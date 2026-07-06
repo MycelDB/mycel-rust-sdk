@@ -20,10 +20,16 @@ pub enum Error {
     Transport(#[from] tonic::transport::Error),
 
     #[error("gRPC status: {0}")]
-    Status(#[from] tonic::Status),
+    Status(Box<tonic::Status>),
 
     #[error("{0}")]
     Message(String),
+}
+
+impl From<tonic::Status> for Error {
+    fn from(status: tonic::Status) -> Self {
+        Self::Status(Box::new(status))
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

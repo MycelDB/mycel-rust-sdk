@@ -49,7 +49,11 @@ impl Default for Config {
 impl Config {
     pub fn addr(&self) -> &str {
         let addr = self.addr.trim();
-        if addr.is_empty() { DEFAULT_ADDR } else { addr }
+        if addr.is_empty() {
+            DEFAULT_ADDR
+        } else {
+            addr
+        }
     }
 
     pub fn endpoint_uri(&self) -> String {
@@ -65,20 +69,35 @@ impl Config {
 
     pub fn from_env() -> Self {
         Self {
-            addr: first_non_empty([env::var("MYCELD_GRPC_ADDR").ok(), Some(DEFAULT_ADDR.to_string())]),
+            addr: first_non_empty([
+                env::var("MYCELD_GRPC_ADDR").ok(),
+                Some(DEFAULT_ADDR.to_string()),
+            ]),
             username: env::var("MYCEL_USERNAME").unwrap_or_default(),
             password: env::var("MYCEL_PASSWORD").unwrap_or_default(),
             access_token: env::var("MYCEL_ACCESS_TOKEN").unwrap_or_default(),
-            call_timeout: env::var("MYCEL_CALL_TIMEOUT").ok().and_then(|v| parse_duration(&v)),
-            tls: env::var("MYCELD_TLS").map(|v| parse_bool(&v)).unwrap_or(false),
+            call_timeout: env::var("MYCEL_CALL_TIMEOUT")
+                .ok()
+                .and_then(|v| parse_duration(&v)),
+            tls: env::var("MYCELD_TLS")
+                .map(|v| parse_bool(&v))
+                .unwrap_or(false),
             tls_ca_file: env::var("MYCELD_TLS_CA_FILE").unwrap_or_default(),
             tls_server_name: env::var("MYCELD_TLS_SERVER_NAME").unwrap_or_default(),
-            tls_insecure_skip_verify: env::var("MYCELD_TLS_INSECURE_SKIP_VERIFY").map(|v| parse_bool(&v)).unwrap_or(false),
+            tls_insecure_skip_verify: env::var("MYCELD_TLS_INSECURE_SKIP_VERIFY")
+                .map(|v| parse_bool(&v))
+                .unwrap_or(false),
             tls_client_cert_file: env::var("MYCELD_TLS_CLIENT_CERT_FILE").unwrap_or_default(),
             tls_client_key_file: env::var("MYCELD_TLS_CLIENT_KEY_FILE").unwrap_or_default(),
-            client_name: first_non_empty([env::var("MYCEL_CLIENT_NAME").ok(), Some("mycel-rust-sdk".to_string())]),
+            client_name: first_non_empty([
+                env::var("MYCEL_CLIENT_NAME").ok(),
+                Some("mycel-rust-sdk".to_string()),
+            ]),
             client_version: env::var("MYCEL_CLIENT_VERSION").unwrap_or_default(),
-            platform: first_non_empty([env::var("MYCEL_CLIENT_PLATFORM").ok(), Some("rust".to_string())]),
+            platform: first_non_empty([
+                env::var("MYCEL_CLIENT_PLATFORM").ok(),
+                Some("rust".to_string()),
+            ]),
             device_label: env::var("MYCEL_CLIENT_DEVICE_LABEL").unwrap_or_default(),
         }
     }
@@ -94,7 +113,10 @@ fn first_non_empty<const N: usize>(values: [Option<String>; N]) -> String {
 }
 
 fn parse_bool(value: &str) -> bool {
-    matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "t" | "true" | "y" | "yes" | "on")
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "1" | "t" | "true" | "y" | "yes" | "on"
+    )
 }
 
 fn parse_duration(value: &str) -> Option<Duration> {
@@ -112,7 +134,10 @@ fn parse_duration(value: &str) -> Option<Duration> {
         return m.parse::<u64>().ok().map(|v| Duration::from_secs(v * 60));
     }
     if let Some(h) = value.strip_suffix('h') {
-        return h.parse::<u64>().ok().map(|v| Duration::from_secs(v * 60 * 60));
+        return h
+            .parse::<u64>()
+            .ok()
+            .map(|v| Duration::from_secs(v * 60 * 60));
     }
     None
 }
@@ -123,7 +148,10 @@ mod tests {
 
     #[test]
     fn endpoint_uri_adds_scheme() {
-        let cfg = Config { addr: "127.0.0.1:9999".into(), ..Default::default() };
+        let cfg = Config {
+            addr: "127.0.0.1:9999".into(),
+            ..Default::default()
+        };
         assert_eq!(cfg.endpoint_uri(), "http://127.0.0.1:9999");
         let cfg = Config { tls: true, ..cfg };
         assert_eq!(cfg.endpoint_uri(), "https://127.0.0.1:9999");

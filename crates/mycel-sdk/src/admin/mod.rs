@@ -7,14 +7,18 @@ use mycel_proto::admin::v1::{
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient,
-    admin_user_service_client::AdminUserServiceClient,
-    AdminDomainServiceGetDomainRequest, AdminSpaceServiceListSpacesRequest, CreateSpaceRequest,
-    CreateUserRequest, FindUserRequest, LoginOperatorRequest, LoginOperatorResponse, Operator,
-    OperatorClientInfo, User, WhoAmIRequest,
+    admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
+    AdminSpaceServiceListSpacesRequest, CreateSpaceRequest, CreateUserRequest, FindUserRequest,
+    LoginOperatorRequest, LoginOperatorResponse, Operator, OperatorClientInfo, User, WhoAmIRequest,
 };
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
 
-use crate::{auth::{AuthInterceptor, TokenSource}, config::Config, error::{Error, Result}, transport::connect_channel};
+use crate::{
+    auth::{AuthInterceptor, TokenSource},
+    config::Config,
+    error::{Error, Result},
+    transport::connect_channel,
+};
 
 pub type AuthenticatedService = InterceptedService<Channel, AuthInterceptor>;
 
@@ -71,13 +75,28 @@ impl AdminClient {
         let interceptor = tokens.interceptor();
         let mut client = Self {
             auth: AdminAuthServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            operators: AdminOperatorServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            operators: AdminOperatorServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             users: AdminUserServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             spaces: AdminSpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            domains: AdminDomainServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            semantic: AdminSemanticServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            semantic_maintenance: AdminSemanticMaintenanceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            semantic_migration: AdminSemanticMigrationServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            domains: AdminDomainServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            semantic: AdminSemanticServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            semantic_maintenance: AdminSemanticMaintenanceServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            semantic_migration: AdminSemanticMigrationServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             inference: AdminInferenceServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
@@ -105,24 +124,46 @@ impl AdminClient {
         self.tokens.set(token);
     }
 
-    pub async fn login_operator(&mut self, username: impl Into<String>, password: impl Into<String>) -> Result<LoginOperatorResponse> {
-        let req = self.request(LoginOperatorRequest { username: username.into(), password: password.into(), client: Some(self.operator_client_info()) });
+    pub async fn login_operator(
+        &mut self,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Result<LoginOperatorResponse> {
+        let req = self.request(LoginOperatorRequest {
+            username: username.into(),
+            password: password.into(),
+            client: Some(self.operator_client_info()),
+        });
         let res = self.auth.login_operator(req).await?.into_inner();
         self.set_access_token(res.access_token.clone());
         Ok(res)
     }
 
     pub async fn who_am_i(&mut self) -> Result<OperatorInfo> {
-        let res = self.auth.who_am_i(self.auth_request(WhoAmIRequest {})).await?.into_inner();
+        let res = self
+            .auth
+            .who_am_i(self.auth_request(WhoAmIRequest {}))
+            .await?
+            .into_inner();
         Ok(operator_info(res.operator.unwrap_or_default()))
     }
 
     pub async fn find_user(&mut self, username: impl Into<String>) -> Result<UserInfo> {
-        let res = self.users.find_user(self.auth_request(FindUserRequest { username: username.into().trim().to_string() })).await?.into_inner();
+        let res = self
+            .users
+            .find_user(self.auth_request(FindUserRequest {
+                username: username.into().trim().to_string(),
+            }))
+            .await?
+            .into_inner();
         Ok(user_info(res.user.unwrap_or_default()))
     }
 
-    pub async fn ensure_user(&mut self, username: impl Into<String>, password: impl Into<String>) -> Result<UserInfo> {
+    pub async fn ensure_user(
+        &mut self,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Result<UserInfo> {
         let username = username.into().trim().to_string();
         if username.is_empty() {
             return Err(Error::Message("username is required".into()));
@@ -130,7 +171,15 @@ impl AdminClient {
         match self.find_user(username.clone()).await {
             Ok(user) => Ok(user),
             Err(Error::Status(status)) if status.code() == Code::NotFound => {
-                let res = self.users.create_user(self.auth_request(CreateUserRequest { username, password: Some(password.into()), disabled: false })).await?.into_inner();
+                let res = self
+                    .users
+                    .create_user(self.auth_request(CreateUserRequest {
+                        username,
+                        password: Some(password.into()),
+                        disabled: false,
+                    }))
+                    .await?
+                    .into_inner();
                 Ok(user_info(res.user.unwrap_or_default()))
             }
             Err(err) => Err(err),
@@ -146,12 +195,23 @@ impl AdminClient {
         let mut token = String::new();
         let mut found: Option<SpaceInfo> = None;
         loop {
-            let res = self.spaces.list_spaces(self.auth_request(AdminSpaceServiceListSpacesRequest { page_size: 100, page_token: token, include_archived: false })).await?.into_inner();
+            let res = self
+                .spaces
+                .list_spaces(self.auth_request(AdminSpaceServiceListSpacesRequest {
+                    page_size: 100,
+                    page_token: token,
+                    include_archived: false,
+                }))
+                .await?
+                .into_inner();
             for sp in res.spaces {
                 if sp.name != name {
                     continue;
                 }
-                let info = SpaceInfo { space_id: sp.space_id, name: sp.name };
+                let info = SpaceInfo {
+                    space_id: sp.space_id,
+                    name: sp.name,
+                };
                 if found.is_some() {
                     return Err(Error::Message(format!("multiple spaces named {name:?}")));
                 }
@@ -163,10 +223,16 @@ impl AdminClient {
             token = res.next_page_token;
         }
 
-        found.ok_or_else(|| Error::Status(tonic::Status::not_found(format!("space {name:?} not found"))))
+        found.ok_or_else(|| tonic::Status::not_found(format!("space {name:?} not found")).into())
     }
 
-    pub async fn ensure_space(&mut self, name: impl Into<String>, owner_username: impl Into<String>, default_domain_key: impl Into<String>, default_domain_name: impl Into<String>) -> Result<(SpaceInfo, DomainInfo)> {
+    pub async fn ensure_space(
+        &mut self,
+        name: impl Into<String>,
+        owner_username: impl Into<String>,
+        default_domain_key: impl Into<String>,
+        default_domain_name: impl Into<String>,
+    ) -> Result<(SpaceInfo, DomainInfo)> {
         let name = name.into();
         let owner_username = owner_username.into();
         let default_domain_key = non_empty(&default_domain_key.into(), "default");
@@ -174,30 +240,68 @@ impl AdminClient {
 
         match self.find_space_by_name(name.clone()).await {
             Ok(space) => {
-                let domain = self.get_domain(space.space_id.clone(), default_domain_key).await?;
+                let domain = self
+                    .get_domain(space.space_id.clone(), default_domain_key)
+                    .await?;
                 Ok((space, domain))
             }
             Err(Error::Status(status)) if status.code() == Code::NotFound => {
-                let res = self.spaces.create_space(self.auth_request(CreateSpaceRequest {
-                    name: name.trim().to_string(),
-                    owner_user_id: String::new(),
-                    owner_username: owner_username.trim().to_string(),
-                    default_domain_key: default_domain_key.clone(),
-                    default_domain_name: default_domain_name.clone(),
-                })).await?.into_inner();
-                let space = res.space.ok_or_else(|| Error::Message("create space response did not include a space".into()))?;
-                let sp = SpaceInfo { space_id: space.space_id, name: space.name };
-                let domain = DomainInfo { space_id: sp.space_id.clone(), domain_id: res.default_domain_id, key: default_domain_key, name: default_domain_name, default: true, system: false };
+                let res = self
+                    .spaces
+                    .create_space(self.auth_request(CreateSpaceRequest {
+                        name: name.trim().to_string(),
+                        owner_user_id: String::new(),
+                        owner_username: owner_username.trim().to_string(),
+                        default_domain_key: default_domain_key.clone(),
+                        default_domain_name: default_domain_name.clone(),
+                    }))
+                    .await?
+                    .into_inner();
+                let space = res.space.ok_or_else(|| {
+                    Error::Message("create space response did not include a space".into())
+                })?;
+                let sp = SpaceInfo {
+                    space_id: space.space_id,
+                    name: space.name,
+                };
+                let domain = DomainInfo {
+                    space_id: sp.space_id.clone(),
+                    domain_id: res.default_domain_id,
+                    key: default_domain_key,
+                    name: default_domain_name,
+                    default: true,
+                    system: false,
+                };
                 Ok((sp, domain))
             }
             Err(err) => Err(err),
         }
     }
 
-    pub async fn get_domain(&mut self, space_id: impl Into<String>, domain_ref: impl Into<String>) -> Result<DomainInfo> {
-        let res = self.domains.get_domain(self.auth_request(AdminDomainServiceGetDomainRequest { space_id: space_id.into(), domain_ref: domain_ref.into() })).await?.into_inner();
-        let d = res.domain.ok_or_else(|| Error::Message("get domain response did not include a domain".into()))?;
-        Ok(DomainInfo { space_id: d.space_id, domain_id: d.domain_id, key: d.key, name: d.name, default: d.default, system: d.system })
+    pub async fn get_domain(
+        &mut self,
+        space_id: impl Into<String>,
+        domain_ref: impl Into<String>,
+    ) -> Result<DomainInfo> {
+        let res = self
+            .domains
+            .get_domain(self.auth_request(AdminDomainServiceGetDomainRequest {
+                space_id: space_id.into(),
+                domain_ref: domain_ref.into(),
+            }))
+            .await?
+            .into_inner();
+        let d = res
+            .domain
+            .ok_or_else(|| Error::Message("get domain response did not include a domain".into()))?;
+        Ok(DomainInfo {
+            space_id: d.space_id,
+            domain_id: d.domain_id,
+            key: d.key,
+            name: d.name,
+            default: d.default,
+            system: d.system,
+        })
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
@@ -223,14 +327,26 @@ impl AdminClient {
 }
 
 fn operator_info(op: Operator) -> OperatorInfo {
-    OperatorInfo { operator_id: op.operator_id, username: op.username }
+    OperatorInfo {
+        operator_id: op.operator_id,
+        username: op.username,
+    }
 }
 
 fn user_info(user: User) -> UserInfo {
-    UserInfo { user_id: user.user_id, username: user.username, state: user.state().as_str_name().to_string() }
+    let state = user.state().as_str_name().to_string();
+    UserInfo {
+        user_id: user.user_id,
+        username: user.username,
+        state,
+    }
 }
 
 fn non_empty(value: &str, default: &str) -> String {
     let value = value.trim();
-    if value.is_empty() { default.to_string() } else { value.to_string() }
+    if value.is_empty() {
+        default.to_string()
+    } else {
+        value.to_string()
+    }
 }

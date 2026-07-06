@@ -11,7 +11,9 @@ pub struct TokenSource {
 
 impl TokenSource {
     pub fn new(token: impl Into<String>) -> Self {
-        Self { token: Arc::new(RwLock::new(token.into().trim().to_string())) }
+        Self {
+            token: Arc::new(RwLock::new(token.into().trim().to_string())),
+        }
     }
 
     pub fn set(&self, token: impl Into<String>) {
@@ -23,7 +25,9 @@ impl TokenSource {
     }
 
     pub fn interceptor(&self) -> AuthInterceptor {
-        AuthInterceptor { tokens: self.clone() }
+        AuthInterceptor {
+            tokens: self.clone(),
+        }
     }
 }
 

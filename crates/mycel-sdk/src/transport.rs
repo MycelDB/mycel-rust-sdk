@@ -2,7 +2,10 @@ use std::fs;
 
 use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Identity};
 
-use crate::{config::Config, error::{Error, Result}};
+use crate::{
+    config::Config,
+    error::{Error, Result},
+};
 
 pub async fn connect_channel(cfg: &Config) -> Result<Channel> {
     let mut endpoint = Endpoint::from_shared(cfg.endpoint_uri())
@@ -45,7 +48,10 @@ fn tls_config(cfg: &Config) -> Result<ClientTlsConfig> {
 }
 
 fn read_file(path: &str) -> Result<Vec<u8>> {
-    fs::read(path).map_err(|source| Error::ReadFile { path: path.to_string(), source })
+    fs::read(path).map_err(|source| Error::ReadFile {
+        path: path.to_string(),
+        source,
+    })
 }
 
 #[cfg(test)]
@@ -54,7 +60,14 @@ mod tests {
 
     #[test]
     fn rejects_partial_client_certificate() {
-        let cfg = Config { tls: true, tls_client_cert_file: "client.pem".into(), ..Default::default() };
-        assert!(matches!(tls_config(&cfg), Err(Error::PartialClientCertificate)));
+        let cfg = Config {
+            tls: true,
+            tls_client_cert_file: "client.pem".into(),
+            ..Default::default()
+        };
+        assert!(matches!(
+            tls_config(&cfg),
+            Err(Error::PartialClientCertificate)
+        ));
     }
 }

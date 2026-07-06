@@ -1,16 +1,23 @@
 use mycel_proto::client::v1::{
     auth_service_client::AuthServiceClient, blob_service_client::BlobServiceClient,
-    change_stream_service_client::ChangeStreamServiceClient, domain_service_client::DomainServiceClient,
-    graph_service_client::GraphServiceClient, import_export_service_client::ImportExportServiceClient,
-    metadata_catalog_service_client::MetadataCatalogServiceClient, query_service_client::QueryServiceClient,
-    semantic_service_client::SemanticServiceClient, session_service_client::SessionServiceClient,
-    space_service_client::SpaceServiceClient, template_service_client::TemplateServiceClient,
+    change_stream_service_client::ChangeStreamServiceClient,
+    domain_service_client::DomainServiceClient, graph_service_client::GraphServiceClient,
+    import_export_service_client::ImportExportServiceClient,
+    metadata_catalog_service_client::MetadataCatalogServiceClient,
+    query_service_client::QueryServiceClient, semantic_service_client::SemanticServiceClient,
+    session_service_client::SessionServiceClient, space_service_client::SpaceServiceClient,
+    template_service_client::TemplateServiceClient,
     transaction_service_client::TransactionServiceClient, AuthPrincipal, ClientInfo, LoginRequest,
     LoginResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
 
-use crate::{auth::{AuthInterceptor, TokenSource}, config::Config, error::{Error, Result}, transport::connect_channel};
+use crate::{
+    auth::{AuthInterceptor, TokenSource},
+    config::Config,
+    error::{Error, Result},
+    transport::connect_channel,
+};
 
 pub type AuthenticatedService = InterceptedService<Channel, AuthInterceptor>;
 
@@ -52,14 +59,26 @@ impl Client {
             domain: DomainServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             template: TemplateServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             session: SessionServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            transaction: TransactionServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            transaction: TransactionServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             graph: GraphServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             blob: BlobServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             query: QueryServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            import_export: ImportExportServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            metadata: MetadataCatalogServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            import_export: ImportExportServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            metadata: MetadataCatalogServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             semantic: SemanticServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            change_stream: ChangeStreamServiceClient::with_interceptor(channel.clone(), interceptor),
+            change_stream: ChangeStreamServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor,
+            ),
             channel,
             tokens,
             cfg,
@@ -86,7 +105,11 @@ impl Client {
         self.tokens.set(token);
     }
 
-    pub async fn login(&mut self, username: impl Into<String>, password: impl Into<String>) -> Result<LoginResponse> {
+    pub async fn login(
+        &mut self,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Result<LoginResponse> {
         let req = self.request(LoginRequest {
             username: username.into(),
             password: password.into(),
@@ -98,16 +121,29 @@ impl Client {
     }
 
     pub async fn refresh(&mut self, refresh_token: Option<String>) -> Result<RefreshResponse> {
-        let req = self.auth_request(RefreshRequest { refresh_token, client: Some(self.client_info()) });
+        let req = self.auth_request(RefreshRequest {
+            refresh_token,
+            client: Some(self.client_info()),
+        });
         let res = self.auth.refresh(req).await?.into_inner();
         self.set_access_token(res.access_token.clone());
         Ok(res)
     }
 
     pub async fn who_am_i(&mut self) -> Result<PrincipalInfo> {
-        let res = self.auth.who_am_i(self.auth_request(WhoAmIRequest {})).await?.into_inner();
-        let principal = res.principal.unwrap_or_else(|| AuthPrincipal { user_id: String::new(), username: String::new() });
-        Ok(PrincipalInfo { user_id: principal.user_id, username: principal.username })
+        let res = self
+            .auth
+            .who_am_i(self.auth_request(WhoAmIRequest {}))
+            .await?
+            .into_inner();
+        let principal = res.principal.unwrap_or_else(|| AuthPrincipal {
+            user_id: String::new(),
+            username: String::new(),
+        });
+        Ok(PrincipalInfo {
+            user_id: principal.user_id,
+            username: principal.username,
+        })
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
@@ -134,12 +170,19 @@ impl Client {
 
 fn non_empty(value: &str, default: &str) -> String {
     let value = value.trim();
-    if value.is_empty() { default.to_string() } else { value.to_string() }
+    if value.is_empty() {
+        default.to_string()
+    } else {
+        value.to_string()
+    }
 }
 
 impl From<tonic::Status> for PrincipalInfo {
     fn from(_: tonic::Status) -> Self {
-        Self { user_id: String::new(), username: String::new() }
+        Self {
+            user_id: String::new(),
+            username: String::new(),
+        }
     }
 }
 
