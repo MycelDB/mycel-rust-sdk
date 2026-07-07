@@ -22,6 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "mycel/client/v1/space.proto",
         "mycel/client/v1/template.proto",
         "mycel/admin/v1/auth.proto",
+        "mycel/admin/v1/backup.proto",
         "mycel/admin/v1/domain.proto",
         "mycel/admin/v1/inference.proto",
         "mycel/admin/v1/operator.proto",

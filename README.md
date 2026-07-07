@@ -13,6 +13,7 @@ This SDK mirrors the Go SDK shape:
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
+- Admin backup policy/status/list/trigger/delete helpers
 
 ## Crates
 
@@ -49,6 +50,15 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
     password: "secret".into(),
     ..Default::default()
 }).await?;
+```
+
+Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
+
+```rust
+let policy = admin.get_backup_policy().await?;
+let status = admin.get_backup_status().await?;
+let trigger = admin.trigger_backup("before upgrade").await?;
+let _ = (policy, status, trigger);
 ```
 
 ## Environment config

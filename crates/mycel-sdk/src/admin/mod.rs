@@ -1,5 +1,6 @@
 use mycel_proto::admin::v1::{
     admin_auth_service_client::AdminAuthServiceClient,
+    admin_backup_service_client::AdminBackupServiceClient,
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_service_client::AdminInferenceServiceClient,
     admin_operator_service_client::AdminOperatorServiceClient,
@@ -8,8 +9,11 @@ use mycel_proto::admin::v1::{
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient,
     admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, CreateSpaceRequest, CreateUserRequest, FindUserRequest,
-    LoginOperatorRequest, LoginOperatorResponse, Operator, OperatorClientInfo, User, WhoAmIRequest,
+    AdminSpaceServiceListSpacesRequest, BackupPolicy, CreateSpaceRequest, CreateUserRequest,
+    DeleteBackupRequest, DeleteBackupResponse, FindUserRequest, GetBackupPolicyRequest,
+    GetBackupStatusRequest, GetBackupStatusResponse, ListBackupsRequest, ListBackupsResponse,
+    LoginOperatorRequest, LoginOperatorResponse, Operator, OperatorClientInfo,
+    TriggerBackupRequest, TriggerBackupResponse, UpdateBackupPolicyRequest, User, WhoAmIRequest,
 };
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
 
@@ -62,6 +66,7 @@ pub struct AdminClient {
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
     pub inference: AdminInferenceServiceClient<AuthenticatedService>,
+    pub backup: AdminBackupServiceClient<AuthenticatedService>,
 
     channel: Channel,
     tokens: TokenSource,
@@ -97,7 +102,11 @@ impl AdminClient {
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference: AdminInferenceServiceClient::with_interceptor(channel.clone(), interceptor),
+            inference: AdminInferenceServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            backup: AdminBackupServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
             cfg,
@@ -302,6 +311,79 @@ impl AdminClient {
             default: d.default,
             system: d.system,
         })
+    }
+
+    pub async fn get_backup_policy(&mut self) -> Result<BackupPolicy> {
+        let res = self
+            .backup
+            .get_backup_policy(self.auth_request(GetBackupPolicyRequest {}))
+            .await?
+            .into_inner();
+        Ok(res.policy.unwrap_or_default())
+    }
+
+    pub async fn update_backup_policy(&mut self, policy: BackupPolicy) -> Result<BackupPolicy> {
+        let res = self
+            .backup
+            .update_backup_policy(self.auth_request(UpdateBackupPolicyRequest {
+                policy: Some(policy),
+            }))
+            .await?
+            .into_inner();
+        Ok(res.policy.unwrap_or_default())
+    }
+
+    pub async fn trigger_backup(
+        &mut self,
+        reason: impl Into<String>,
+    ) -> Result<TriggerBackupResponse> {
+        let res = self
+            .backup
+            .trigger_backup(self.auth_request(TriggerBackupRequest {
+                reason: reason.into(),
+            }))
+            .await?
+            .into_inner();
+        Ok(res)
+    }
+
+    pub async fn get_backup_status(&mut self) -> Result<GetBackupStatusResponse> {
+        let res = self
+            .backup
+            .get_backup_status(self.auth_request(GetBackupStatusRequest {}))
+            .await?
+            .into_inner();
+        Ok(res)
+    }
+
+    pub async fn list_backups(
+        &mut self,
+        page_size: i32,
+        page_token: impl Into<String>,
+    ) -> Result<ListBackupsResponse> {
+        let res = self
+            .backup
+            .list_backups(self.auth_request(ListBackupsRequest {
+                page_size,
+                page_token: page_token.into(),
+            }))
+            .await?
+            .into_inner();
+        Ok(res)
+    }
+
+    pub async fn delete_backup(
+        &mut self,
+        backup_id: impl Into<String>,
+    ) -> Result<DeleteBackupResponse> {
+        let res = self
+            .backup
+            .delete_backup(self.auth_request(DeleteBackupRequest {
+                backup_id: backup_id.into(),
+            }))
+            .await?
+            .into_inner();
+        Ok(res)
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
