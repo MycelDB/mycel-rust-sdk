@@ -9,7 +9,7 @@ This SDK mirrors the Go SDK shape:
 - user login and refresh helpers
 - operator/admin login helper
 - bearer-token metadata injection
-- generated Admin and Client service clients
+- generated Admin and Client service clients from the language-independent `mycel-api` protobuf contracts
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
@@ -17,8 +17,32 @@ This SDK mirrors the Go SDK shape:
 
 ## Crates
 
-- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from `../mycel-api/api/proto`
+- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from the sibling `../mycel-api/api/proto` checkout, or from `MYCEL_API_ROOT=/path/to/mycel-api`
 - `mycel-sdk`: ergonomic client wrapper around the generated clients
+
+## Protobuf generation
+
+The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`.
+
+By default, it reads:
+
+```text
+../mycel-api/api/proto
+```
+
+Set `MYCEL_API_ROOT` to use a different checkout:
+
+```sh
+MYCEL_API_ROOT=/path/to/mycel-api cargo test
+```
+
+## Validate
+
+```sh
+make ci
+```
+
+This runs `cargo fmt --check`, `cargo test`, and `cargo build`.
 
 ## Usage
 
