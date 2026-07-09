@@ -1,3 +1,5 @@
+use std::{sync::Arc, time::SystemTime};
+
 use mycel_proto::admin::v1::{
     admin_auth_service_client::AdminAuthServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
@@ -12,19 +14,35 @@ use mycel_proto::admin::v1::{
     AdminSpaceServiceListSpacesRequest, BackupPolicy, CreateSpaceRequest, CreateUserRequest,
     DeleteBackupRequest, DeleteBackupResponse, FindUserRequest, GetBackupPolicyRequest,
     GetBackupStatusRequest, GetBackupStatusResponse, ListBackupsRequest, ListBackupsResponse,
-    LoginOperatorRequest, LoginOperatorResponse, Operator, OperatorClientInfo,
+    LoginOperatorRequest, LoginOperatorResponse, LogoutOperatorRequest, LogoutOperatorResponse,
+    Operator, OperatorClientInfo, RefreshOperatorRequest, RefreshOperatorResponse,
     TriggerBackupRequest, TriggerBackupResponse, UpdateBackupPolicyRequest, User, WhoAmIRequest,
 };
+use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
 
 use crate::{
-    auth::{AuthInterceptor, TokenSource},
+    auth::{is_expired_unauthenticated, timestamp_to_system_time, AuthInterceptor, TokenSource},
     config::Config,
     error::{Error, Result},
     transport::connect_channel,
 };
 
 pub type AuthenticatedService = InterceptedService<Channel, AuthInterceptor>;
+
+macro_rules! admin_call_with_refresh {
+    ($client:ident, $call:expr, $retry:expr) => {{
+        $client.refresh_if_needed().await?;
+        match $call.await {
+            Ok(res) => Ok(res),
+            Err(status) if is_expired_unauthenticated(&status) && $client.tokens.can_refresh() => {
+                $client.refresh_after_expired().await?;
+                Ok($retry.await?)
+            }
+            Err(status) => Err(Error::from(status)),
+        }
+    }};
+}
 
 #[derive(Debug, Clone)]
 pub struct OperatorInfo {
@@ -70,12 +88,13 @@ pub struct AdminClient {
 
     channel: Channel,
     tokens: TokenSource,
+    refresh_lock: Arc<Mutex<()>>,
     cfg: Config,
 }
 
 impl AdminClient {
     pub async fn dial(cfg: Config) -> Result<Self> {
-        let tokens = TokenSource::new(cfg.access_token.clone());
+        let tokens = TokenSource::from_config(&cfg);
         let channel = connect_channel(&cfg).await?;
         let interceptor = tokens.interceptor();
         let mut client = Self {
@@ -109,6 +128,7 @@ impl AdminClient {
             backup: AdminBackupServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
+            refresh_lock: Arc::new(Mutex::new(())),
             cfg,
         };
 
@@ -129,8 +149,30 @@ impl AdminClient {
         self.tokens.token()
     }
 
+    pub fn refresh_token(&self) -> String {
+        self.tokens.refresh_token()
+    }
+
+    pub fn access_token_expire_time(&self) -> Option<SystemTime> {
+        self.tokens.access_token_expire_time()
+    }
+
     pub fn set_access_token(&self, token: impl Into<String>) {
         self.tokens.set(token);
+    }
+
+    pub fn set_refresh_token(&self, token: impl Into<String>) {
+        self.tokens.set_refresh_token(token);
+    }
+
+    pub fn set_auth_tokens(
+        &self,
+        access_token: impl Into<String>,
+        expire_time: Option<SystemTime>,
+        refresh_token: impl Into<String>,
+    ) {
+        self.tokens
+            .set_tokens(access_token, expire_time, refresh_token);
     }
 
     pub async fn login_operator(
@@ -144,27 +186,70 @@ impl AdminClient {
             client: Some(self.operator_client_info()),
         });
         let res = self.auth.login_operator(req).await?.into_inner();
-        self.set_access_token(res.access_token.clone());
+        self.set_auth_tokens(
+            res.access_token.clone(),
+            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            res.refresh_token.clone().unwrap_or_default(),
+        );
+        Ok(res)
+    }
+
+    pub async fn refresh_operator(
+        &mut self,
+        refresh_token: Option<String>,
+    ) -> Result<RefreshOperatorResponse> {
+        let refresh_token = refresh_token.or_else(|| {
+            let token = self.refresh_token();
+            (!token.is_empty()).then_some(token)
+        });
+        let req = self.auth_request(RefreshOperatorRequest {
+            refresh_token,
+            client: Some(self.operator_client_info()),
+        });
+        let res = self.auth.refresh_operator(req).await?.into_inner();
+        self.set_auth_tokens(
+            res.access_token.clone(),
+            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            res.refresh_token.clone().unwrap_or_default(),
+        );
+        Ok(res)
+    }
+
+    pub async fn logout_operator(
+        &mut self,
+        auth_session_id: Option<String>,
+    ) -> Result<LogoutOperatorResponse> {
+        let req = self.auth_request(LogoutOperatorRequest {
+            auth_session_id: auth_session_id.clone(),
+        });
+        let res = self.auth.logout_operator(req).await?.into_inner();
+        if auth_session_id.is_none() {
+            self.tokens.clear();
+        }
         Ok(res)
     }
 
     pub async fn who_am_i(&mut self) -> Result<OperatorInfo> {
-        let res = self
-            .auth
-            .who_am_i(self.auth_request(WhoAmIRequest {}))
-            .await?
-            .into_inner();
+        let res = admin_call_with_refresh!(
+            self,
+            self.auth.who_am_i(self.auth_request(WhoAmIRequest {})),
+            self.auth.who_am_i(self.auth_request(WhoAmIRequest {}))
+        )?
+        .into_inner();
         Ok(operator_info(res.operator.unwrap_or_default()))
     }
 
     pub async fn find_user(&mut self, username: impl Into<String>) -> Result<UserInfo> {
-        let res = self
-            .users
-            .find_user(self.auth_request(FindUserRequest {
-                username: username.into().trim().to_string(),
-            }))
-            .await?
-            .into_inner();
+        let username = username.into().trim().to_string();
+        let res = admin_call_with_refresh!(
+            self,
+            self.users.find_user(self.auth_request(FindUserRequest {
+                username: username.clone(),
+            })),
+            self.users
+                .find_user(self.auth_request(FindUserRequest { username }))
+        )?
+        .into_inner();
         Ok(user_info(res.user.unwrap_or_default()))
     }
 
@@ -180,15 +265,21 @@ impl AdminClient {
         match self.find_user(username.clone()).await {
             Ok(user) => Ok(user),
             Err(Error::Status(status)) if status.code() == Code::NotFound => {
-                let res = self
-                    .users
-                    .create_user(self.auth_request(CreateUserRequest {
+                let password = password.into();
+                let res = admin_call_with_refresh!(
+                    self,
+                    self.users.create_user(self.auth_request(CreateUserRequest {
+                        username: username.clone(),
+                        password: Some(password.clone()),
+                        disabled: false,
+                    })),
+                    self.users.create_user(self.auth_request(CreateUserRequest {
                         username,
-                        password: Some(password.into()),
+                        password: Some(password),
                         disabled: false,
                     }))
-                    .await?
-                    .into_inner();
+                )?
+                .into_inner();
                 Ok(user_info(res.user.unwrap_or_default()))
             }
             Err(err) => Err(err),
@@ -204,15 +295,22 @@ impl AdminClient {
         let mut token = String::new();
         let mut found: Option<SpaceInfo> = None;
         loop {
-            let res = self
-                .spaces
-                .list_spaces(self.auth_request(AdminSpaceServiceListSpacesRequest {
-                    page_size: 100,
-                    page_token: token,
-                    include_archived: false,
-                }))
-                .await?
-                .into_inner();
+            let res = admin_call_with_refresh!(
+                self,
+                self.spaces
+                    .list_spaces(self.auth_request(AdminSpaceServiceListSpacesRequest {
+                        page_size: 100,
+                        page_token: token.clone(),
+                        include_archived: false,
+                    })),
+                self.spaces
+                    .list_spaces(self.auth_request(AdminSpaceServiceListSpacesRequest {
+                        page_size: 100,
+                        page_token: token.clone(),
+                        include_archived: false,
+                    }))
+            )?
+            .into_inner();
             for sp in res.spaces {
                 if sp.name != name {
                     continue;
@@ -255,17 +353,26 @@ impl AdminClient {
                 Ok((space, domain))
             }
             Err(Error::Status(status)) if status.code() == Code::NotFound => {
-                let res = self
-                    .spaces
-                    .create_space(self.auth_request(CreateSpaceRequest {
-                        name: name.trim().to_string(),
-                        owner_user_id: String::new(),
-                        owner_username: owner_username.trim().to_string(),
-                        default_domain_key: default_domain_key.clone(),
-                        default_domain_name: default_domain_name.clone(),
-                    }))
-                    .await?
-                    .into_inner();
+                let res = admin_call_with_refresh!(
+                    self,
+                    self.spaces
+                        .create_space(self.auth_request(CreateSpaceRequest {
+                            name: name.trim().to_string(),
+                            owner_user_id: String::new(),
+                            owner_username: owner_username.trim().to_string(),
+                            default_domain_key: default_domain_key.clone(),
+                            default_domain_name: default_domain_name.clone(),
+                        })),
+                    self.spaces
+                        .create_space(self.auth_request(CreateSpaceRequest {
+                            name: name.trim().to_string(),
+                            owner_user_id: String::new(),
+                            owner_username: owner_username.trim().to_string(),
+                            default_domain_key: default_domain_key.clone(),
+                            default_domain_name: default_domain_name.clone(),
+                        }))
+                )?
+                .into_inner();
                 let space = res.space.ok_or_else(|| {
                     Error::Message("create space response did not include a space".into())
                 })?;
@@ -292,14 +399,22 @@ impl AdminClient {
         space_id: impl Into<String>,
         domain_ref: impl Into<String>,
     ) -> Result<DomainInfo> {
-        let res = self
-            .domains
-            .get_domain(self.auth_request(AdminDomainServiceGetDomainRequest {
-                space_id: space_id.into(),
-                domain_ref: domain_ref.into(),
-            }))
-            .await?
-            .into_inner();
+        let space_id = space_id.into();
+        let domain_ref = domain_ref.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.domains
+                .get_domain(self.auth_request(AdminDomainServiceGetDomainRequest {
+                    space_id: space_id.clone(),
+                    domain_ref: domain_ref.clone(),
+                })),
+            self.domains
+                .get_domain(self.auth_request(AdminDomainServiceGetDomainRequest {
+                    space_id,
+                    domain_ref,
+                }))
+        )?
+        .into_inner();
         let d = res
             .domain
             .ok_or_else(|| Error::Message("get domain response did not include a domain".into()))?;
@@ -314,22 +429,30 @@ impl AdminClient {
     }
 
     pub async fn get_backup_policy(&mut self) -> Result<BackupPolicy> {
-        let res = self
-            .backup
-            .get_backup_policy(self.auth_request(GetBackupPolicyRequest {}))
-            .await?
-            .into_inner();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .get_backup_policy(self.auth_request(GetBackupPolicyRequest {})),
+            self.backup
+                .get_backup_policy(self.auth_request(GetBackupPolicyRequest {}))
+        )?
+        .into_inner();
         Ok(res.policy.unwrap_or_default())
     }
 
     pub async fn update_backup_policy(&mut self, policy: BackupPolicy) -> Result<BackupPolicy> {
-        let res = self
-            .backup
-            .update_backup_policy(self.auth_request(UpdateBackupPolicyRequest {
-                policy: Some(policy),
-            }))
-            .await?
-            .into_inner();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .update_backup_policy(self.auth_request(UpdateBackupPolicyRequest {
+                    policy: Some(policy.clone()),
+                })),
+            self.backup
+                .update_backup_policy(self.auth_request(UpdateBackupPolicyRequest {
+                    policy: Some(policy),
+                }))
+        )?
+        .into_inner();
         Ok(res.policy.unwrap_or_default())
     }
 
@@ -337,22 +460,29 @@ impl AdminClient {
         &mut self,
         reason: impl Into<String>,
     ) -> Result<TriggerBackupResponse> {
-        let res = self
-            .backup
-            .trigger_backup(self.auth_request(TriggerBackupRequest {
-                reason: reason.into(),
-            }))
-            .await?
-            .into_inner();
+        let reason = reason.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .trigger_backup(self.auth_request(TriggerBackupRequest {
+                    reason: reason.clone(),
+                })),
+            self.backup
+                .trigger_backup(self.auth_request(TriggerBackupRequest { reason }))
+        )?
+        .into_inner();
         Ok(res)
     }
 
     pub async fn get_backup_status(&mut self) -> Result<GetBackupStatusResponse> {
-        let res = self
-            .backup
-            .get_backup_status(self.auth_request(GetBackupStatusRequest {}))
-            .await?
-            .into_inner();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .get_backup_status(self.auth_request(GetBackupStatusRequest {})),
+            self.backup
+                .get_backup_status(self.auth_request(GetBackupStatusRequest {}))
+        )?
+        .into_inner();
         Ok(res)
     }
 
@@ -361,14 +491,21 @@ impl AdminClient {
         page_size: i32,
         page_token: impl Into<String>,
     ) -> Result<ListBackupsResponse> {
-        let res = self
-            .backup
-            .list_backups(self.auth_request(ListBackupsRequest {
-                page_size,
-                page_token: page_token.into(),
-            }))
-            .await?
-            .into_inner();
+        let page_token = page_token.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .list_backups(self.auth_request(ListBackupsRequest {
+                    page_size,
+                    page_token: page_token.clone(),
+                })),
+            self.backup
+                .list_backups(self.auth_request(ListBackupsRequest {
+                    page_size,
+                    page_token,
+                }))
+        )?
+        .into_inner();
         Ok(res)
     }
 
@@ -376,14 +513,39 @@ impl AdminClient {
         &mut self,
         backup_id: impl Into<String>,
     ) -> Result<DeleteBackupResponse> {
-        let res = self
-            .backup
-            .delete_backup(self.auth_request(DeleteBackupRequest {
-                backup_id: backup_id.into(),
-            }))
-            .await?
-            .into_inner();
+        let backup_id = backup_id.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .delete_backup(self.auth_request(DeleteBackupRequest {
+                    backup_id: backup_id.clone(),
+                })),
+            self.backup
+                .delete_backup(self.auth_request(DeleteBackupRequest { backup_id }))
+        )?
+        .into_inner();
         Ok(res)
+    }
+
+    pub(crate) async fn refresh_if_needed(&mut self) -> Result<()> {
+        if !self.tokens.needs_refresh(SystemTime::now()) {
+            return Ok(());
+        }
+        let refresh_lock = self.refresh_lock.clone();
+        let _guard = refresh_lock.lock().await;
+        if !self.tokens.needs_refresh(SystemTime::now()) {
+            return Ok(());
+        }
+        self.refresh_operator(None).await.map(|_| ())
+    }
+
+    pub(crate) async fn refresh_after_expired(&mut self) -> Result<()> {
+        if !self.tokens.can_refresh() {
+            return Ok(());
+        }
+        let refresh_lock = self.refresh_lock.clone();
+        let _guard = refresh_lock.lock().await;
+        self.refresh_operator(None).await.map(|_| ())
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
