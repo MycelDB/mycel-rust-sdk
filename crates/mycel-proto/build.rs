@@ -1,38 +1,36 @@
-use std::{env, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let protoc = protoc_bin_vendored::protoc_bin_path()?;
     env::set_var("PROTOC", protoc);
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let proto_root = manifest_dir.join("../../../mycel-api/api/proto");
+    let proto_root = env::var_os("MYCEL_API_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| manifest_dir.join("../../../mycel-api"))
+        .join("api/proto");
 
-    let protos = [
-        "mycel/common/v1/access.proto",
-        "mycel/client/v1/auth.proto",
-        "mycel/client/v1/blob.proto",
-        "mycel/client/v1/change_stream.proto",
-        "mycel/client/v1/domain.proto",
-        "mycel/client/v1/graph.proto",
-        "mycel/client/v1/import_export.proto",
-        "mycel/client/v1/metadata_catalog.proto",
-        "mycel/client/v1/query.proto",
-        "mycel/client/v1/semantic.proto",
-        "mycel/client/v1/session.proto",
-        "mycel/client/v1/space.proto",
-        "mycel/client/v1/template.proto",
-        "mycel/admin/v1/auth.proto",
-        "mycel/admin/v1/domain.proto",
-        "mycel/admin/v1/inference.proto",
-        "mycel/admin/v1/operator.proto",
-        "mycel/admin/v1/semantic.proto",
-        "mycel/admin/v1/semantic_maintenance.proto",
-        "mycel/admin/v1/semantic_migration.proto",
-        "mycel/admin/v1/space.proto",
-        "mycel/admin/v1/user.proto",
-    ];
+    if !proto_root.is_dir() {
+        return Err(format!(
+            "mycel-api proto root not found: {} (set MYCEL_API_ROOT to a mycel-api checkout)",
+            proto_root.display()
+        )
+        .into());
+    }
 
-    let proto_paths: Vec<PathBuf> = protos.iter().map(|p| proto_root.join(p)).collect();
+    println!("cargo:rerun-if-env-changed=MYCEL_API_ROOT");
+    println!("cargo:rerun-if-changed={}", proto_root.display());
+
+    let mut proto_paths = Vec::new();
+    collect_proto_files(&proto_root, &mut proto_paths)?;
+    proto_paths.sort();
+
+    if proto_paths.is_empty() {
+        return Err(format!("no .proto files found under {}", proto_root.display()).into());
+    }
 
     for proto in &proto_paths {
         println!("cargo:rerun-if-changed={}", proto.display());
@@ -43,5 +41,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(true)
         .compile_protos(&proto_paths, &[proto_root])?;
 
+    Ok(())
+}
+
+fn collect_proto_files(
+    dir: &Path,
+    out: &mut Vec<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let file_type = entry.file_type()?;
+        if file_type.is_dir() {
+            collect_proto_files(&path, out)?;
+        } else if path.extension().is_some_and(|ext| ext == "proto") {
+            out.push(path);
+        }
+    }
     Ok(())
 }

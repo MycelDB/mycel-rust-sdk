@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SDK
+        uses: actions/checkout@v4
+        with:
+          path: mycel-rust-sdk
+      - name: Checkout API protos
+        uses: actions/checkout@v4
+        with:
+          repository: MycelDB/mycel-api
+          ref: develop
+          path: mycel-api
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: CI
+        working-directory: mycel-rust-sdk
+        run: make ci

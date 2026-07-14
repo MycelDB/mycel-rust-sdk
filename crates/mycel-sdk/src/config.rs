@@ -1,4 +1,6 @@
-use std::{env, time::Duration};
+use std::{env, time::Duration, time::SystemTime};
+
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub const DEFAULT_ADDR: &str = "127.0.0.1:9091";
 
@@ -9,6 +11,9 @@ pub struct Config {
     pub username: String,
     pub password: String,
     pub access_token: String,
+    pub access_token_expire_time: Option<SystemTime>,
+    pub refresh_token: String,
+    pub refresh_before: Option<Duration>,
     pub call_timeout: Option<Duration>,
 
     pub tls: bool,
@@ -31,6 +36,9 @@ impl Default for Config {
             username: String::new(),
             password: String::new(),
             access_token: String::new(),
+            access_token_expire_time: None,
+            refresh_token: String::new(),
+            refresh_before: None,
             call_timeout: None,
             tls: false,
             tls_ca_file: String::new(),
@@ -76,6 +84,13 @@ impl Config {
             username: env::var("MYCEL_USERNAME").unwrap_or_default(),
             password: env::var("MYCEL_PASSWORD").unwrap_or_default(),
             access_token: env::var("MYCEL_ACCESS_TOKEN").unwrap_or_default(),
+            access_token_expire_time: env::var("MYCEL_ACCESS_TOKEN_EXPIRE_TIME")
+                .ok()
+                .and_then(|v| parse_time(&v)),
+            refresh_token: env::var("MYCEL_REFRESH_TOKEN").unwrap_or_default(),
+            refresh_before: env::var("MYCEL_REFRESH_BEFORE")
+                .ok()
+                .and_then(|v| parse_duration(&v)),
             call_timeout: env::var("MYCEL_CALL_TIMEOUT")
                 .ok()
                 .and_then(|v| parse_duration(&v)),
@@ -142,6 +157,16 @@ fn parse_duration(value: &str) -> Option<Duration> {
     None
 }
 
+fn parse_time(value: &str) -> Option<SystemTime> {
+    let value = value.trim();
+    if value.is_empty() {
+        return None;
+    }
+    OffsetDateTime::parse(value, &Rfc3339)
+        .ok()
+        .map(SystemTime::from)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,5 +188,11 @@ mod tests {
         assert_eq!(parse_duration("250ms"), Some(Duration::from_millis(250)));
         assert_eq!(parse_duration("2m"), Some(Duration::from_secs(120)));
         assert_eq!(parse_duration("bad"), None);
+    }
+
+    #[test]
+    fn time_parser_accepts_rfc3339() {
+        assert!(parse_time("2026-07-03T12:00:00Z").is_some());
+        assert!(parse_time("bad").is_none());
     }
 }

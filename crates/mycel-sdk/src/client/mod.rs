@@ -1,3 +1,5 @@
+use std::{sync::Arc, time::SystemTime};
+
 use mycel_proto::client::v1::{
     auth_service_client::AuthServiceClient, blob_service_client::BlobServiceClient,
     change_stream_service_client::ChangeStreamServiceClient,
@@ -8,12 +10,13 @@ use mycel_proto::client::v1::{
     session_service_client::SessionServiceClient, space_service_client::SpaceServiceClient,
     template_service_client::TemplateServiceClient,
     transaction_service_client::TransactionServiceClient, AuthPrincipal, ClientInfo, LoginRequest,
-    LoginResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
+    LoginResponse, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
+use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
 
 use crate::{
-    auth::{AuthInterceptor, TokenSource},
+    auth::{is_expired_unauthenticated, timestamp_to_system_time, AuthInterceptor, TokenSource},
     config::Config,
     error::{Error, Result},
     transport::connect_channel,
@@ -45,12 +48,13 @@ pub struct Client {
 
     channel: Channel,
     tokens: TokenSource,
+    refresh_lock: Arc<Mutex<()>>,
     cfg: Config,
 }
 
 impl Client {
     pub async fn dial(cfg: Config) -> Result<Self> {
-        let tokens = TokenSource::new(cfg.access_token.clone());
+        let tokens = TokenSource::from_config(&cfg);
         let channel = connect_channel(&cfg).await?;
         let interceptor = tokens.interceptor();
         let mut client = Self {
@@ -81,6 +85,7 @@ impl Client {
             ),
             channel,
             tokens,
+            refresh_lock: Arc::new(Mutex::new(())),
             cfg,
         };
 
@@ -101,8 +106,30 @@ impl Client {
         self.tokens.token()
     }
 
+    pub fn refresh_token(&self) -> String {
+        self.tokens.refresh_token()
+    }
+
+    pub fn access_token_expire_time(&self) -> Option<SystemTime> {
+        self.tokens.access_token_expire_time()
+    }
+
     pub fn set_access_token(&self, token: impl Into<String>) {
         self.tokens.set(token);
+    }
+
+    pub fn set_refresh_token(&self, token: impl Into<String>) {
+        self.tokens.set_refresh_token(token);
+    }
+
+    pub fn set_auth_tokens(
+        &self,
+        access_token: impl Into<String>,
+        expire_time: Option<SystemTime>,
+        refresh_token: impl Into<String>,
+    ) {
+        self.tokens
+            .set_tokens(access_token, expire_time, refresh_token);
     }
 
     pub async fn login(
@@ -116,34 +143,83 @@ impl Client {
             client: Some(self.client_info()),
         });
         let res = self.auth.login(req).await?.into_inner();
-        self.set_access_token(res.access_token.clone());
+        self.set_auth_tokens(
+            res.access_token.clone(),
+            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            res.refresh_token.clone().unwrap_or_default(),
+        );
         Ok(res)
     }
 
     pub async fn refresh(&mut self, refresh_token: Option<String>) -> Result<RefreshResponse> {
+        let refresh_token = refresh_token.or_else(|| {
+            let token = self.refresh_token();
+            (!token.is_empty()).then_some(token)
+        });
         let req = self.auth_request(RefreshRequest {
             refresh_token,
             client: Some(self.client_info()),
         });
         let res = self.auth.refresh(req).await?.into_inner();
-        self.set_access_token(res.access_token.clone());
+        self.set_auth_tokens(
+            res.access_token.clone(),
+            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            res.refresh_token.clone().unwrap_or_default(),
+        );
+        Ok(res)
+    }
+
+    pub async fn logout(&mut self, auth_session_id: Option<String>) -> Result<LogoutResponse> {
+        let req = self.auth_request(LogoutRequest {
+            auth_session_id: auth_session_id.clone(),
+        });
+        let res = self.auth.logout(req).await?.into_inner();
+        if auth_session_id.is_none() {
+            self.tokens.clear();
+        }
         Ok(res)
     }
 
     pub async fn who_am_i(&mut self) -> Result<PrincipalInfo> {
-        let res = self
+        self.refresh_if_needed().await?;
+        match self
             .auth
             .who_am_i(self.auth_request(WhoAmIRequest {}))
-            .await?
-            .into_inner();
-        let principal = res.principal.unwrap_or_else(|| AuthPrincipal {
-            user_id: String::new(),
-            username: String::new(),
-        });
-        Ok(PrincipalInfo {
-            user_id: principal.user_id,
-            username: principal.username,
-        })
+            .await
+        {
+            Ok(res) => Ok(principal_info(res.into_inner().principal)),
+            Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
+                self.refresh_after_expired().await?;
+                let res = self
+                    .auth
+                    .who_am_i(self.auth_request(WhoAmIRequest {}))
+                    .await?
+                    .into_inner();
+                Ok(principal_info(res.principal))
+            }
+            Err(status) => Err(status.into()),
+        }
+    }
+
+    pub(crate) async fn refresh_if_needed(&mut self) -> Result<()> {
+        if !self.tokens.needs_refresh(SystemTime::now()) {
+            return Ok(());
+        }
+        let refresh_lock = self.refresh_lock.clone();
+        let _guard = refresh_lock.lock().await;
+        if !self.tokens.needs_refresh(SystemTime::now()) {
+            return Ok(());
+        }
+        self.refresh(None).await.map(|_| ())
+    }
+
+    pub(crate) async fn refresh_after_expired(&mut self) -> Result<()> {
+        if !self.tokens.can_refresh() {
+            return Ok(());
+        }
+        let refresh_lock = self.refresh_lock.clone();
+        let _guard = refresh_lock.lock().await;
+        self.refresh(None).await.map(|_| ())
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
@@ -165,6 +241,17 @@ impl Client {
             platform: non_empty(&self.cfg.platform, "rust"),
             device_label: self.cfg.device_label.clone(),
         }
+    }
+}
+
+fn principal_info(principal: Option<AuthPrincipal>) -> PrincipalInfo {
+    let principal = principal.unwrap_or_else(|| AuthPrincipal {
+        user_id: String::new(),
+        username: String::new(),
+    });
+    PrincipalInfo {
+        user_id: principal.user_id,
+        username: principal.username,
     }
 }
 

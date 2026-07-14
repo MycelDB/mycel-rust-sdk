@@ -6,18 +6,44 @@ This SDK mirrors the Go SDK shape:
 
 - daemon dial helpers
 - plaintext/TLS/mTLS transport config
-- user login and refresh helpers
-- operator/admin login helper
+- user login, refresh, and logout helpers
+- operator/admin login, refresh, and logout helpers
+- automatic access-token refresh for SDK convenience methods, with one retry on expired-token `Unauthenticated`
 - bearer-token metadata injection
-- generated Admin and Client service clients
+- generated Admin and Client service clients from the language-independent `mycel-api` protobuf contracts
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
+- Admin backup policy/status/list/trigger/delete helpers
 
 ## Crates
 
-- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from `../mycel-api/api/proto`
+- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from the sibling `../mycel-api/api/proto` checkout, or from `MYCEL_API_ROOT=/path/to/mycel-api`
 - `mycel-sdk`: ergonomic client wrapper around the generated clients
+
+## Protobuf generation
+
+The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`.
+
+By default, it reads:
+
+```text
+../mycel-api/api/proto
+```
+
+Set `MYCEL_API_ROOT` to use a different checkout:
+
+```sh
+MYCEL_API_ROOT=/path/to/mycel-api cargo test
+```
+
+## Validate
+
+```sh
+make ci
+```
+
+This runs `cargo fmt --check`, `cargo test`, and `cargo build`.
 
 ## Usage
 
@@ -51,6 +77,17 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 }).await?;
 ```
 
+`dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh`, `refresh_operator`, `logout`, or `logout_operator` directly. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
+
+Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
+
+```rust
+let policy = admin.get_backup_policy().await?;
+let status = admin.get_backup_status().await?;
+let trigger = admin.trigger_backup("before upgrade").await?;
+let _ = (policy, status, trigger);
+```
+
 ## Environment config
 
 `Config::from_env()` reads:
@@ -59,6 +96,9 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 - `MYCEL_USERNAME`
 - `MYCEL_PASSWORD`
 - `MYCEL_ACCESS_TOKEN`
+- `MYCEL_ACCESS_TOKEN_EXPIRE_TIME` (RFC3339)
+- `MYCEL_REFRESH_TOKEN`
+- `MYCEL_REFRESH_BEFORE` (`ms`, `s`, `m`, `h` suffixes; default `30s`)
 - `MYCEL_CALL_TIMEOUT` (`ms`, `s`, `m`, `h` suffixes)
 - `MYCELD_TLS`
 - `MYCELD_TLS_CA_FILE`
