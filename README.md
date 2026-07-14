@@ -18,17 +18,24 @@ This SDK mirrors the Go SDK shape:
 
 ## Crates
 
-- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from the sibling `../mycel-api/api/proto` checkout, or from `MYCEL_API_ROOT=/path/to/mycel-api`
+- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from the language-independent `mycel-api` protobuf contracts. This repo pins `mycel-api` as a submodule at `third_party/mycel-api`; `MYCEL_API_ROOT=/path/to/mycel-api` can override it.
 - `mycel-sdk`: ergonomic client wrapper around the generated clients
 
 ## Protobuf generation
 
 The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`.
 
-By default, it reads:
+By default, it reads the first available API checkout in this order:
 
-```text
-../mycel-api/api/proto
+1. `MYCEL_API_ROOT=/path/to/mycel-api`
+2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.2.0`
+3. sibling `../mycel-api` checkout for local workspace development
+
+For a fresh clone, initialize the submodule before building:
+
+```sh
+git submodule update --init --recursive
+cargo test
 ```
 
 Set `MYCEL_API_ROOT` to use a different checkout:
