@@ -8,9 +8,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     env::set_var("PROTOC", protoc);
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let proto_root = env::var_os("MYCEL_API_ROOT")
+    let repo_root = manifest_dir.join("../..");
+    let api_root = env::var_os("MYCEL_API_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| manifest_dir.join("../../../mycel-api"))
+        .or_else(|| existing_dir(repo_root.join("third_party/mycel-api")))
+        .or_else(|| existing_dir(repo_root.join("../mycel-api")));
+    let proto_root = api_root
+        .ok_or_else(|| {
+            format!(
+                "mycel-api checkout not found (set MYCEL_API_ROOT, initialize third_party/mycel-api submodule, or place mycel-api beside this repo)"
+            )
+        })?
         .join("api/proto");
 
     if !proto_root.is_dir() {
@@ -42,6 +50,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .compile_protos(&proto_paths, &[proto_root])?;
 
     Ok(())
+}
+
+fn existing_dir(path: PathBuf) -> Option<PathBuf> {
+    if path.is_dir() {
+        Some(path)
+    } else {
+        None
+    }
 }
 
 fn collect_proto_files(
