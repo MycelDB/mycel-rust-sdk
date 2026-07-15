@@ -3,6 +3,7 @@ use std::{sync::Arc, time::SystemTime};
 use mycel_proto::admin::v1::{
     admin_auth_service_client::AdminAuthServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
+    admin_cluster_service_client::AdminClusterServiceClient,
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_service_client::AdminInferenceServiceClient,
     admin_operator_service_client::AdminOperatorServiceClient,
@@ -85,6 +86,7 @@ pub struct AdminClient {
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
     pub inference: AdminInferenceServiceClient<AuthenticatedService>,
     pub backup: AdminBackupServiceClient<AuthenticatedService>,
+    pub cluster: AdminClusterServiceClient<AuthenticatedService>,
 
     channel: Channel,
     tokens: TokenSource,
@@ -125,7 +127,8 @@ impl AdminClient {
                 channel.clone(),
                 interceptor.clone(),
             ),
-            backup: AdminBackupServiceClient::with_interceptor(channel.clone(), interceptor),
+            backup: AdminBackupServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            cluster: AdminClusterServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
             refresh_lock: Arc::new(Mutex::new(())),
