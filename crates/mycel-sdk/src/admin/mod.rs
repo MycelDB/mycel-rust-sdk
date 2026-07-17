@@ -127,7 +127,10 @@ impl AdminClient {
                 channel.clone(),
                 interceptor.clone(),
             ),
-            backup: AdminBackupServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            backup: AdminBackupServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             cluster: AdminClusterServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
