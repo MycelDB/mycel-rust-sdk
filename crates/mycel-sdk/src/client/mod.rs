@@ -1,3 +1,5 @@
+mod primary_follow;
+
 use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::client::v1::{
@@ -197,7 +199,22 @@ impl Client {
                     .into_inner();
                 Ok(principal_info(res.principal))
             }
-            Err(status) => Err(status.into()),
+            Err(status) => {
+                let err: Error = status.into();
+                if self.cfg.primary_follow.enabled
+                    && self.cfg.primary_follow.retry_reads
+                    && self.follow_primary_from_error(&err).await?.is_some()
+                {
+                    self.refresh_if_needed().await?;
+                    let res = self
+                        .auth
+                        .who_am_i(self.auth_request(WhoAmIRequest {}))
+                        .await?
+                        .into_inner();
+                    return Ok(principal_info(res.principal));
+                }
+                Err(err)
+            }
         }
     }
 

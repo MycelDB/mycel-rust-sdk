@@ -38,19 +38,37 @@ impl Client {
                 key
             }
         };
-        let res = client_call_with_refresh!(
+        let first_space_id = space_id.clone();
+        let first_domain_key = domain_key.clone();
+        let res = match client_call_with_refresh!(
             self,
+            self.domain.get_domain(self.auth_request(GetDomainRequest {
+                space_id: first_space_id,
+                domain_id: String::new(),
+                key: first_domain_key,
+            })),
             self.domain.get_domain(self.auth_request(GetDomainRequest {
                 space_id: space_id.clone(),
                 domain_id: String::new(),
                 key: domain_key.clone(),
-            })),
-            self.domain.get_domain(self.auth_request(GetDomainRequest {
-                space_id,
-                domain_id: String::new(),
-                key: domain_key.clone(),
             }))
-        )?
+        ) {
+            Ok(res) => res,
+            Err(err) if self.cfg.primary_follow.enabled && self.cfg.primary_follow.retry_reads => {
+                if self.follow_primary_from_error(&err).await?.is_some() {
+                    self.domain
+                        .get_domain(self.auth_request(GetDomainRequest {
+                            space_id,
+                            domain_id: String::new(),
+                            key: domain_key.clone(),
+                        }))
+                        .await?
+                } else {
+                    return Err(err);
+                }
+            }
+            Err(err) => return Err(err),
+        }
         .into_inner();
         res.domain
             .map(|d| d.domain_id)
@@ -64,7 +82,7 @@ impl Client {
     ) -> Result<String> {
         let space_id = space_id.into();
         let domain_id = domain_id.into();
-        let res = client_call_with_refresh!(
+        let res = match client_call_with_refresh!(
             self,
             self.session
                 .open_session(self.auth_request(OpenSessionRequest {
@@ -74,11 +92,27 @@ impl Client {
                 })),
             self.session
                 .open_session(self.auth_request(OpenSessionRequest {
-                    space_id,
-                    domain_id,
+                    space_id: space_id.clone(),
+                    domain_id: domain_id.clone(),
                     requested_idle_timeout: None,
                 }))
-        )?
+        ) {
+            Ok(res) => res,
+            Err(err) if self.cfg.primary_follow.enabled && self.cfg.primary_follow.retry_reads => {
+                if self.follow_primary_from_error(&err).await?.is_some() {
+                    self.session
+                        .open_session(self.auth_request(OpenSessionRequest {
+                            space_id,
+                            domain_id,
+                            requested_idle_timeout: None,
+                        }))
+                        .await?
+                } else {
+                    return Err(err);
+                }
+            }
+            Err(err) => return Err(err),
+        }
         .into_inner();
         res.session
             .map(|s| s.session_id)
@@ -142,7 +176,7 @@ impl Client {
 
     pub async fn commit_transaction(&mut self, transaction_id: impl Into<String>) -> Result<()> {
         let transaction_id = transaction_id.into();
-        client_call_with_refresh!(
+        match client_call_with_refresh!(
             self,
             self.transaction
                 .commit_transaction(self.auth_request(CommitTransactionRequest {
@@ -150,8 +184,16 @@ impl Client {
                 })),
             self.transaction
                 .commit_transaction(self.auth_request(CommitTransactionRequest { transaction_id }))
-        )?;
-        Ok(())
+        ) {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                self.follow_primary_for_unsafe(
+                    "commit transaction; reopen transaction on new primary",
+                    &err,
+                )
+                .await
+            }
+        }
     }
 
     pub async fn close_transaction(&mut self, transaction_id: impl Into<String>) -> Result<()> {
