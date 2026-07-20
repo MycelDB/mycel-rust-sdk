@@ -58,14 +58,6 @@ impl From<tonic::Status> for Error {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct PrimaryHint {
-    pub node_id: Option<String>,
-    pub node_name: Option<String>,
-    pub backend_advertise_addr: Option<String>,
-    pub authority_epoch: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SnapshotRequiredInfo {
     pub requested_after_lsn: Option<String>,
     pub next_requested_lsn: Option<String>,
@@ -77,16 +69,6 @@ pub struct SnapshotRequiredInfo {
 }
 
 impl Error {
-    pub fn is_not_primary(&self) -> bool {
-        match self {
-            Error::Status(status) => {
-                status.code() == tonic::Code::FailedPrecondition
-                    && status.message() == "node is not cluster primary"
-            }
-            _ => false,
-        }
-    }
-
     pub fn is_snapshot_required(&self) -> bool {
         match self {
             Error::Status(status) => {
@@ -116,41 +98,6 @@ impl Error {
                 let _ = status;
                 None
             })
-    }
-
-    pub fn primary_hint(&self) -> Option<PrimaryHint> {
-        let status = match self {
-            Error::Status(status) => status,
-            _ => return None,
-        };
-        if let Some(metadata) = self.error_info_metadata("MYCEL_CLUSTER_NOT_PRIMARY") {
-            return Some(PrimaryHint {
-                node_id: metadata.get("mycel-primary-node-id").cloned(),
-                node_name: metadata.get("mycel-primary-node-name").cloned(),
-                backend_advertise_addr: metadata
-                    .get("mycel-primary-backend-advertise-addr")
-                    .cloned(),
-                authority_epoch: metadata.get("mycel-authority-epoch").cloned(),
-            });
-        }
-        let metadata = status.metadata();
-        let value = |key: &str| {
-            metadata
-                .get(key)
-                .and_then(|v| v.to_str().ok())
-                .map(|v| v.to_string())
-        };
-        let hint = PrimaryHint {
-            node_id: value("mycel-primary-node-id"),
-            node_name: value("mycel-primary-node-name"),
-            backend_advertise_addr: value("mycel-primary-backend-advertise-addr"),
-            authority_epoch: value("mycel-authority-epoch"),
-        };
-        if hint == PrimaryHint::default() {
-            None
-        } else {
-            Some(hint)
-        }
     }
 
     fn error_info_metadata(&self, reason: &str) -> Option<HashMap<String, String>> {

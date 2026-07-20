@@ -15,7 +15,6 @@ pub struct Config {
     pub refresh_token: String,
     pub refresh_before: Option<Duration>,
     pub call_timeout: Option<Duration>,
-    pub primary_follow: PrimaryFollowPolicy,
 
     pub tls: bool,
     pub tls_ca_file: String,
@@ -30,25 +29,6 @@ pub struct Config {
     pub device_label: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrimaryFollowPolicy {
-    pub enabled: bool,
-    pub retry_reads: bool,
-    pub retry_unsafe: bool,
-    pub max_redirects: usize,
-}
-
-impl Default for PrimaryFollowPolicy {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            retry_reads: true,
-            retry_unsafe: false,
-            max_redirects: 1,
-        }
-    }
-}
-
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -60,7 +40,6 @@ impl Default for Config {
             refresh_token: String::new(),
             refresh_before: None,
             call_timeout: None,
-            primary_follow: PrimaryFollowPolicy::default(),
             tls: false,
             tls_ca_file: String::new(),
             tls_server_name: String::new(),
@@ -115,7 +94,6 @@ impl Config {
             call_timeout: env::var("MYCEL_CALL_TIMEOUT")
                 .ok()
                 .and_then(|v| parse_duration(&v)),
-            primary_follow: PrimaryFollowPolicy::default(),
             tls: env::var("MYCELD_TLS")
                 .map(|v| parse_bool(&v))
                 .unwrap_or(false),

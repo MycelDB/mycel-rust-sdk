@@ -54,19 +54,6 @@ impl Client {
             }))
         ) {
             Ok(res) => res,
-            Err(err) if self.cfg.primary_follow.enabled && self.cfg.primary_follow.retry_reads => {
-                if self.follow_primary_from_error(&err).await?.is_some() {
-                    self.domain
-                        .get_domain(self.auth_request(GetDomainRequest {
-                            space_id,
-                            domain_id: String::new(),
-                            key: domain_key.clone(),
-                        }))
-                        .await?
-                } else {
-                    return Err(err);
-                }
-            }
             Err(err) => return Err(err),
         }
         .into_inner();
@@ -98,19 +85,6 @@ impl Client {
                 }))
         ) {
             Ok(res) => res,
-            Err(err) if self.cfg.primary_follow.enabled && self.cfg.primary_follow.retry_reads => {
-                if self.follow_primary_from_error(&err).await?.is_some() {
-                    self.session
-                        .open_session(self.auth_request(OpenSessionRequest {
-                            space_id,
-                            domain_id,
-                            requested_idle_timeout: None,
-                        }))
-                        .await?
-                } else {
-                    return Err(err);
-                }
-            }
             Err(err) => return Err(err),
         }
         .into_inner();
@@ -186,13 +160,7 @@ impl Client {
                 .commit_transaction(self.auth_request(CommitTransactionRequest { transaction_id }))
         ) {
             Ok(_) => Ok(()),
-            Err(err) => {
-                self.follow_primary_for_unsafe(
-                    "commit transaction; reopen transaction on new primary",
-                    &err,
-                )
-                .await
-            }
+            Err(err) => Err(err),
         }
     }
 
