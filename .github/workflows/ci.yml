@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [develop]
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -17,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: MycelDB/mycel-api
-          ref: v0.2.0
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || 'develop' }}
           path: mycel-api
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
