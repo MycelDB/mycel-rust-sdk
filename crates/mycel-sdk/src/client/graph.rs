@@ -5,7 +5,8 @@ use mycel_proto::client::v1::{
     GraphQuery, ListChildrenRequest, ListChildrenResponse, ListNodesRequest, ListNodesResponse,
     Node, NodeCreate, UpdateNodeRequest,
 };
-use prost_types::FieldMask;
+use prost_types::{value, FieldMask, Struct, Value};
+use std::collections::BTreeMap;
 
 use crate::{
     auth::is_expired_unauthenticated,
@@ -25,6 +26,17 @@ macro_rules! client_call_with_refresh {
             Err(status) => Err(Error::from(status)),
         }
     }};
+}
+
+fn text_payload(content: String) -> Struct {
+    Struct {
+        fields: BTreeMap::from([(
+            "text".to_string(),
+            Value {
+                kind: Some(value::Kind::StringValue(content)),
+            },
+        )]),
+    }
 }
 
 impl Client {
@@ -86,11 +98,11 @@ impl Client {
             transaction_id,
             node: Some(Node {
                 node_id,
-                content,
+                payload: Some(text_payload(content)),
                 ..Default::default()
             }),
             update_mask: Some(FieldMask {
-                paths: vec!["content".to_string()],
+                paths: vec!["payload".to_string()],
             }),
         };
         let res = client_call_with_refresh!(
