@@ -1,12 +1,12 @@
 use mycel_proto::client::v1::{
     ApplyGraphOperationsRequest, ApplyGraphOperationsResponse, CreateEdgeRequest,
-    CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteQueryRequest,
+    CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteGqlRequest, ExecuteQueryRequest,
     ExecuteQueryResponse, GetNodeRequest, GetParentRequest, GetParentResponse, GraphOperation,
     GraphQuery, ListChildrenRequest, ListChildrenResponse, ListNodesRequest, ListNodesResponse,
-    Node, NodeCreate, UpdateNodeRequest,
+    Node, NodeCreate, QueryResult, UpdateNodeRequest,
 };
 use prost_types::{value, FieldMask, Struct, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     auth::is_expired_unauthenticated,
@@ -258,6 +258,65 @@ impl Client {
         )?
         .into_inner();
         Ok(res)
+    }
+
+    pub async fn execute_gql(
+        &mut self,
+        transaction_id: impl Into<String>,
+        query: impl Into<String>,
+        params: Option<HashMap<String, Value>>,
+        page_size: i32,
+    ) -> Result<QueryResult> {
+        let transaction_id = transaction_id.into();
+        let query = query.into();
+        let params = params.unwrap_or_default();
+        let res = client_call_with_refresh!(
+            self,
+            self.query.execute_gql(self.auth_request(ExecuteGqlRequest {
+                transaction_id: transaction_id.clone(),
+                query: query.clone(),
+                params: params.clone(),
+                page_size,
+                page_token: String::new(),
+            })),
+            self.query.execute_gql(self.auth_request(ExecuteGqlRequest {
+                transaction_id,
+                query,
+                params,
+                page_size,
+                page_token: String::new(),
+            }))
+        )?
+        .into_inner();
+        res.result
+            .ok_or_else(|| Error::Message("execute gql response did not include a result".into()))
+    }
+
+    pub async fn query_gql_read_only(
+        &mut self,
+        space_id: impl Into<String>,
+        domain_id: impl Into<String>,
+        query: impl Into<String>,
+        page_size: i32,
+    ) -> Result<QueryResult> {
+        let session_id = self.open_session(space_id, domain_id).await?;
+        let transaction_id = match self.begin_read_only_transaction(session_id.clone()).await {
+            Ok(transaction_id) => transaction_id,
+            Err(err) => {
+                let _ = self.close_session(session_id).await;
+                return Err(err);
+            }
+        };
+        let result = self
+            .execute_gql(transaction_id.clone(), query, None, page_size)
+            .await;
+        let close_result = self.close_transaction(transaction_id).await;
+        let _ = self.close_session(session_id).await;
+        match (result, close_result) {
+            (Ok(result), Ok(())) => Ok(result),
+            (Err(err), _) => Err(err),
+            (_, Err(err)) => Err(err),
+        }
     }
 
     pub async fn execute_query(
