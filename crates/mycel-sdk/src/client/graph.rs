@@ -1,9 +1,10 @@
 use mycel_proto::client::v1::{
     ApplyGraphOperationsRequest, ApplyGraphOperationsResponse, CreateEdgeRequest,
-    CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteGqlRequest, ExecuteQueryRequest,
-    ExecuteQueryResponse, GetNodeRequest, GetParentRequest, GetParentResponse, GraphOperation,
-    GraphQuery, ListChildrenRequest, ListChildrenResponse, ListNodesRequest, ListNodesResponse,
-    Node, NodeCreate, QueryResult, UpdateNodeRequest,
+    CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteGqlRequest,
+    ExecuteGqlScriptRequest, ExecuteGqlScriptResponse, ExecuteQueryRequest, ExecuteQueryResponse,
+    GetNodeRequest, GetParentRequest, GetParentResponse, GraphOperation, GraphQuery,
+    ListChildrenRequest, ListChildrenResponse, ListNodesRequest, ListNodesResponse, Node,
+    NodeCreate, QueryResult, UpdateNodeRequest,
 };
 use prost_types::{value, FieldMask, Struct, Value};
 use std::collections::{BTreeMap, HashMap};
@@ -290,6 +291,102 @@ impl Client {
         .into_inner();
         res.result
             .ok_or_else(|| Error::Message("execute gql response did not include a result".into()))
+    }
+
+    pub async fn execute_gql_script(
+        &mut self,
+        transaction_id: impl Into<String>,
+        script: impl Into<String>,
+        params: Option<HashMap<String, Value>>,
+        stop_on_error: bool,
+        page_size: i32,
+    ) -> Result<ExecuteGqlScriptResponse> {
+        let transaction_id = transaction_id.into();
+        let script = script.into();
+        let params = params.unwrap_or_default();
+        let res = client_call_with_refresh!(
+            self,
+            self.query
+                .execute_gql_script(self.auth_request(ExecuteGqlScriptRequest {
+                    transaction_id: transaction_id.clone(),
+                    script: script.clone(),
+                    params: params.clone(),
+                    stop_on_error,
+                    page_size
+                })),
+            self.query
+                .execute_gql_script(self.auth_request(ExecuteGqlScriptRequest {
+                    transaction_id,
+                    script,
+                    params,
+                    stop_on_error,
+                    page_size
+                }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn query_gql_script_read_only(
+        &mut self,
+        space_id: impl Into<String>,
+        domain_id: impl Into<String>,
+        script: impl Into<String>,
+        page_size: i32,
+    ) -> Result<ExecuteGqlScriptResponse> {
+        let session_id = self.open_session(space_id, domain_id).await?;
+        let transaction_id = match self.begin_read_only_transaction(session_id.clone()).await {
+            Ok(transaction_id) => transaction_id,
+            Err(err) => {
+                let _ = self.close_session(session_id).await;
+                return Err(err);
+            }
+        };
+        let result = self
+            .execute_gql_script(transaction_id.clone(), script, None, true, page_size)
+            .await;
+        let close_result = self.close_transaction(transaction_id).await;
+        let _ = self.close_session(session_id).await;
+        match (result, close_result) {
+            (Ok(result), Ok(())) => Ok(result),
+            (Err(err), _) => Err(err),
+            (_, Err(err)) => Err(err),
+        }
+    }
+
+    pub async fn query_gql_script_read_write(
+        &mut self,
+        space_id: impl Into<String>,
+        domain_id: impl Into<String>,
+        script: impl Into<String>,
+        page_size: i32,
+    ) -> Result<ExecuteGqlScriptResponse> {
+        let session_id = self.open_session(space_id, domain_id).await?;
+        let transaction_id = match self.begin_read_write_transaction(session_id.clone()).await {
+            Ok(transaction_id) => transaction_id,
+            Err(err) => {
+                let _ = self.close_session(session_id).await;
+                return Err(err);
+            }
+        };
+        let result = self
+            .execute_gql_script(transaction_id.clone(), script, None, true, page_size)
+            .await;
+        match &result {
+            Ok(response)
+                if response
+                    .statements
+                    .iter()
+                    .all(|statement| statement.success) =>
+            {
+                self.commit_transaction(transaction_id).await?
+            }
+            _ => {
+                let _ = self.close_transaction(transaction_id).await;
+            }
+        }
+        let _ = self.close_session(session_id).await;
+        result
     }
 
     pub async fn query_gql_read_only(
