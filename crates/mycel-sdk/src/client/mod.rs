@@ -1,7 +1,8 @@
 use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::client::v1::{
-    auth_service_client::AuthServiceClient, blob_service_client::BlobServiceClient,
+    auth_service_client::AuthServiceClient, automation_service_client::AutomationServiceClient,
+    blob_service_client::BlobServiceClient,
     change_stream_service_client::ChangeStreamServiceClient,
     domain_service_client::DomainServiceClient, graph_service_client::GraphServiceClient,
     import_export_service_client::ImportExportServiceClient,
@@ -41,6 +42,7 @@ pub struct Client {
     pub blob: BlobServiceClient<AuthenticatedService>,
     pub query: QueryServiceClient<AuthenticatedService>,
     pub schema: SchemaServiceClient<AuthenticatedService>,
+    pub automation: AutomationServiceClient<AuthenticatedService>,
     pub import_export: ImportExportServiceClient<AuthenticatedService>,
     pub metadata: MetadataCatalogServiceClient<AuthenticatedService>,
     pub semantic: SemanticServiceClient<AuthenticatedService>,
@@ -70,6 +72,10 @@ impl Client {
             blob: BlobServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             query: QueryServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             schema: SchemaServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            automation: AutomationServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
             import_export: ImportExportServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
