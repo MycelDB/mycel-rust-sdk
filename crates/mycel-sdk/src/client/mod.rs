@@ -6,10 +6,11 @@ use mycel_proto::client::v1::{
     domain_service_client::DomainServiceClient, graph_service_client::GraphServiceClient,
     import_export_service_client::ImportExportServiceClient,
     metadata_catalog_service_client::MetadataCatalogServiceClient,
-    query_service_client::QueryServiceClient, semantic_service_client::SemanticServiceClient,
-    session_service_client::SessionServiceClient, space_service_client::SpaceServiceClient,
-    transaction_service_client::TransactionServiceClient, AuthPrincipal, ClientInfo, LoginRequest,
-    LoginResponse, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
+    query_service_client::QueryServiceClient, schema_service_client::SchemaServiceClient,
+    semantic_service_client::SemanticServiceClient, session_service_client::SessionServiceClient,
+    space_service_client::SpaceServiceClient, transaction_service_client::TransactionServiceClient,
+    AuthPrincipal, ClientInfo, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse,
+    RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
@@ -39,6 +40,7 @@ pub struct Client {
     pub graph: GraphServiceClient<AuthenticatedService>,
     pub blob: BlobServiceClient<AuthenticatedService>,
     pub query: QueryServiceClient<AuthenticatedService>,
+    pub schema: SchemaServiceClient<AuthenticatedService>,
     pub import_export: ImportExportServiceClient<AuthenticatedService>,
     pub metadata: MetadataCatalogServiceClient<AuthenticatedService>,
     pub semantic: SemanticServiceClient<AuthenticatedService>,
@@ -67,6 +69,7 @@ impl Client {
             graph: GraphServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             blob: BlobServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             query: QueryServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            schema: SchemaServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             import_export: ImportExportServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),

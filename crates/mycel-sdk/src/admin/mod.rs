@@ -7,6 +7,7 @@ use mycel_proto::admin::v1::{
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_service_client::AdminInferenceServiceClient,
     admin_operator_service_client::AdminOperatorServiceClient,
+    admin_schema_service_client::AdminSchemaServiceClient,
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
@@ -86,6 +87,7 @@ pub struct AdminClient {
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
     pub inference: AdminInferenceServiceClient<AuthenticatedService>,
     pub backup: AdminBackupServiceClient<AuthenticatedService>,
+    pub schema: AdminSchemaServiceClient<AuthenticatedService>,
     pub cluster: AdminClusterServiceClient<AuthenticatedService>,
 
     channel: Channel,
@@ -128,6 +130,10 @@ impl AdminClient {
                 interceptor.clone(),
             ),
             backup: AdminBackupServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            schema: AdminSchemaServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
