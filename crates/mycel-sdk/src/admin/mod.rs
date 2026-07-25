@@ -11,7 +11,6 @@ use mycel_proto::admin::v1::{
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient,
-    admin_template_service_client::AdminTemplateServiceClient,
     admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
     AdminSpaceServiceListSpacesRequest, BackupPolicy, CreateSpaceRequest, CreateUserRequest,
     DeleteBackupRequest, DeleteBackupResponse, FindUserRequest, GetBackupPolicyRequest,
@@ -81,7 +80,6 @@ pub struct AdminClient {
     pub operators: AdminOperatorServiceClient<AuthenticatedService>,
     pub users: AdminUserServiceClient<AuthenticatedService>,
     pub spaces: AdminSpaceServiceClient<AuthenticatedService>,
-    pub templates: AdminTemplateServiceClient<AuthenticatedService>,
     pub domains: AdminDomainServiceClient<AuthenticatedService>,
     pub semantic: AdminSemanticServiceClient<AuthenticatedService>,
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
@@ -109,10 +107,6 @@ impl AdminClient {
             ),
             users: AdminUserServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             spaces: AdminSpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            templates: AdminTemplateServiceClient::with_interceptor(
-                channel.clone(),
-                interceptor.clone(),
-            ),
             domains: AdminDomainServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),

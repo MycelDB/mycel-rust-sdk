@@ -8,7 +8,6 @@ use mycel_proto::client::v1::{
     metadata_catalog_service_client::MetadataCatalogServiceClient,
     query_service_client::QueryServiceClient, semantic_service_client::SemanticServiceClient,
     session_service_client::SessionServiceClient, space_service_client::SpaceServiceClient,
-    template_service_client::TemplateServiceClient,
     transaction_service_client::TransactionServiceClient, AuthPrincipal, ClientInfo, LoginRequest,
     LoginResponse, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
@@ -35,7 +34,6 @@ pub struct Client {
     pub auth: AuthServiceClient<AuthenticatedService>,
     pub space: SpaceServiceClient<AuthenticatedService>,
     pub domain: DomainServiceClient<AuthenticatedService>,
-    pub template: TemplateServiceClient<AuthenticatedService>,
     pub session: SessionServiceClient<AuthenticatedService>,
     pub transaction: TransactionServiceClient<AuthenticatedService>,
     pub graph: GraphServiceClient<AuthenticatedService>,
@@ -61,7 +59,6 @@ impl Client {
             auth: AuthServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             space: SpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             domain: DomainServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            template: TemplateServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             session: SessionServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             transaction: TransactionServiceClient::with_interceptor(
                 channel.clone(),
