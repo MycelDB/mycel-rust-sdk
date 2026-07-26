@@ -2,16 +2,17 @@ use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::admin::v1::{
     admin_auth_service_client::AdminAuthServiceClient,
+    admin_automation_service_client::AdminAutomationServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
     admin_cluster_service_client::AdminClusterServiceClient,
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_service_client::AdminInferenceServiceClient,
     admin_operator_service_client::AdminOperatorServiceClient,
+    admin_schema_service_client::AdminSchemaServiceClient,
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient,
-    admin_template_service_client::AdminTemplateServiceClient,
     admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
     AdminSpaceServiceListSpacesRequest, BackupPolicy, CreateSpaceRequest, CreateUserRequest,
     DeleteBackupRequest, DeleteBackupResponse, FindUserRequest, GetBackupPolicyRequest,
@@ -81,13 +82,14 @@ pub struct AdminClient {
     pub operators: AdminOperatorServiceClient<AuthenticatedService>,
     pub users: AdminUserServiceClient<AuthenticatedService>,
     pub spaces: AdminSpaceServiceClient<AuthenticatedService>,
-    pub templates: AdminTemplateServiceClient<AuthenticatedService>,
     pub domains: AdminDomainServiceClient<AuthenticatedService>,
     pub semantic: AdminSemanticServiceClient<AuthenticatedService>,
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
     pub inference: AdminInferenceServiceClient<AuthenticatedService>,
     pub backup: AdminBackupServiceClient<AuthenticatedService>,
+    pub schema: AdminSchemaServiceClient<AuthenticatedService>,
+    pub automation: AdminAutomationServiceClient<AuthenticatedService>,
     pub cluster: AdminClusterServiceClient<AuthenticatedService>,
 
     channel: Channel,
@@ -109,10 +111,6 @@ impl AdminClient {
             ),
             users: AdminUserServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             spaces: AdminSpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            templates: AdminTemplateServiceClient::with_interceptor(
-                channel.clone(),
-                interceptor.clone(),
-            ),
             domains: AdminDomainServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
@@ -134,6 +132,14 @@ impl AdminClient {
                 interceptor.clone(),
             ),
             backup: AdminBackupServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            schema: AdminSchemaServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            automation: AdminAutomationServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
