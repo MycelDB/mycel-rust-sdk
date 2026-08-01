@@ -28,7 +28,7 @@ The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-pro
 By default, it reads the first available API checkout in this order:
 
 1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.4.0`
+2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.5.0`
 3. sibling `../mycel-api` checkout for local workspace development
 
 For a fresh clone, initialize the submodule before building:
