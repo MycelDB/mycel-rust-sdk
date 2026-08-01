@@ -179,10 +179,12 @@ impl Client {
             self.graph.get_node(self.auth_request(GetNodeRequest {
                 transaction_id: transaction_id.clone(),
                 node_id: node_id.clone(),
+                read_options: None,
             })),
             self.graph.get_node(self.auth_request(GetNodeRequest {
                 transaction_id,
                 node_id,
+                read_options: None,
             }))
         )?
         .into_inner();
@@ -204,11 +206,13 @@ impl Client {
                 transaction_id: transaction_id.clone(),
                 page_size,
                 page_token: page_token.clone(),
+                read_options: None,
             })),
             self.graph.list_nodes(self.auth_request(ListNodesRequest {
                 transaction_id,
                 page_size,
                 page_token,
+                read_options: None,
             }))
         )?
         .into_inner();
@@ -228,11 +232,13 @@ impl Client {
                 .list_children(self.auth_request(ListChildrenRequest {
                     transaction_id: transaction_id.clone(),
                     parent_node_id: parent_node_id.clone(),
+                    read_options: None,
                 })),
             self.graph
                 .list_children(self.auth_request(ListChildrenRequest {
                     transaction_id,
                     parent_node_id,
+                    read_options: None,
                 }))
         )?
         .into_inner();
@@ -251,10 +257,12 @@ impl Client {
             self.graph.get_parent(self.auth_request(GetParentRequest {
                 transaction_id: transaction_id.clone(),
                 child_node_id: child_node_id.clone(),
+                read_options: None,
             })),
             self.graph.get_parent(self.auth_request(GetParentRequest {
                 transaction_id,
                 child_node_id,
+                read_options: None,
             }))
         )?
         .into_inner();
@@ -279,6 +287,7 @@ impl Client {
                 params: params.clone(),
                 page_size,
                 page_token: String::new(),
+                read_options: None,
             })),
             self.query.execute_gql(self.auth_request(ExecuteGqlRequest {
                 transaction_id,
@@ -286,6 +295,7 @@ impl Client {
                 params,
                 page_size,
                 page_token: String::new(),
+                read_options: None,
             }))
         )?
         .into_inner();
@@ -312,7 +322,8 @@ impl Client {
                     script: script.clone(),
                     params: params.clone(),
                     stop_on_error,
-                    page_size
+                    page_size,
+                    read_options: None,
                 })),
             self.query
                 .execute_gql_script(self.auth_request(ExecuteGqlScriptRequest {
@@ -320,7 +331,8 @@ impl Client {
                     script,
                     params,
                     stop_on_error,
-                    page_size
+                    page_size,
+                    read_options: None,
                 }))
         )?
         .into_inner();
@@ -431,6 +443,7 @@ impl Client {
                     query: Some(query.clone()),
                     page_size,
                     page_token: String::new(),
+                    read_options: None,
                 })),
             self.query
                 .execute_query(self.auth_request(ExecuteQueryRequest {
@@ -438,6 +451,7 @@ impl Client {
                     query: Some(query),
                     page_size,
                     page_token: String::new(),
+                    read_options: None,
                 }))
         )?
         .into_inner();
