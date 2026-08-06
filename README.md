@@ -15,6 +15,7 @@ This SDK mirrors the Go SDK shape:
 - session/transaction helpers
 - thin graph/query convenience methods
 - Admin backup policy/status/list/trigger/delete helpers
+- Admin cluster backup trigger/status/list/validate helpers
 
 ## Crates
 
@@ -28,7 +29,7 @@ The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-pro
 By default, it reads the first available API checkout in this order:
 
 1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.5.0`
+2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.6.0`
 3. sibling `../mycel-api` checkout for local workspace development
 
 For a fresh clone, initialize the submodule before building:
@@ -92,7 +93,12 @@ Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
 let policy = admin.get_backup_policy().await?;
 let status = admin.get_backup_status().await?;
 let trigger = admin.trigger_backup("before upgrade").await?;
-let _ = (policy, status, trigger);
+let cluster = admin.trigger_cluster_backup(
+    "before upgrade",
+    "/mnt/mycel-backups",
+    mycel_proto::admin::v1::BackupArchiveFormat::TarZst,
+).await?;
+let _ = (policy, status, trigger, cluster);
 ```
 
 ## Environment config
