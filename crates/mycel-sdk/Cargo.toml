@@ -13,6 +13,7 @@ prost.workspace = true
 prost-types.workspace = true
 thiserror.workspace = true
 time = { version = "0.3", features = ["parsing"] }
+uuid.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

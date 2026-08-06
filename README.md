@@ -29,7 +29,7 @@ The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-pro
 By default, it reads the first available API checkout in this order:
 
 1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.6.0`
+2. `third_party/mycel-api` submodule, pinned to the matching `mycel-api` release or branch
 3. sibling `../mycel-api` checkout for local workspace development
 
 For a fresh clone, initialize the submodule before building:
@@ -86,6 +86,17 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 ```
 
 `dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh`, `refresh_operator`, `logout`, or `logout_operator` directly. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
+
+Transaction operation IDs can be generated client-side and passed when beginning a transaction. They are correlation metadata only, not idempotency keys:
+
+```rust
+let operation_id = mycel_sdk::new_operation_id();
+let tx = client
+    .begin_read_write_transaction_with_operation_id(session_id, operation_id)
+    .await?;
+let commit = client.commit_transaction_result(tx.transaction_id).await?;
+let _ = commit.operation_id;
+```
 
 Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
 
