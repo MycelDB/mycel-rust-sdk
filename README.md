@@ -14,6 +14,7 @@ This SDK mirrors the Go SDK shape:
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
+- graph-change watch helpers
 - Admin backup policy/status/list/trigger/delete helpers
 - Admin cluster backup trigger/status/list/validate helpers
 
@@ -86,6 +87,21 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 ```
 
 `dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh`, `refresh_operator`, `logout`, or `logout_operator` directly. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
+
+Graph changes can be watched with `GraphChangeService.WatchGraphChanges` through the SDK helper:
+
+```rust
+let mut stream = client
+    .watch_graph_changes(mycel_proto::client::v1::WatchGraphChangesRequest {
+        space_id,
+        domain_id,
+        include_current: true,
+        ..Default::default()
+    })
+    .await?;
+let msg = stream.message().await?;
+let _ = msg;
+```
 
 Transaction operation IDs can be generated client-side and passed when beginning a transaction. They are correlation metadata only, not idempotency keys:
 
