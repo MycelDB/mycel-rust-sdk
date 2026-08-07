@@ -103,6 +103,8 @@ let msg = stream.message().await?;
 let _ = msg;
 ```
 
+Watch helpers refresh/retry only while opening the stream. They do not automatically reconnect or resume if a long-lived stream ends later. Track the last received `event.revision`, reconnect with `after_revision`, and handle `gap` by invalidating or rebuilding local derived state. Dropping the returned stream stops reading; cancel/drop the parent task when stopping early. Global `call_timeout` / `MYCEL_CALL_TIMEOUT` applies to watch streams, so long-lived watchers should usually avoid a short global call timeout.
+
 Transaction operation IDs can be generated client-side and passed when beginning a transaction. They are correlation metadata only, not idempotency keys:
 
 ```rust
