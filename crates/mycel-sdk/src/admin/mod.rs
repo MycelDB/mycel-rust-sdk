@@ -14,12 +14,16 @@ use mycel_proto::admin::v1::{
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient,
     admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, BackupPolicy, CreateSpaceRequest, CreateUserRequest,
-    DeleteBackupRequest, DeleteBackupResponse, FindUserRequest, GetBackupPolicyRequest,
-    GetBackupStatusRequest, GetBackupStatusResponse, ListBackupsRequest, ListBackupsResponse,
+    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy, CreateSpaceRequest,
+    CreateUserRequest, DeleteBackupRequest, DeleteBackupResponse, FindUserRequest,
+    GetBackupPolicyRequest, GetBackupStatusRequest, GetBackupStatusResponse,
+    GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, ListBackupsRequest,
+    ListBackupsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
     LoginOperatorRequest, LoginOperatorResponse, LogoutOperatorRequest, LogoutOperatorResponse,
     Operator, OperatorClientInfo, RefreshOperatorRequest, RefreshOperatorResponse,
-    TriggerBackupRequest, TriggerBackupResponse, UpdateBackupPolicyRequest, User, WhoAmIRequest,
+    TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
+    TriggerClusterBackupResponse, UpdateBackupPolicyRequest, User, ValidateClusterBackupSetRequest,
+    ValidateClusterBackupSetResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
@@ -540,6 +544,96 @@ impl AdminClient {
                 })),
             self.backup
                 .delete_backup(self.auth_request(DeleteBackupRequest { backup_id }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn trigger_cluster_backup(
+        &mut self,
+        reason: impl Into<String>,
+        output_dir: impl Into<String>,
+        archive_format: BackupArchiveFormat,
+    ) -> Result<TriggerClusterBackupResponse> {
+        let reason = reason.into();
+        let output_dir = output_dir.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .trigger_cluster_backup(self.auth_request(TriggerClusterBackupRequest {
+                    reason: reason.clone(),
+                    output_dir: output_dir.clone(),
+                    archive_format: archive_format as i32,
+                })),
+            self.backup
+                .trigger_cluster_backup(self.auth_request(TriggerClusterBackupRequest {
+                    reason,
+                    output_dir,
+                    archive_format: archive_format as i32,
+                }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn get_cluster_backup_status(
+        &mut self,
+        backup_set_id: impl Into<String>,
+    ) -> Result<GetClusterBackupStatusResponse> {
+        let backup_set_id = backup_set_id.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup.get_cluster_backup_status(self.auth_request(
+                GetClusterBackupStatusRequest {
+                    backup_set_id: backup_set_id.clone(),
+                }
+            )),
+            self.backup.get_cluster_backup_status(
+                self.auth_request(GetClusterBackupStatusRequest { backup_set_id })
+            )
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn list_cluster_backups(
+        &mut self,
+        page_size: i32,
+        page_token: impl Into<String>,
+    ) -> Result<ListClusterBackupsResponse> {
+        let page_token = page_token.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .list_cluster_backups(self.auth_request(ListClusterBackupsRequest {
+                    page_size,
+                    page_token: page_token.clone(),
+                })),
+            self.backup
+                .list_cluster_backups(self.auth_request(ListClusterBackupsRequest {
+                    page_size,
+                    page_token,
+                }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn validate_cluster_backup_set(
+        &mut self,
+        backup_set_path: impl Into<String>,
+    ) -> Result<ValidateClusterBackupSetResponse> {
+        let backup_set_path = backup_set_path.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup.validate_cluster_backup_set(self.auth_request(
+                ValidateClusterBackupSetRequest {
+                    backup_set_path: backup_set_path.clone(),
+                }
+            )),
+            self.backup.validate_cluster_backup_set(
+                self.auth_request(ValidateClusterBackupSetRequest { backup_set_path })
+            )
         )?
         .into_inner();
         Ok(res)

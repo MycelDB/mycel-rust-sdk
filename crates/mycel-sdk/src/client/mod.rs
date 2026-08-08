@@ -2,9 +2,9 @@ use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::client::v1::{
     auth_service_client::AuthServiceClient, automation_service_client::AutomationServiceClient,
-    blob_service_client::BlobServiceClient,
-    change_stream_service_client::ChangeStreamServiceClient,
-    domain_service_client::DomainServiceClient, graph_service_client::GraphServiceClient,
+    blob_service_client::BlobServiceClient, domain_service_client::DomainServiceClient,
+    graph_change_service_client::GraphChangeServiceClient,
+    graph_service_client::GraphServiceClient,
     import_export_service_client::ImportExportServiceClient,
     metadata_catalog_service_client::MetadataCatalogServiceClient,
     query_service_client::QueryServiceClient, schema_service_client::SchemaServiceClient,
@@ -46,7 +46,7 @@ pub struct Client {
     pub import_export: ImportExportServiceClient<AuthenticatedService>,
     pub metadata: MetadataCatalogServiceClient<AuthenticatedService>,
     pub semantic: SemanticServiceClient<AuthenticatedService>,
-    pub change_stream: ChangeStreamServiceClient<AuthenticatedService>,
+    pub graph_change: GraphChangeServiceClient<AuthenticatedService>,
 
     channel: Channel,
     tokens: TokenSource,
@@ -85,10 +85,7 @@ impl Client {
                 interceptor.clone(),
             ),
             semantic: SemanticServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            change_stream: ChangeStreamServiceClient::with_interceptor(
-                channel.clone(),
-                interceptor,
-            ),
+            graph_change: GraphChangeServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
             refresh_lock: Arc::new(Mutex::new(())),
@@ -286,4 +283,5 @@ impl From<String> for Error {
 }
 
 pub mod graph;
+pub mod graph_change;
 pub mod session;
