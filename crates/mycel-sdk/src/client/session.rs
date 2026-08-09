@@ -1,6 +1,7 @@
 use mycel_proto::client::v1::{
     BeginTransactionRequest, CloseSessionRequest, CloseTransactionRequest,
-    CommitTransactionRequest, GetDomainRequest, OpenSessionRequest, TransactionMode,
+    CommitTransactionRequest, GetDomainRequest, GraphTransaction, OpenSessionRequest,
+    TransactionCommit, TransactionMode,
 };
 
 use crate::{
@@ -112,22 +113,41 @@ impl Client {
         session_id: impl Into<String>,
         mode: TransactionMode,
     ) -> Result<String> {
+        let tx = self
+            .begin_transaction_with_operation_id(session_id, mode, "")
+            .await?;
+        Ok(tx.transaction_id)
+    }
+
+    /// Begins a transaction with optional client operation correlation metadata.
+    /// Pass [`crate::new_operation_id`] to correlate the write with later graph-change
+    /// events; pass an empty string to let the daemon generate an operation ID. The
+    /// returned transaction includes the resolved operation ID.
+    pub async fn begin_transaction_with_operation_id(
+        &mut self,
+        session_id: impl Into<String>,
+        mode: TransactionMode,
+        operation_id: impl Into<String>,
+    ) -> Result<GraphTransaction> {
         let session_id = session_id.into();
+        let operation_id = operation_id.into();
         let res = client_call_with_refresh!(
             self,
             self.transaction
                 .begin_transaction(self.auth_request(BeginTransactionRequest {
                     session_id: session_id.clone(),
                     mode: mode as i32,
+                    operation_id: operation_id.clone(),
                 })),
             self.transaction
                 .begin_transaction(self.auth_request(BeginTransactionRequest {
                     session_id,
                     mode: mode as i32,
+                    operation_id,
                 }))
         )?
         .into_inner();
-        res.transaction.map(|tx| tx.transaction_id).ok_or_else(|| {
+        res.transaction.ok_or_else(|| {
             Error::Message("begin transaction response did not include a transaction".into())
         })
     }
@@ -140,6 +160,19 @@ impl Client {
             .await
     }
 
+    pub async fn begin_read_write_transaction_with_operation_id(
+        &mut self,
+        session_id: impl Into<String>,
+        operation_id: impl Into<String>,
+    ) -> Result<GraphTransaction> {
+        self.begin_transaction_with_operation_id(
+            session_id,
+            TransactionMode::ReadWrite,
+            operation_id,
+        )
+        .await
+    }
+
     pub async fn begin_read_only_transaction(
         &mut self,
         session_id: impl Into<String>,
@@ -148,9 +181,33 @@ impl Client {
             .await
     }
 
+    pub async fn begin_read_only_transaction_with_operation_id(
+        &mut self,
+        session_id: impl Into<String>,
+        operation_id: impl Into<String>,
+    ) -> Result<GraphTransaction> {
+        self.begin_transaction_with_operation_id(
+            session_id,
+            TransactionMode::ReadOnly,
+            operation_id,
+        )
+        .await
+    }
+
     pub async fn commit_transaction(&mut self, transaction_id: impl Into<String>) -> Result<()> {
+        self.commit_transaction_result(transaction_id)
+            .await
+            .map(|_| ())
+    }
+
+    /// Commits a read-write transaction and returns commit metadata, including the
+    /// operation ID associated with the transaction.
+    pub async fn commit_transaction_result(
+        &mut self,
+        transaction_id: impl Into<String>,
+    ) -> Result<TransactionCommit> {
         let transaction_id = transaction_id.into();
-        match client_call_with_refresh!(
+        let res = client_call_with_refresh!(
             self,
             self.transaction
                 .commit_transaction(self.auth_request(CommitTransactionRequest {
@@ -158,10 +215,11 @@ impl Client {
                 })),
             self.transaction
                 .commit_transaction(self.auth_request(CommitTransactionRequest { transaction_id }))
-        ) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        }
+        )?
+        .into_inner();
+        res.commit.ok_or_else(|| {
+            Error::Message("commit transaction response did not include a commit".into())
+        })
     }
 
     pub async fn close_transaction(&mut self, transaction_id: impl Into<String>) -> Result<()> {

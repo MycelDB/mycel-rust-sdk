@@ -14,6 +14,7 @@ This SDK mirrors the Go SDK shape:
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
+- graph-change watch helpers
 - Admin backup policy/status/list/trigger/delete helpers
 - Admin cluster backup trigger/status/list/validate helpers
 
@@ -24,12 +25,12 @@ This SDK mirrors the Go SDK shape:
 
 ## Protobuf generation
 
-The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`.
+The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`. The current `develop` branch is aligned with `mycel-api` `v0.7.0`.
 
 By default, it reads the first available API checkout in this order:
 
 1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api` submodule, pinned to `mycel-api v0.6.0`
+2. `third_party/mycel-api` submodule, pinned to the matching `mycel-api` release or branch
 3. sibling `../mycel-api` checkout for local workspace development
 
 For a fresh clone, initialize the submodule before building:
@@ -86,6 +87,55 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 ```
 
 `dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh`, `refresh_operator`, `logout`, or `logout_operator` directly. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
+
+Transaction operation IDs can be generated client-side and passed when beginning a transaction. They are correlation metadata only, not idempotency keys:
+
+```rust
+let operation_id = mycel_sdk::new_operation_id();
+let tx = client
+    .begin_read_write_transaction_with_operation_id(session_id, operation_id.clone())
+    .await?;
+// Perform graph writes against tx.transaction_id.
+let commit = client.commit_transaction_result(tx.transaction_id).await?;
+let _ = commit.operation_id; // matches operation_id
+```
+
+Graph changes can be watched with `GraphChangeService.WatchGraphChanges` through the SDK helper. Persist the last processed `event.revision` and use it as `after_revision` when reconnecting:
+
+```rust
+let mut last_revision: i64 = load_checkpoint();
+let mut stream = client
+    .watch_graph_changes(mycel_proto::client::v1::WatchGraphChangesRequest {
+        space_id,
+        domain_id,
+        after_revision: Some(last_revision),
+        include_current: true,
+        ..Default::default()
+    })
+    .await?;
+while let Some(msg) = stream.message().await? {
+    match msg.message {
+        Some(mycel_proto::client::v1::watch_graph_changes_response::Message::Event(event)) => {
+            if event.origin.as_ref().map(|origin| origin.operation_id.as_str())
+                == Some(operation_id.as_str())
+            {
+                continue; // optional: ignore a write issued by this workflow
+            }
+            // Apply event to local cache or derived state.
+            last_revision = event.revision;
+            save_checkpoint(last_revision);
+        }
+        Some(mycel_proto::client::v1::watch_graph_changes_response::Message::Gap(_gap)) => {
+            // Requested history is unavailable. Rebuild/resync local state,
+            // persist a fresh checkpoint, and open a new stream.
+            break;
+        }
+        _ => {}
+    }
+}
+```
+
+Watch helpers refresh/retry only while opening the stream. They do not automatically reconnect or resume if a long-lived stream ends later. Track the last received `event.revision`, reconnect with `after_revision`, and handle `gap` by invalidating or rebuilding local derived state. Dropping the returned stream stops reading; cancel/drop the parent task when stopping early. Global `call_timeout` / `MYCEL_CALL_TIMEOUT` applies to watch streams, so long-lived watchers should usually avoid a short global call timeout.
 
 Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
 
