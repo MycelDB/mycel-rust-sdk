@@ -1,29 +1,30 @@
 use std::{sync::Arc, time::SystemTime};
 
+use mycel_proto::admin::v1::find_principal_request;
 use mycel_proto::admin::v1::{
-    admin_auth_service_client::AdminAuthServiceClient,
     admin_automation_service_client::AdminAutomationServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
     admin_cluster_service_client::AdminClusterServiceClient,
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_service_client::AdminInferenceServiceClient,
-    admin_operator_service_client::AdminOperatorServiceClient,
+    admin_principal_service_client::AdminPrincipalServiceClient,
     admin_schema_service_client::AdminSchemaServiceClient,
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
-    admin_space_service_client::AdminSpaceServiceClient,
-    admin_user_service_client::AdminUserServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy, CreateSpaceRequest,
-    CreateUserRequest, DeleteBackupRequest, DeleteBackupResponse, FindUserRequest,
+    admin_space_service_client::AdminSpaceServiceClient, AdminDomainServiceGetDomainRequest,
+    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy, CreatePrincipalRequest,
+    CreateSpaceRequest, DeleteBackupRequest, DeleteBackupResponse, FindPrincipalRequest,
     GetBackupPolicyRequest, GetBackupStatusRequest, GetBackupStatusResponse,
     GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, ListBackupsRequest,
-    ListBackupsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
-    LoginOperatorRequest, LoginOperatorResponse, LogoutOperatorRequest, LogoutOperatorResponse,
-    Operator, OperatorClientInfo, RefreshOperatorRequest, RefreshOperatorResponse,
-    TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
-    TriggerClusterBackupResponse, UpdateBackupPolicyRequest, User, ValidateClusterBackupSetRequest,
-    ValidateClusterBackupSetResponse, WhoAmIRequest,
+    ListBackupsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse, Principal,
+    PrincipalState, TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
+    TriggerClusterBackupResponse, UpdateBackupPolicyRequest, ValidateClusterBackupSetRequest,
+    ValidateClusterBackupSetResponse,
+};
+use mycel_proto::common::v1::{
+    auth_service_client::AuthServiceClient, ClientInfo, LoginRequest, LoginResponse, LogoutRequest,
+    LogoutResponse, PrincipalType, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
@@ -52,14 +53,15 @@ macro_rules! admin_call_with_refresh {
 }
 
 #[derive(Debug, Clone)]
-pub struct OperatorInfo {
-    pub operator_id: String,
+pub struct PrincipalAdminInfo {
+    pub principal_id: String,
     pub username: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct UserInfo {
     pub user_id: String,
+    pub principal_id: String,
     pub username: String,
     pub state: String,
 }
@@ -82,9 +84,8 @@ pub struct DomainInfo {
 
 #[derive(Clone)]
 pub struct AdminClient {
-    pub auth: AdminAuthServiceClient<AuthenticatedService>,
-    pub operators: AdminOperatorServiceClient<AuthenticatedService>,
-    pub users: AdminUserServiceClient<AuthenticatedService>,
+    pub auth: AuthServiceClient<AuthenticatedService>,
+    pub principals: AdminPrincipalServiceClient<AuthenticatedService>,
     pub spaces: AdminSpaceServiceClient<AuthenticatedService>,
     pub domains: AdminDomainServiceClient<AuthenticatedService>,
     pub semantic: AdminSemanticServiceClient<AuthenticatedService>,
@@ -108,12 +109,11 @@ impl AdminClient {
         let channel = connect_channel(&cfg).await?;
         let interceptor = tokens.interceptor();
         let mut client = Self {
-            auth: AdminAuthServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
-            operators: AdminOperatorServiceClient::with_interceptor(
+            auth: AuthServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
+            principals: AdminPrincipalServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
-            users: AdminUserServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             spaces: AdminSpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             domains: AdminDomainServiceClient::with_interceptor(
                 channel.clone(),
@@ -157,7 +157,7 @@ impl AdminClient {
         if !client.cfg.username.is_empty() || !client.cfg.password.is_empty() {
             let username = client.cfg.username.clone();
             let password = client.cfg.password.clone();
-            client.login_operator(username, password).await?;
+            client.login_principal(username, password).await?;
         }
 
         Ok(client)
@@ -197,17 +197,17 @@ impl AdminClient {
             .set_tokens(access_token, expire_time, refresh_token);
     }
 
-    pub async fn login_operator(
+    pub async fn login_principal(
         &mut self,
         username: impl Into<String>,
         password: impl Into<String>,
-    ) -> Result<LoginOperatorResponse> {
-        let req = self.request(LoginOperatorRequest {
+    ) -> Result<LoginResponse> {
+        let req = self.request(LoginRequest {
             username: username.into(),
             password: password.into(),
-            client: Some(self.operator_client_info()),
+            client: Some(self.client_info()),
         });
-        let res = self.auth.login_operator(req).await?.into_inner();
+        let res = self.auth.login(req).await?.into_inner();
         self.set_auth_tokens(
             res.access_token.clone(),
             timestamp_to_system_time(res.access_token_expire_time.clone()),
@@ -216,19 +216,19 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn refresh_operator(
+    pub async fn refresh_principal(
         &mut self,
         refresh_token: Option<String>,
-    ) -> Result<RefreshOperatorResponse> {
+    ) -> Result<RefreshResponse> {
         let refresh_token = refresh_token.or_else(|| {
             let token = self.refresh_token();
             (!token.is_empty()).then_some(token)
         });
-        let req = self.auth_request(RefreshOperatorRequest {
+        let req = self.auth_request(RefreshRequest {
             refresh_token,
-            client: Some(self.operator_client_info()),
+            client: Some(self.client_info()),
         });
-        let res = self.auth.refresh_operator(req).await?.into_inner();
+        let res = self.auth.refresh(req).await?.into_inner();
         self.set_auth_tokens(
             res.access_token.clone(),
             timestamp_to_system_time(res.access_token_expire_time.clone()),
@@ -237,42 +237,45 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn logout_operator(
+    pub async fn logout_principal(
         &mut self,
         auth_session_id: Option<String>,
-    ) -> Result<LogoutOperatorResponse> {
-        let req = self.auth_request(LogoutOperatorRequest {
+    ) -> Result<LogoutResponse> {
+        let req = self.auth_request(LogoutRequest {
             auth_session_id: auth_session_id.clone(),
         });
-        let res = self.auth.logout_operator(req).await?.into_inner();
+        let res = self.auth.logout(req).await?.into_inner();
         if auth_session_id.is_none() {
             self.tokens.clear();
         }
         Ok(res)
     }
 
-    pub async fn who_am_i(&mut self) -> Result<OperatorInfo> {
+    pub async fn who_am_i(&mut self) -> Result<PrincipalAdminInfo> {
         let res = admin_call_with_refresh!(
             self,
             self.auth.who_am_i(self.auth_request(WhoAmIRequest {})),
             self.auth.who_am_i(self.auth_request(WhoAmIRequest {}))
         )?
         .into_inner();
-        Ok(operator_info(res.operator.unwrap_or_default()))
+        Ok(principal_admin_info(res.principal.unwrap_or_default()))
     }
 
     pub async fn find_user(&mut self, username: impl Into<String>) -> Result<UserInfo> {
         let username = username.into().trim().to_string();
         let res = admin_call_with_refresh!(
             self,
-            self.users.find_user(self.auth_request(FindUserRequest {
-                username: username.clone(),
-            })),
-            self.users
-                .find_user(self.auth_request(FindUserRequest { username }))
+            self.principals
+                .find_principal(self.auth_request(FindPrincipalRequest {
+                    lookup: Some(find_principal_request::Lookup::Username(username.clone())),
+                })),
+            self.principals
+                .find_principal(self.auth_request(FindPrincipalRequest {
+                    lookup: Some(find_principal_request::Lookup::Username(username)),
+                }))
         )?
         .into_inner();
-        Ok(user_info(res.user.unwrap_or_default()))
+        Ok(user_info(res.principal.unwrap_or_default()))
     }
 
     pub async fn ensure_user(
@@ -290,19 +293,25 @@ impl AdminClient {
                 let password = password.into();
                 let res = admin_call_with_refresh!(
                     self,
-                    self.users.create_user(self.auth_request(CreateUserRequest {
-                        username: username.clone(),
-                        password: Some(password.clone()),
-                        disabled: false,
-                    })),
-                    self.users.create_user(self.auth_request(CreateUserRequest {
-                        username,
-                        password: Some(password),
-                        disabled: false,
-                    }))
+                    self.principals
+                        .create_principal(self.auth_request(CreatePrincipalRequest {
+                            username: username.clone(),
+                            password: Some(password.clone()),
+                            r#type: PrincipalType::Human as i32,
+                            login_enabled: true,
+                            ..Default::default()
+                        })),
+                    self.principals
+                        .create_principal(self.auth_request(CreatePrincipalRequest {
+                            username,
+                            password: Some(password),
+                            r#type: PrincipalType::Human as i32,
+                            login_enabled: true,
+                            ..Default::default()
+                        }))
                 )?
                 .into_inner();
-                Ok(user_info(res.user.unwrap_or_default()))
+                Ok(user_info(res.principal.unwrap_or_default()))
             }
             Err(err) => Err(err),
         }
@@ -380,7 +389,7 @@ impl AdminClient {
                     self.spaces
                         .create_space(self.auth_request(CreateSpaceRequest {
                             name: name.trim().to_string(),
-                            owner_user_id: String::new(),
+                            owner_principal_id: String::new(),
                             owner_username: owner_username.trim().to_string(),
                             default_domain_key: default_domain_key.clone(),
                             default_domain_name: default_domain_name.clone(),
@@ -388,7 +397,7 @@ impl AdminClient {
                     self.spaces
                         .create_space(self.auth_request(CreateSpaceRequest {
                             name: name.trim().to_string(),
-                            owner_user_id: String::new(),
+                            owner_principal_id: String::new(),
                             owner_username: owner_username.trim().to_string(),
                             default_domain_key: default_domain_key.clone(),
                             default_domain_name: default_domain_name.clone(),
@@ -648,7 +657,7 @@ impl AdminClient {
         if !self.tokens.needs_refresh(SystemTime::now()) {
             return Ok(());
         }
-        self.refresh_operator(None).await.map(|_| ())
+        self.refresh_principal(None).await.map(|_| ())
     }
 
     pub(crate) async fn refresh_after_expired(&mut self) -> Result<()> {
@@ -657,7 +666,7 @@ impl AdminClient {
         }
         let refresh_lock = self.refresh_lock.clone();
         let _guard = refresh_lock.lock().await;
-        self.refresh_operator(None).await.map(|_| ())
+        self.refresh_principal(None).await.map(|_| ())
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
@@ -672,8 +681,8 @@ impl AdminClient {
         self.request(message)
     }
 
-    fn operator_client_info(&self) -> OperatorClientInfo {
-        OperatorClientInfo {
+    fn client_info(&self) -> ClientInfo {
+        ClientInfo {
             name: non_empty(&self.cfg.client_name, "mycel-rust-sdk"),
             version: self.cfg.client_version.clone(),
             platform: non_empty(&self.cfg.platform, "rust"),
@@ -682,18 +691,22 @@ impl AdminClient {
     }
 }
 
-fn operator_info(op: Operator) -> OperatorInfo {
-    OperatorInfo {
-        operator_id: op.operator_id,
-        username: op.username,
+fn principal_admin_info(principal: mycel_proto::common::v1::AuthPrincipal) -> PrincipalAdminInfo {
+    PrincipalAdminInfo {
+        principal_id: principal.principal_id,
+        username: principal.username,
     }
 }
 
-fn user_info(user: User) -> UserInfo {
-    let state = user.state().as_str_name().to_string();
+fn user_info(principal: Principal) -> UserInfo {
+    let state = PrincipalState::try_from(principal.state)
+        .unwrap_or(PrincipalState::Unspecified)
+        .as_str_name()
+        .to_string();
     UserInfo {
-        user_id: user.user_id,
-        username: user.username,
+        user_id: principal.principal_id.clone(),
+        principal_id: principal.principal_id,
+        username: principal.username,
         state,
     }
 }

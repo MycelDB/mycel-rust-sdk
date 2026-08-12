@@ -1,8 +1,8 @@
 use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::client::v1::{
-    auth_service_client::AuthServiceClient, automation_service_client::AutomationServiceClient,
-    blob_service_client::BlobServiceClient, domain_service_client::DomainServiceClient,
+    automation_service_client::AutomationServiceClient, blob_service_client::BlobServiceClient,
+    domain_service_client::DomainServiceClient,
     graph_change_service_client::GraphChangeServiceClient,
     graph_service_client::GraphServiceClient,
     import_export_service_client::ImportExportServiceClient,
@@ -10,8 +10,10 @@ use mycel_proto::client::v1::{
     query_service_client::QueryServiceClient, schema_service_client::SchemaServiceClient,
     semantic_service_client::SemanticServiceClient, session_service_client::SessionServiceClient,
     space_service_client::SpaceServiceClient, transaction_service_client::TransactionServiceClient,
-    AuthPrincipal, ClientInfo, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse,
-    RefreshRequest, RefreshResponse, WhoAmIRequest,
+};
+use mycel_proto::common::v1::{
+    auth_service_client::AuthServiceClient, AuthPrincipal, ClientInfo, LoginRequest, LoginResponse,
+    LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
@@ -28,6 +30,7 @@ pub type AuthenticatedService = InterceptedService<Channel, AuthInterceptor>;
 #[derive(Debug, Clone)]
 pub struct PrincipalInfo {
     pub user_id: String,
+    pub principal_id: String,
     pub username: String,
 }
 
@@ -249,11 +252,13 @@ impl Client {
 
 fn principal_info(principal: Option<AuthPrincipal>) -> PrincipalInfo {
     let principal = principal.unwrap_or_else(|| AuthPrincipal {
-        user_id: String::new(),
+        principal_id: String::new(),
         username: String::new(),
+        r#type: 0,
     });
     PrincipalInfo {
-        user_id: principal.user_id,
+        user_id: principal.principal_id.clone(),
+        principal_id: principal.principal_id,
         username: principal.username,
     }
 }
@@ -271,6 +276,7 @@ impl From<tonic::Status> for PrincipalInfo {
     fn from(_: tonic::Status) -> Self {
         Self {
             user_id: String::new(),
+            principal_id: String::new(),
             username: String::new(),
         }
     }
