@@ -86,7 +86,7 @@ let mut admin = mycel_sdk::dial_admin(mycel_sdk::Config {
 }).await?;
 ```
 
-`dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh`, `refresh_operator`, `logout`, or `logout_operator` directly. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
+`dial` and `dial_admin` store access-token expiry and refresh tokens returned by login. SDK convenience methods refresh near-expiry tokens automatically. If a protected convenience call fails with `Unauthenticated` because the access token is expired, the SDK refreshes once and retries once. You can also call `refresh` or `logout` directly on client or admin SDK handles. Raw generated service clients exposed on `client.*` and `admin.*` still receive bearer-token metadata, but callers using them directly should call refresh helpers themselves.
 
 Transaction operation IDs can be generated client-side and passed when beginning a transaction. They are correlation metadata only, not idempotency keys:
 
