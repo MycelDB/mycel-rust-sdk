@@ -25,7 +25,7 @@ This SDK mirrors the Go SDK shape:
 
 ## Protobuf generation
 
-The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`. The current `develop` branch is aligned with `mycel-api` `v0.7.0`.
+The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`. The current `develop` branch is aligned with `mycel-api` `v0.8.0`.
 
 By default, it reads the first available API checkout in this order:
 
