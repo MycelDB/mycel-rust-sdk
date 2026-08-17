@@ -2,9 +2,9 @@ use mycel_proto::client::v1::{
     ApplyGraphOperationsRequest, ApplyGraphOperationsResponse, CreateEdgeRequest,
     CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteGqlRequest,
     ExecuteGqlScriptRequest, ExecuteGqlScriptResponse, ExecuteQueryRequest, ExecuteQueryResponse,
-    GetNodeRequest, GetParentRequest, GetParentResponse, GraphOperation, GraphQuery,
-    ListChildrenRequest, ListChildrenResponse, ListNodesRequest, ListNodesResponse, Node,
-    NodeCreate, QueryResult, UpdateNodeRequest,
+    ExplainGqlRequest, ExplainQueryRequest, GetNodeRequest, GetParentRequest, GetParentResponse,
+    GraphOperation, GraphQuery, ListChildrenRequest, ListChildrenResponse, ListNodesRequest,
+    ListNodesResponse, Node, NodeCreate, QueryDiagnostics, QueryResult, UpdateNodeRequest,
 };
 use prost_types::{value, FieldMask, Struct, Value};
 use std::collections::{BTreeMap, HashMap};
@@ -303,6 +303,36 @@ impl Client {
             .ok_or_else(|| Error::Message("execute gql response did not include a result".into()))
     }
 
+    pub async fn explain_gql(
+        &mut self,
+        transaction_id: impl Into<String>,
+        query: impl Into<String>,
+        params: Option<HashMap<String, Value>>,
+    ) -> Result<QueryDiagnostics> {
+        let transaction_id = transaction_id.into();
+        let query = query.into();
+        let params = params.unwrap_or_default();
+        let res = client_call_with_refresh!(
+            self,
+            self.query.explain_gql(self.auth_request(ExplainGqlRequest {
+                transaction_id: transaction_id.clone(),
+                query: query.clone(),
+                params: params.clone(),
+                read_options: None,
+            })),
+            self.query.explain_gql(self.auth_request(ExplainGqlRequest {
+                transaction_id,
+                query,
+                params,
+                read_options: None,
+            }))
+        )?
+        .into_inner();
+        res.diagnostics.ok_or_else(|| {
+            Error::Message("explain gql response did not include diagnostics".into())
+        })
+    }
+
     pub async fn execute_gql_script(
         &mut self,
         transaction_id: impl Into<String>,
@@ -426,6 +456,33 @@ impl Client {
             (Err(err), _) => Err(err),
             (_, Err(err)) => Err(err),
         }
+    }
+
+    pub async fn explain_query(
+        &mut self,
+        transaction_id: impl Into<String>,
+        query: GraphQuery,
+    ) -> Result<QueryDiagnostics> {
+        let transaction_id = transaction_id.into();
+        let res = client_call_with_refresh!(
+            self,
+            self.query
+                .explain_query(self.auth_request(ExplainQueryRequest {
+                    transaction_id: transaction_id.clone(),
+                    query: Some(query.clone()),
+                    read_options: None,
+                })),
+            self.query
+                .explain_query(self.auth_request(ExplainQueryRequest {
+                    transaction_id,
+                    query: Some(query),
+                    read_options: None,
+                }))
+        )?
+        .into_inner();
+        res.diagnostics.ok_or_else(|| {
+            Error::Message("explain query response did not include diagnostics".into())
+        })
     }
 
     pub async fn execute_query(

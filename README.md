@@ -14,6 +14,7 @@ This SDK mirrors the Go SDK shape:
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods
+- structured query builders and explain helpers for common indexed/text/semantic/path/aggregate shapes
 - graph-change watch helpers
 - Admin backup policy/status/list/trigger/delete helpers
 - Admin cluster backup trigger/status/list/validate helpers
@@ -99,6 +100,23 @@ let tx = client
 let commit = client.commit_transaction_result(tx.transaction_id).await?;
 let _ = commit.operation_id; // matches operation_id
 ```
+
+Common structured query shapes can be built without hand-assembling every protobuf field:
+
+```rust
+let query = mycel_sdk::query::indexed_node_lookup_query(
+    "n",
+    "Note",
+    "title",
+    mycel_sdk::query::string_value("Roadmap"),
+    "note",
+);
+let diagnostics = client.explain_query(tx_id.clone(), query.clone()).await?;
+let result = client.execute_query(tx_id, query, 50).await?;
+let _ = (diagnostics.plan, result.result);
+```
+
+Other builders include `ordered_node_query`, `text_predicate_query`, `semantic_predicate_query`, `path_query`, `aggregate_count_query`, `aggregate_property_query`, and `Client::explain_gql`.
 
 Graph changes can be watched with `GraphChangeService.WatchGraphChanges` through the SDK helper. Persist the last processed `event.revision` and use it as `after_revision` when reconnecting:
 
