@@ -23,12 +23,15 @@ use mycel_proto::admin::v1::{
     GetBackupPolicyRequest, GetBackupStatusRequest, GetBackupStatusResponse,
     GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, ListBackupsRequest,
     ListBackupsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse, Principal,
-    PrincipalState, TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
+    PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
+    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
+    TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
     TriggerClusterBackupResponse, UpdateBackupPolicyRequest, ValidateClusterBackupSetRequest,
     ValidateClusterBackupSetResponse,
 };
 use mycel_proto::common::v1::{
-    auth_service_client::AuthServiceClient, ClientInfo, LoginRequest, LoginResponse, LogoutRequest,
+    auth_service_client::AuthServiceClient, AccessScope, AccessScopeType, Capability, ClientInfo,
+    GetMyAccessRequest, GetMyAccessResponse, LoginRequest, LoginResponse, LogoutRequest,
     LogoutResponse, PrincipalType, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
@@ -85,6 +88,26 @@ pub struct DomainInfo {
     pub name: String,
     pub default: bool,
     pub system: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct PrincipalRoleGrantInfo {
+    pub grant_id: String,
+    pub principal_id: String,
+    pub role: String,
+    pub scope_type: String,
+    pub space_id: String,
+    pub domain_id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PrincipalCapabilityGrantInfo {
+    pub grant_id: String,
+    pub principal_id: String,
+    pub capability: String,
+    pub scope_type: String,
+    pub space_id: String,
+    pub domain_id: String,
 }
 
 #[derive(Clone)]
@@ -291,6 +314,23 @@ impl AdminClient {
         Ok(principal_admin_info(res.principal.unwrap_or_default()))
     }
 
+    pub async fn get_my_access(
+        &mut self,
+        scope: Option<AccessScope>,
+    ) -> Result<GetMyAccessResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.auth
+                .get_my_access(self.auth_request(GetMyAccessRequest {
+                    scope: scope.clone()
+                })),
+            self.auth
+                .get_my_access(self.auth_request(GetMyAccessRequest { scope }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
     pub async fn find_user(&mut self, username: impl Into<String>) -> Result<UserInfo> {
         let username = username.into().trim().to_string();
         let res = admin_call_with_refresh!(
@@ -345,6 +385,98 @@ impl AdminClient {
             }
             Err(err) => Err(err),
         }
+    }
+
+    pub async fn set_principal_roles_for_scope(
+        &mut self,
+        principal_id: impl Into<String>,
+        scope_type: impl Into<String>,
+        space_id: impl Into<String>,
+        domain_id: impl Into<String>,
+        roles: Vec<String>,
+        reason: impl Into<String>,
+    ) -> Result<Vec<PrincipalRoleGrantInfo>> {
+        let principal_id = principal_id.into().trim().to_string();
+        if principal_id.is_empty() {
+            return Err(Error::Message("principal id is required".into()));
+        }
+        let scope = Some(sdk_access_scope(scope_type, space_id, domain_id));
+        let reason = reason.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.principals
+                .set_principal_roles_for_scope(self.auth_request(
+                    SetPrincipalRolesForScopeRequest {
+                        principal_id: principal_id.clone(),
+                        scope: scope.clone(),
+                        roles: roles.clone(),
+                        reason: reason.clone(),
+                    }
+                )),
+            self.principals
+                .set_principal_roles_for_scope(self.auth_request(
+                    SetPrincipalRolesForScopeRequest {
+                        principal_id,
+                        scope,
+                        roles,
+                        reason,
+                    }
+                ))
+        )?
+        .into_inner();
+        Ok(res
+            .grants
+            .into_iter()
+            .map(principal_role_grant_info)
+            .collect())
+    }
+
+    pub async fn set_principal_capabilities_for_scope(
+        &mut self,
+        principal_id: impl Into<String>,
+        scope_type: impl Into<String>,
+        space_id: impl Into<String>,
+        domain_id: impl Into<String>,
+        capabilities: Vec<String>,
+        reason: impl Into<String>,
+    ) -> Result<Vec<PrincipalCapabilityGrantInfo>> {
+        let principal_id = principal_id.into().trim().to_string();
+        if principal_id.is_empty() {
+            return Err(Error::Message("principal id is required".into()));
+        }
+        let parsed = capabilities
+            .iter()
+            .map(|capability| sdk_capability(capability))
+            .collect::<Result<Vec<_>>>()?;
+        let scope = Some(sdk_access_scope(scope_type, space_id, domain_id));
+        let reason = reason.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.principals
+                .set_principal_capabilities_for_scope(self.auth_request(
+                    SetPrincipalCapabilitiesForScopeRequest {
+                        principal_id: principal_id.clone(),
+                        scope: scope.clone(),
+                        capabilities: parsed.clone().into_iter().map(|cap| cap as i32).collect(),
+                        reason: reason.clone(),
+                    }
+                )),
+            self.principals
+                .set_principal_capabilities_for_scope(self.auth_request(
+                    SetPrincipalCapabilitiesForScopeRequest {
+                        principal_id,
+                        scope,
+                        capabilities: parsed.into_iter().map(|cap| cap as i32).collect(),
+                        reason,
+                    }
+                ))
+        )?
+        .into_inner();
+        Ok(res
+            .grants
+            .into_iter()
+            .map(principal_capability_grant_info)
+            .collect())
     }
 
     pub async fn find_space_by_name(&mut self, name: impl Into<String>) -> Result<SpaceInfo> {
@@ -718,6 +850,76 @@ impl AdminClient {
             platform: non_empty(&self.cfg.platform, "rust"),
             device_label: self.cfg.device_label.clone(),
         }
+    }
+}
+
+fn sdk_access_scope(
+    scope_type: impl Into<String>,
+    space_id: impl Into<String>,
+    domain_id: impl Into<String>,
+) -> AccessScope {
+    let scope_type = scope_type.into().trim().to_ascii_lowercase();
+    let space_id = space_id.into().trim().to_string();
+    let domain_id = domain_id.into().trim().to_string();
+    let typ = match scope_type.as_str() {
+        "space" => AccessScopeType::Space,
+        "domain" => AccessScopeType::Domain,
+        "" | "system" if !domain_id.is_empty() => AccessScopeType::Domain,
+        "" | "system" if !space_id.is_empty() => AccessScopeType::Space,
+        _ => AccessScopeType::System,
+    };
+    AccessScope {
+        r#type: typ as i32,
+        space_id: (!space_id.is_empty()).then_some(space_id),
+        domain_id: (!domain_id.is_empty()).then_some(domain_id),
+    }
+}
+
+fn sdk_capability(raw: &str) -> Result<Capability> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(Error::Message("capability is required".into()));
+    }
+    let normalized = trimmed.replace(['.', '-'], "_").to_ascii_uppercase();
+    let name = if normalized.starts_with("CAPABILITY_") {
+        normalized
+    } else {
+        format!("CAPABILITY_{normalized}")
+    };
+    Capability::from_str_name(&name)
+        .filter(|capability| *capability != Capability::Unspecified)
+        .ok_or_else(|| Error::Message(format!("unknown capability {raw:?}")))
+}
+
+fn principal_role_grant_info(grant: PrincipalRoleGrant) -> PrincipalRoleGrantInfo {
+    let scope = grant.scope.unwrap_or_default();
+    PrincipalRoleGrantInfo {
+        grant_id: grant.role_grant_id,
+        principal_id: grant.principal_id,
+        role: grant.role,
+        scope_type: AccessScopeType::try_from(scope.r#type)
+            .map(|typ| typ.as_str_name().to_string())
+            .unwrap_or_else(|_| format!("ACCESS_SCOPE_TYPE_UNKNOWN_{}", scope.r#type)),
+        space_id: scope.space_id.unwrap_or_default(),
+        domain_id: scope.domain_id.unwrap_or_default(),
+    }
+}
+
+fn principal_capability_grant_info(
+    grant: PrincipalCapabilityGrant,
+) -> PrincipalCapabilityGrantInfo {
+    let scope = grant.scope.unwrap_or_default();
+    PrincipalCapabilityGrantInfo {
+        grant_id: grant.capability_grant_id,
+        principal_id: grant.principal_id,
+        capability: Capability::try_from(grant.capability)
+            .map(|capability| capability.as_str_name().to_string())
+            .unwrap_or_else(|_| format!("CAPABILITY_UNKNOWN_{}", grant.capability)),
+        scope_type: AccessScopeType::try_from(scope.r#type)
+            .map(|typ| typ.as_str_name().to_string())
+            .unwrap_or_else(|_| format!("ACCESS_SCOPE_TYPE_UNKNOWN_{}", scope.r#type)),
+        space_id: scope.space_id.unwrap_or_default(),
+        domain_id: scope.domain_id.unwrap_or_default(),
     }
 }
 

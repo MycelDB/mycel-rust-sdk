@@ -12,8 +12,9 @@ use mycel_proto::client::v1::{
     space_service_client::SpaceServiceClient, transaction_service_client::TransactionServiceClient,
 };
 use mycel_proto::common::v1::{
-    auth_service_client::AuthServiceClient, AuthPrincipal, ClientInfo, LoginRequest, LoginResponse,
-    LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
+    auth_service_client::AuthServiceClient, AccessScope, AuthPrincipal, ClientInfo,
+    GetMyAccessRequest, GetMyAccessResponse, LoginRequest, LoginResponse, LogoutRequest,
+    LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,
 };
 use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
@@ -202,6 +203,31 @@ impl Client {
                     .await?
                     .into_inner();
                 Ok(principal_info(res.principal))
+            }
+            Err(status) => Err(status.into()),
+        }
+    }
+
+    pub async fn get_my_access(
+        &mut self,
+        scope: Option<AccessScope>,
+    ) -> Result<GetMyAccessResponse> {
+        self.refresh_if_needed().await?;
+        match self
+            .auth
+            .get_my_access(self.auth_request(GetMyAccessRequest {
+                scope: scope.clone(),
+            }))
+            .await
+        {
+            Ok(res) => Ok(res.into_inner()),
+            Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
+                self.refresh_after_expired().await?;
+                Ok(self
+                    .auth
+                    .get_my_access(self.auth_request(GetMyAccessRequest { scope }))
+                    .await?
+                    .into_inner())
             }
             Err(status) => Err(status.into()),
         }
