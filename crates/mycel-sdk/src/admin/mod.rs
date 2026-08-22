@@ -7,11 +7,11 @@ use mycel_proto::admin::v1::{
     admin_cluster_service_client::AdminClusterServiceClient,
     admin_domain_service_client::AdminDomainServiceClient,
     admin_inference_catalog_service_client::AdminInferenceCatalogServiceClient,
-    admin_inference_credential_service_client::AdminInferenceCredentialServiceClient,
-    admin_inference_grant_service_client::AdminInferenceGrantServiceClient,
-    admin_inference_policy_service_client::AdminInferencePolicyServiceClient,
-    admin_inference_profile_service_client::AdminInferenceProfileServiceClient,
-    admin_inference_usage_service_client::AdminInferenceUsageServiceClient,
+    admin_intelligence_access_credential_service_client::AdminIntelligenceAccessCredentialServiceClient,
+    admin_intelligence_access_grant_service_client::AdminIntelligenceAccessGrantServiceClient,
+    admin_intelligence_access_policy_service_client::AdminIntelligenceAccessPolicyServiceClient,
+    admin_intelligence_access_profile_service_client::AdminIntelligenceAccessProfileServiceClient,
+    admin_intelligence_access_usage_service_client::AdminIntelligenceAccessUsageServiceClient,
     admin_principal_service_client::AdminPrincipalServiceClient,
     admin_schema_service_client::AdminSchemaServiceClient,
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
@@ -120,11 +120,11 @@ pub struct AdminClient {
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
     pub inference_catalog: AdminInferenceCatalogServiceClient<AuthenticatedService>,
-    pub inference_profiles: AdminInferenceProfileServiceClient<AuthenticatedService>,
-    pub inference_credentials: AdminInferenceCredentialServiceClient<AuthenticatedService>,
-    pub inference_grants: AdminInferenceGrantServiceClient<AuthenticatedService>,
-    pub inference_policies: AdminInferencePolicyServiceClient<AuthenticatedService>,
-    pub inference_usage: AdminInferenceUsageServiceClient<AuthenticatedService>,
+    pub inference_profiles: AdminIntelligenceAccessProfileServiceClient<AuthenticatedService>,
+    pub inference_credentials: AdminIntelligenceAccessCredentialServiceClient<AuthenticatedService>,
+    pub inference_grants: AdminIntelligenceAccessGrantServiceClient<AuthenticatedService>,
+    pub inference_policies: AdminIntelligenceAccessPolicyServiceClient<AuthenticatedService>,
+    pub inference_usage: AdminIntelligenceAccessUsageServiceClient<AuthenticatedService>,
     pub backup: AdminBackupServiceClient<AuthenticatedService>,
     pub schema: AdminSchemaServiceClient<AuthenticatedService>,
     pub automation: AdminAutomationServiceClient<AuthenticatedService>,
@@ -168,23 +168,23 @@ impl AdminClient {
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference_profiles: AdminInferenceProfileServiceClient::with_interceptor(
+            inference_profiles: AdminIntelligenceAccessProfileServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference_credentials: AdminInferenceCredentialServiceClient::with_interceptor(
+            inference_credentials: AdminIntelligenceAccessCredentialServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference_grants: AdminInferenceGrantServiceClient::with_interceptor(
+            inference_grants: AdminIntelligenceAccessGrantServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference_policies: AdminInferencePolicyServiceClient::with_interceptor(
+            inference_policies: AdminIntelligenceAccessPolicyServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
-            inference_usage: AdminInferenceUsageServiceClient::with_interceptor(
+            inference_usage: AdminIntelligenceAccessUsageServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
