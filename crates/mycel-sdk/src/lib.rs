@@ -9,7 +9,9 @@ mod transport;
 
 pub use auth::TokenSource;
 pub use config::{Config, DEFAULT_ADDR};
-pub use error::{Error, Result};
+pub use error::{
+    classify_error, classify_status, ClassifiedError, Error, ErrorKind, ErrorSeverity, Result,
+};
 pub use mycel_proto as proto;
 
 pub use admin::AdminClient;
