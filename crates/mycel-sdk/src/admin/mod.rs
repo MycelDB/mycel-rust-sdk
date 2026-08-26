@@ -2,6 +2,7 @@ use std::{sync::Arc, time::SystemTime};
 
 use mycel_proto::admin::v1::find_principal_request;
 use mycel_proto::admin::v1::{
+    admin_activity_service_client::AdminActivityServiceClient,
     admin_automation_service_client::AdminAutomationServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
     admin_cluster_service_client::AdminClusterServiceClient,
@@ -116,6 +117,7 @@ pub struct AdminClient {
     pub principals: AdminPrincipalServiceClient<AuthenticatedService>,
     pub spaces: AdminSpaceServiceClient<AuthenticatedService>,
     pub domains: AdminDomainServiceClient<AuthenticatedService>,
+    pub activity: AdminActivityServiceClient<AuthenticatedService>,
     pub semantic: AdminSemanticServiceClient<AuthenticatedService>,
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
@@ -149,6 +151,10 @@ impl AdminClient {
             ),
             spaces: AdminSpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             domains: AdminDomainServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            activity: AdminActivityServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
