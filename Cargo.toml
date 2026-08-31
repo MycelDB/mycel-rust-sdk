@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/mycel-proto",
+    "crates/mycel",
     "crates/mycel-sdk",
 ]
 resolver = "2"

@@ -13,7 +13,7 @@
 
 - [ ] Source `.proto` changes are not added here; API contract changes belong in `mycel-api`.
 - [ ] The matching `mycel-api` branch/tag/commit or submodule update is identified when generated bindings change.
-- [ ] Generated Cargo build output was not committed.
+- [ ] `crates/mycel/gen/rust/` was regenerated with `make generate` when API contracts changed.
 - [ ] Non-Rust generated bindings were not added.
 
 ## Rust checks

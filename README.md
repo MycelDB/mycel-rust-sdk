@@ -26,31 +26,27 @@ This SDK mirrors the Go SDK shape:
 
 ## Crates
 
-- `mycel-proto`: generated `prost`/`tonic` protobuf and gRPC clients from the language-independent `mycel-api` protobuf contracts. This repo pins `mycel-api` as a submodule at `third_party/mycel-api`; `MYCEL_API_ROOT=/path/to/mycel-api` can override it.
-- `mycel-sdk`: ergonomic client wrapper around the generated clients
+- `mycel`: committed `prost`/`tonic` protobuf and gRPC clients generated from the language-independent `mycel-api` protobuf contracts.
+- `mycel-sdk`: ergonomic client wrapper around the generated clients.
 
 ## Protobuf generation
 
-The Rust SDK does not commit generated protobuf/gRPC bindings. `crates/mycel-proto/build.rs` discovers all `*.proto` files under the `mycel-api` checkout and generates Rust code into Cargo's build output during `cargo build`/`cargo test`. The current `develop` branch is aligned with `mycel-api` `v0.8.0`.
+Generated Rust protobuf/gRPC bindings are committed under `crates/mycel/gen/rust/` so tagged crate releases are self-contained. Normal `cargo build` and `cargo test` use the committed generated files and do not require a `mycel-api` checkout.
 
-By default, it reads the first available API checkout in this order:
+The current `develop` branch is aligned with `mycel-api` `v0.8.0`.
 
-1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api` submodule, pinned to the matching `mycel-api` release or branch
-3. sibling `../mycel-api` checkout for local workspace development
-
-For a fresh clone, initialize the submodule before building:
+To regenerate bindings, use a matching `mycel-api` checkout and run:
 
 ```sh
-git submodule update --init --recursive
-cargo test
+MYCEL_API_ROOT=/path/to/mycel-api make generate
 ```
 
-Set `MYCEL_API_ROOT` to use a different checkout:
+If `MYCEL_API_ROOT` is not set, generation reads the first available API checkout in this order:
 
-```sh
-MYCEL_API_ROOT=/path/to/mycel-api cargo test
-```
+1. `third_party/mycel-api` submodule, pinned to the matching `mycel-api` release or branch
+2. sibling `../mycel-api` checkout for local workspace development
+
+Generated files in `crates/mycel/gen/rust/` should be committed when API contracts change.
 
 ## Validate
 
@@ -128,7 +124,7 @@ Graph changes can be watched with `GraphChangeService.WatchGraphChanges` through
 ```rust
 let mut last_revision: i64 = load_checkpoint();
 let mut stream = client
-    .watch_graph_changes(mycel_proto::client::v1::WatchGraphChangesRequest {
+    .watch_graph_changes(mycel::client::v1::WatchGraphChangesRequest {
         space_id,
         domain_id,
         after_revision: Some(last_revision),
@@ -138,7 +134,7 @@ let mut stream = client
     .await?;
 while let Some(msg) = stream.message().await? {
     match msg.message {
-        Some(mycel_proto::client::v1::watch_graph_changes_response::Message::Event(event)) => {
+        Some(mycel::client::v1::watch_graph_changes_response::Message::Event(event)) => {
             if event.origin.as_ref().map(|origin| origin.operation_id.as_str())
                 == Some(operation_id.as_str())
             {
@@ -148,7 +144,7 @@ while let Some(msg) = stream.message().await? {
             last_revision = event.revision;
             save_checkpoint(last_revision);
         }
-        Some(mycel_proto::client::v1::watch_graph_changes_response::Message::Gap(_gap)) => {
+        Some(mycel::client::v1::watch_graph_changes_response::Message::Gap(_gap)) => {
             // Requested history is unavailable. Rebuild/resync local state,
             // persist a fresh checkpoint, and open a new stream.
             break;
@@ -169,7 +165,7 @@ let trigger = admin.trigger_backup("before upgrade").await?;
 let cluster = admin.trigger_cluster_backup(
     "before upgrade",
     "/mnt/mycel-backups",
-    mycel_proto::admin::v1::BackupArchiveFormat::TarZst,
+    mycel::admin::v1::BackupArchiveFormat::TarZst,
 ).await?;
 let _ = (policy, status, trigger, cluster);
 ```

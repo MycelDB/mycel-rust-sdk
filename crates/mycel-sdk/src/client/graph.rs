@@ -1,4 +1,4 @@
-use mycel_proto::client::v1::{
+use mycel::client::v1::{
     ApplyGraphOperationsRequest, ApplyGraphOperationsResponse, CreateEdgeRequest,
     CreateNodeRequest, DeleteNodeRequest, Edge, EdgeCreate, ExecuteGqlRequest,
     ExecuteGqlScriptRequest, ExecuteGqlScriptResponse, ExecuteQueryRequest, ExecuteQueryResponse,

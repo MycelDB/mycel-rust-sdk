@@ -4,6 +4,13 @@ use std::{
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("cargo:rerun-if-env-changed=MYCEL_GENERATE_PROTO");
+    println!("cargo:rerun-if-env-changed=MYCEL_API_ROOT");
+
+    if !env_flag("MYCEL_GENERATE_PROTO") {
+        return Ok(());
+    }
+
     let protoc = protoc_bin_vendored::protoc_bin_path()?;
     env::set_var("PROTOC", protoc);
 
@@ -29,8 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into());
     }
 
-    println!("cargo:rerun-if-env-changed=MYCEL_API_ROOT");
-    println!("cargo:rerun-if-changed={}", proto_root.display());
+    let out_dir = manifest_dir.join("gen/rust");
+    fs::create_dir_all(&out_dir)?;
 
     let mut proto_paths = Vec::new();
     collect_proto_files(&proto_root, &mut proto_paths)?;
@@ -40,16 +47,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("no .proto files found under {}", proto_root.display()).into());
     }
 
-    for proto in &proto_paths {
-        println!("cargo:rerun-if-changed={}", proto.display());
-    }
-
     tonic_build::configure()
         .build_server(false)
         .build_client(true)
+        .out_dir(&out_dir)
         .compile_protos(&proto_paths, &[proto_root])?;
 
     Ok(())
+}
+
+fn env_flag(name: &str) -> bool {
+    env::var(name)
+        .map(|v| {
+            matches!(
+                v.trim().to_ascii_lowercase().as_str(),
+                "1" | "t" | "true" | "y" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
 }
 
 fn existing_dir(path: PathBuf) -> Option<PathBuf> {

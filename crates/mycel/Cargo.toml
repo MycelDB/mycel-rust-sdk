@@ -1,12 +1,12 @@
 [package]
-name = "mycel-proto"
+name = "mycel"
 version = "0.8.0"
 description = "prost/tonic protobuf bindings for MycelDB daemon APIs"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/myceldb/mycel-rust-sdk"
-documentation = "https://docs.rs/mycel-proto"
+documentation = "https://docs.rs/mycel"
 keywords = ["myceldb", "grpc", "protobuf", "tonic"]
 categories = ["api-bindings", "database", "network-programming"]
 

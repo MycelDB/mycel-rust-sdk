@@ -1,4 +1,4 @@
-use mycel_proto::client::v1::{
+use mycel::client::v1::{
     aggregate_argument, expr, value_expr, AggregateArgument, AggregateFunction,
     AggregateProjection, DepthSpec, Expr, GraphPattern, GraphQuery, NodePattern, OrderSpec,
     PropExpr, PropertyEqualsExpr, ReturnProjection, ReturnProjectionKind, SemanticSearchExpr,
@@ -266,7 +266,7 @@ fn default_output_name(output_name: String, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mycel_proto::client::v1::{aggregate_argument, expr, value_expr};
+    use mycel::client::v1::{aggregate_argument, expr, value_expr};
 
     #[test]
     fn builds_common_query_shapes() {

@@ -11,7 +11,7 @@ keywords = ["myceldb", "grpc", "sdk", "database"]
 categories = ["api-bindings", "database", "network-programming"]
 
 [dependencies]
-mycel-proto = { path = "../mycel-proto" }
+mycel = { path = "../mycel" }
 tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true

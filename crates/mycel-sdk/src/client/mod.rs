@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::SystemTime};
 
-use mycel_proto::client::v1::{
+use mycel::client::v1::{
     automation_service_client::AutomationServiceClient, blob_service_client::BlobServiceClient,
     domain_service_client::DomainServiceClient,
     graph_change_service_client::GraphChangeServiceClient,
@@ -11,7 +11,7 @@ use mycel_proto::client::v1::{
     semantic_service_client::SemanticServiceClient, session_service_client::SessionServiceClient,
     space_service_client::SpaceServiceClient, transaction_service_client::TransactionServiceClient,
 };
-use mycel_proto::common::v1::{
+use mycel::common::v1::{
     auth_service_client::AuthServiceClient, AccessScope, AuthPrincipal, ClientInfo,
     GetMyAccessRequest, GetMyAccessResponse, LoginRequest, LoginResponse, LogoutRequest,
     LogoutResponse, RefreshRequest, RefreshResponse, WhoAmIRequest,

@@ -7,7 +7,7 @@ Thank you for contributing to the MycelDB Rust SDK. This repository provides Rus
 This repo **does** contain:
 
 - `mycel-sdk`: ergonomic Rust client wrappers for connection, authentication, sessions, transactions, graph/query helpers, backup helpers, and watch helpers.
-- `mycel-proto`: generated `prost`/`tonic` bindings produced at build time from `mycel-api` protobuf contracts.
+- `mycel`: committed `prost`/`tonic` bindings generated from `mycel-api` protobuf contracts.
 - Tests and examples for Rust SDK behavior.
 - Build scripts for generating bindings from `mycel-api`.
 
@@ -20,17 +20,13 @@ This repo **does not** contain:
 
 ## Local setup
 
-Initialize the pinned API submodule before building from a fresh clone:
+Normal builds use committed generated bindings under `crates/mycel/gen/rust/` and do not require a `mycel-api` checkout.
+
+Initialize the pinned API submodule only when you need to regenerate bindings from the default checkout:
 
 ```sh
 git submodule update --init --recursive
 ```
-
-By default, protobuf generation reads the first available API checkout in this order:
-
-1. `MYCEL_API_ROOT=/path/to/mycel-api`
-2. `third_party/mycel-api`
-3. sibling `../mycel-api`
 
 ## Local validation
 
@@ -57,17 +53,18 @@ cargo doc --workspace --no-deps
 
 ## Generated protobuf bindings
 
-The Rust SDK does not commit generated Rust protobuf/gRPC output. `crates/mycel-proto/build.rs` generates code into Cargo's build output during `cargo build` and `cargo test`.
+Generated Rust protobuf/gRPC output is committed under `crates/mycel/gen/rust/` so crate releases are self-contained.
 
 When API contracts change:
 
 1. Land or check out the matching `mycel-api` changes.
 2. Update `third_party/mycel-api` or set `MYCEL_API_ROOT` to the intended checkout.
-3. Run `make ci`.
-4. Commit SDK helper/test updates and the submodule pointer when the pinned API changes.
-5. Document compatibility or migration notes when public SDK behavior changes.
+3. Run `make generate` to refresh `crates/mycel/gen/rust/`.
+4. Run `make ci`.
+5. Commit SDK helper/test updates, regenerated files, and the submodule pointer when the pinned API changes.
+6. Document compatibility or migration notes when public SDK behavior changes.
 
-Do not hand-edit generated files in Cargo build output.
+Do not hand-edit files under `crates/mycel/gen/rust/`. Regenerate them from `mycel-api` instead.
 
 ## Rust SDK compatibility
 
@@ -94,7 +91,7 @@ Before a stable `1.0.0` release, the crates may still evolve, but PRs should sti
 - Do not log credentials, refresh tokens, bearer tokens, TLS key material, or private data.
 - Keep default network behavior safe; insecure TLS settings must remain explicit opt-ins.
 - Keep feature flags additive and document default features before publishing crates.
-- Keep `Cargo.lock` committed for repository CI reproducibility; reassess this policy if the repo becomes pure library crates intended only for crates.io publication.
+- Do not commit `Cargo.lock` for this library workspace unless the project intentionally changes that policy.
 
 ## Pull request expectations
 

@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::SystemTime};
 
-use mycel_proto::admin::v1::find_principal_request;
-use mycel_proto::admin::v1::{
+use mycel::admin::v1::find_principal_request;
+use mycel::admin::v1::{
     admin_activity_service_client::AdminActivityServiceClient,
     admin_automation_service_client::AdminAutomationServiceClient,
     admin_backup_service_client::AdminBackupServiceClient,
@@ -30,7 +30,7 @@ use mycel_proto::admin::v1::{
     TriggerClusterBackupResponse, UpdateBackupPolicyRequest, ValidateClusterBackupSetRequest,
     ValidateClusterBackupSetResponse,
 };
-use mycel_proto::common::v1::{
+use mycel::common::v1::{
     auth_service_client::AuthServiceClient, AccessScope, AccessScopeType, Capability, ClientInfo,
     GetMyAccessRequest, GetMyAccessResponse, LoginRequest, LoginResponse, LogoutRequest,
     LogoutResponse, PrincipalType, RefreshRequest, RefreshResponse, WhoAmIRequest,
@@ -929,7 +929,7 @@ fn principal_capability_grant_info(
     }
 }
 
-fn principal_admin_info(principal: mycel_proto::common::v1::AuthPrincipal) -> PrincipalAdminInfo {
+fn principal_admin_info(principal: mycel::common::v1::AuthPrincipal) -> PrincipalAdminInfo {
     PrincipalAdminInfo {
         principal_id: principal.principal_id,
         username: principal.username,
