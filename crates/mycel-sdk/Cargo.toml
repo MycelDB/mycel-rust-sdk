@@ -1,12 +1,17 @@
 [package]
 name = "mycel-sdk"
 version = "0.8.0"
+description = "Ergonomic Rust SDK for MycelDB daemon APIs"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage = "https://github.com/myceldb/mycel-rust-sdk"
+documentation = "https://docs.rs/mycel-sdk"
+keywords = ["myceldb", "grpc", "sdk", "database"]
+categories = ["api-bindings", "database", "network-programming"]
 
 [dependencies]
-mycel-proto = { path = "../mycel-proto" }
+mycel = { path = "../mycel" }
 tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true

@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a Rust SDK helper, generated binding workflow, or documentation improvement
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. API contract changes belong in `mycel-api` first; this repository should track the Rust SDK implementation and generated bindings.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - SDK helper API
+        - Authentication/session behavior
+        - TLS/transport configuration
+        - Query/graph helper
+        - Generated bindings workflow
+        - Cargo/crates.io packaging
+        - Documentation/examples
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to accomplish?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the SDK provide or change?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workaround or lower-level tonic API use.
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Would this affect exported APIs, generated bindings, auth behavior, timeouts/retries, TLS behavior, feature flags, or existing callers?
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context

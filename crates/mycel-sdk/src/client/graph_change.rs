@@ -1,4 +1,4 @@
-use mycel_proto::client::v1::{WatchGraphChangesRequest, WatchGraphChangesResponse};
+use mycel::client::v1::{WatchGraphChangesRequest, WatchGraphChangesResponse};
 use tonic::Streaming;
 
 use crate::{

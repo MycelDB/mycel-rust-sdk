@@ -6,6 +6,10 @@ on:
     tags:
       - 'v*'
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -15,16 +19,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: mycel-rust-sdk
-      - name: Checkout API protos
-        uses: actions/checkout@v4
-        with:
-          repository: MycelDB/mycel-api
-          ref: ${{ github.ref_type == 'tag' && github.ref_name || (github.head_ref || github.ref_name) }}
-          path: mycel-api
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
+
       - name: CI
         working-directory: mycel-rust-sdk
         run: make ci

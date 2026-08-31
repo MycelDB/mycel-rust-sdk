@@ -1,4 +1,4 @@
-use mycel_proto::client::v1::{
+use mycel::client::v1::{
     BeginTransactionRequest, CloseSessionRequest, CloseTransactionRequest,
     CommitTransactionRequest, GetDomainRequest, GraphTransaction, OpenSessionRequest,
     TransactionCommit, TransactionMode,
