@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible Mycel Rust SDK problem
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. If this involves credentials, tokens, TLS key material, private data, or a suspected vulnerability, stop here and use the private security reporting link instead.
+  - type: input
+    id: version
+    attributes:
+      label: SDK version
+      description: Crate version, commit SHA, or branch.
+      placeholder: v0.8.0 or commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Provide a minimal reproducible example when possible.
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include sanitized errors or logs. Do not paste secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Rust version, OS/architecture, MycelDB daemon/API version, relevant sanitized configuration.
+      placeholder: |
+        Rust: rustc --version
+        OS/arch: ...
+        MycelDB daemon/API version: ...
+        Transport: plaintext/TLS/mTLS
+        Tokio/runtime context: ...
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Links, related issues, or notes.

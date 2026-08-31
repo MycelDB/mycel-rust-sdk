@@ -1,5 +1,10 @@
 # Mycel Rust SDK
 
+[![CI](https://github.com/MycelDB/mycel-rust-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/MycelDB/mycel-rust-sdk/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/mycel-sdk.svg)](https://crates.io/crates/mycel-sdk)
+[![Docs.rs](https://docs.rs/mycel-sdk/badge.svg)](https://docs.rs/mycel-sdk)
+[![License](https://img.shields.io/github/license/MycelDB/mycel-rust-sdk)](LICENSE)
+
 Rust connector for MycelDB daemon APIs.
 
 This SDK mirrors the Go SDK shape:
@@ -173,21 +178,35 @@ let _ = (policy, status, trigger, cluster);
 
 `Config::from_env()` reads:
 
-- `MYCELD_GRPC_ADDR`
-- `MYCEL_USERNAME`
-- `MYCEL_PASSWORD`
-- `MYCEL_ACCESS_TOKEN`
-- `MYCEL_ACCESS_TOKEN_EXPIRE_TIME` (RFC3339)
-- `MYCEL_REFRESH_TOKEN`
-- `MYCEL_REFRESH_BEFORE` (`ms`, `s`, `m`, `h` suffixes; default `30s`)
-- `MYCEL_CALL_TIMEOUT` (`ms`, `s`, `m`, `h` suffixes)
-- `MYCELD_TLS`
-- `MYCELD_TLS_CA_FILE`
-- `MYCELD_TLS_SERVER_NAME`
-- `MYCELD_TLS_INSECURE_SKIP_VERIFY` *(currently rejected by Rust SDK transport)*
-- `MYCELD_TLS_CLIENT_CERT_FILE`
-- `MYCELD_TLS_CLIENT_KEY_FILE`
-- `MYCEL_CLIENT_NAME`
-- `MYCEL_CLIENT_VERSION`
-- `MYCEL_CLIENT_PLATFORM`
-- `MYCEL_CLIENT_DEVICE_LABEL`
+| Variable | Default | Description |
+| --- | --- | --- |
+| `MYCELD_GRPC_ADDR` | `127.0.0.1:9091` | MycelDB daemon gRPC address to dial. |
+| `MYCEL_USERNAME` | Empty | Username used for SDK login. |
+| `MYCEL_PASSWORD` | Empty | Password used for SDK login. |
+| `MYCEL_ACCESS_TOKEN` | Empty | Existing bearer access token to use instead of starting unauthenticated. |
+| `MYCEL_ACCESS_TOKEN_EXPIRE_TIME` | `None` | RFC3339 access-token expiry timestamp used to decide when refresh is needed. |
+| `MYCEL_REFRESH_TOKEN` | Empty | Refresh token used to renew access tokens. |
+| `MYCEL_REFRESH_BEFORE` | `30s` effective default | Duration before access-token expiry when the SDK should proactively refresh; accepts `ms`, `s`, `m`, and `h` suffixes. |
+| `MYCEL_CALL_TIMEOUT` | No timeout | Per-RPC timeout when set; accepts `ms`, `s`, `m`, and `h` suffixes. |
+| `MYCELD_TLS` | `false` | Enables TLS transport when set to a truthy value. |
+| `MYCELD_TLS_CA_FILE` | Empty | Path to a PEM CA bundle used to verify the daemon TLS certificate. |
+| `MYCELD_TLS_SERVER_NAME` | Empty | TLS server name override for certificate verification. |
+| `MYCELD_TLS_INSECURE_SKIP_VERIFY` | `false` | Parsed from the environment, but currently rejected by Rust SDK transport for safety. |
+| `MYCELD_TLS_CLIENT_CERT_FILE` | Empty | Path to the client certificate PEM file for mTLS. |
+| `MYCELD_TLS_CLIENT_KEY_FILE` | Empty | Path to the client private key PEM file for mTLS. |
+| `MYCEL_CLIENT_NAME` | `mycel-rust-sdk` | Client application name sent in login metadata. |
+| `MYCEL_CLIENT_VERSION` | Empty | Client application version sent in login metadata. |
+| `MYCEL_CLIENT_PLATFORM` | `rust` | Client platform identifier sent in login metadata. |
+| `MYCEL_CLIENT_DEVICE_LABEL` | Empty | Optional device label sent in login metadata. |
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for SDK contribution guidelines, generated binding policy, Rust validation checks, and compatibility expectations. See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community standards and [`CHANGELOG.md`](CHANGELOG.md) for release notes.
+
+## Security
+
+Please report suspected vulnerabilities privately through GitHub Security Advisories / private vulnerability reporting. See [`SECURITY.md`](SECURITY.md).
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).

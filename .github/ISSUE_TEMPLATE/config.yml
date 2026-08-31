@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/MycelDB/mycel-rust-sdk/security/advisories/new
+    about: Please report suspected vulnerabilities privately. Do not open public security issues.
+  - name: MycelDB API contracts
+    url: https://github.com/MycelDB/mycel-api/issues
+    about: File protobuf/API contract issues in mycel-api when the Rust SDK bindings are only reflecting the contract.
