@@ -15,7 +15,7 @@ This SDK mirrors the Go SDK shape:
 - operator/admin login, refresh, and logout helpers
 - automatic access-token refresh for SDK convenience methods, with one retry on expired-token `Unauthenticated`
 - bearer-token metadata injection
-- generated Admin and Client service clients from the language-independent `mycel-api` protobuf contracts
+- generated Admin and Client service clients from the language-independent `mycel-api` protobuf contracts, including lexical Search and admin lexical maintenance clients
 - call timeout helpers
 - session/transaction helpers
 - thin graph/query convenience methods

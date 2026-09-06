@@ -13,6 +13,7 @@ use mycel::admin::v1::{
     admin_intelligence_access_policy_service_client::AdminIntelligenceAccessPolicyServiceClient,
     admin_intelligence_access_profile_service_client::AdminIntelligenceAccessProfileServiceClient,
     admin_intelligence_access_usage_service_client::AdminIntelligenceAccessUsageServiceClient,
+    admin_lexical_maintenance_service_client::AdminLexicalMaintenanceServiceClient,
     admin_principal_service_client::AdminPrincipalServiceClient,
     admin_schema_service_client::AdminSchemaServiceClient,
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
@@ -118,6 +119,7 @@ pub struct AdminClient {
     pub spaces: AdminSpaceServiceClient<AuthenticatedService>,
     pub domains: AdminDomainServiceClient<AuthenticatedService>,
     pub activity: AdminActivityServiceClient<AuthenticatedService>,
+    pub lexical_maintenance: AdminLexicalMaintenanceServiceClient<AuthenticatedService>,
     pub semantic: AdminSemanticServiceClient<AuthenticatedService>,
     pub semantic_maintenance: AdminSemanticMaintenanceServiceClient<AuthenticatedService>,
     pub semantic_migration: AdminSemanticMigrationServiceClient<AuthenticatedService>,
@@ -155,6 +157,10 @@ impl AdminClient {
                 interceptor.clone(),
             ),
             activity: AdminActivityServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            lexical_maintenance: AdminLexicalMaintenanceServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
