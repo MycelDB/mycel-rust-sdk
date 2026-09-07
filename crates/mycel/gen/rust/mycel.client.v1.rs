@@ -1804,6 +1804,424 @@ pub mod domain_service_client {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    /// V1 supports SEARCH_MODE_LEXICAL. Unspecified mode defaults to lexical while
+    /// lexical search is the only implemented mode.
+    #[prost(enumeration = "SearchMode", tag = "3")]
+    pub mode: i32,
+    /// Lucene-style v1 query string. Supported syntax includes terms, quoted
+    /// phrases, AND, OR, NOT, unary '-', and parentheses. The implicit operator is
+    /// AND. Wildcard, fuzzy, range, and fielded lexical syntax are reserved and
+    /// should return structured diagnostics rather than partial matches.
+    #[prost(string, tag = "4")]
+    pub query: ::prost::alloc::string::String,
+    /// Optional filters reserved for future metadata/hybrid search composition.
+    #[prost(message, optional, tag = "5")]
+    pub filters: ::core::option::Option<SearchFilters>,
+    /// Maximum number of results to return. The daemon may cap this value.
+    #[prost(int32, tag = "6")]
+    pub page_size: i32,
+    /// Opaque continuation token returned by a previous Search call.
+    #[prost(string, tag = "7")]
+    pub page_token: ::prost::alloc::string::String,
+    /// Include matched terms/fields and scoring diagnostics when available. The
+    /// daemon must redact diagnostics that could leak unauthorized data.
+    #[prost(bool, tag = "8")]
+    pub include_diagnostics: bool,
+    /// Controls whether stale lexical index results may be returned. If false, the
+    /// daemon should fail closed when the index is known to be stale, rebuilding,
+    /// missing, or unsafe for the target consistency policy.
+    #[prost(bool, tag = "9")]
+    pub allow_stale: bool,
+    /// Optional maximum acceptable revision lag when latest graph revision is
+    /// known. A value of 0 leaves the limit unset.
+    #[prost(int64, tag = "10")]
+    pub max_revision_lag: i64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub results: ::prost::alloc::vec::Vec<SearchResult>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub freshness: ::core::option::Option<SearchFreshness>,
+    /// Non-fatal search warnings such as stale index state, degraded diagnostics,
+    /// or capped page sizes. Warnings must not include secrets or unauthorized
+    /// graph metadata.
+    #[prost(string, repeated, tag = "4")]
+    pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "5")]
+    pub diagnostics: ::core::option::Option<SearchDiagnostics>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchResult {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub node_id: ::prost::alloc::string::String,
+    #[prost(double, tag = "4")]
+    pub score: f64,
+    #[prost(enumeration = "SearchScoreKind", tag = "5")]
+    pub score_kind: i32,
+    /// Graph revision represented by the indexed document when known. A value of 0
+    /// means the daemon did not provide revision diagnostics.
+    #[prost(int64, tag = "6")]
+    pub indexed_graph_revision: i64,
+    /// Optional diagnostics requested by include_diagnostics. These fields must not
+    /// include full source text or unauthorized data.
+    #[prost(string, repeated, tag = "7")]
+    pub matched_terms: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "8")]
+    pub matched_field_paths: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "9")]
+    pub score_components: ::prost::alloc::vec::Vec<SearchScoreComponent>,
+}
+/// Reserved seam for future structured metadata filters. This empty message is
+/// intentionally present so clients can construct stable request shapes before
+/// hybrid/filter support lands.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SearchFilters {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchFreshness {
+    #[prost(enumeration = "SearchFreshnessState", tag = "1")]
+    pub state: i32,
+    #[prost(int64, tag = "2")]
+    pub indexed_graph_revision: i64,
+    #[prost(int64, tag = "3")]
+    pub latest_known_graph_revision: i64,
+    #[prost(int64, tag = "4")]
+    pub revision_lag: i64,
+    #[prost(string, tag = "5")]
+    pub updated_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub last_error: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchDiagnostics {
+    #[prost(string, tag = "1")]
+    pub analyzer_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub index_format_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub query_plan: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "4")]
+    pub normalized_terms: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "5")]
+    pub unsupported_syntax: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(int32, tag = "6")]
+    pub segments_searched: i32,
+    #[prost(int32, tag = "7")]
+    pub postings_lists_scanned: i32,
+    #[prost(int32, tag = "8")]
+    pub candidate_count: i32,
+    #[prost(bool, tag = "9")]
+    pub truncated: bool,
+    #[prost(string, tag = "10")]
+    pub rejected_reason: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchScoreComponent {
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(double, tag = "2")]
+    pub value: f64,
+    #[prost(string, tag = "3")]
+    pub description: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetLexicalIndexStatusRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetLexicalIndexStatusResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<LexicalIndexStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LexicalIndexStatus {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "SearchFreshnessState", tag = "3")]
+    pub state: i32,
+    #[prost(int64, tag = "4")]
+    pub indexed_graph_revision: i64,
+    #[prost(int64, tag = "5")]
+    pub latest_known_graph_revision: i64,
+    #[prost(int64, tag = "6")]
+    pub revision_lag: i64,
+    #[prost(int64, tag = "7")]
+    pub live_document_count: i64,
+    #[prost(int64, tag = "8")]
+    pub deleted_document_count: i64,
+    #[prost(int32, tag = "9")]
+    pub segment_count: i32,
+    #[prost(string, tag = "10")]
+    pub analyzer_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub index_format_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub updated_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "13")]
+    pub last_rebuild_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "14")]
+    pub last_error: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SearchMode {
+    Unspecified = 0,
+    Lexical = 1,
+}
+impl SearchMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEARCH_MODE_UNSPECIFIED",
+            Self::Lexical => "SEARCH_MODE_LEXICAL",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEARCH_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEARCH_MODE_LEXICAL" => Some(Self::Lexical),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SearchScoreKind {
+    Unspecified = 0,
+    Bm25 = 1,
+}
+impl SearchScoreKind {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEARCH_SCORE_KIND_UNSPECIFIED",
+            Self::Bm25 => "SEARCH_SCORE_KIND_BM25",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEARCH_SCORE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEARCH_SCORE_KIND_BM25" => Some(Self::Bm25),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SearchFreshnessState {
+    Unspecified = 0,
+    Fresh = 1,
+    Stale = 2,
+    Rebuilding = 3,
+    Unavailable = 4,
+    Error = 5,
+}
+impl SearchFreshnessState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEARCH_FRESHNESS_STATE_UNSPECIFIED",
+            Self::Fresh => "SEARCH_FRESHNESS_STATE_FRESH",
+            Self::Stale => "SEARCH_FRESHNESS_STATE_STALE",
+            Self::Rebuilding => "SEARCH_FRESHNESS_STATE_REBUILDING",
+            Self::Unavailable => "SEARCH_FRESHNESS_STATE_UNAVAILABLE",
+            Self::Error => "SEARCH_FRESHNESS_STATE_ERROR",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEARCH_FRESHNESS_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEARCH_FRESHNESS_STATE_FRESH" => Some(Self::Fresh),
+            "SEARCH_FRESHNESS_STATE_STALE" => Some(Self::Stale),
+            "SEARCH_FRESHNESS_STATE_REBUILDING" => Some(Self::Rebuilding),
+            "SEARCH_FRESHNESS_STATE_UNAVAILABLE" => Some(Self::Unavailable),
+            "SEARCH_FRESHNESS_STATE_ERROR" => Some(Self::Error),
+            _ => None,
+        }
+    }
+}
+/// Generated client implementations.
+pub mod search_service_client {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    /// SearchService exposes first-class search over graph content. V1 supports
+    /// lexical search for one space/domain. Future modes may add semantic, metadata,
+    /// or hybrid orchestration without changing the existing lexical contract.
+    #[derive(Debug, Clone)]
+    pub struct SearchServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl SearchServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> SearchServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> SearchServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+        {
+            SearchServiceClient::new(InterceptedService::new(inner, interceptor))
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        /// Search runs a search request for the authenticated caller within the target
+        /// space/domain. Results are discovery candidates from an eventually
+        /// consistent index; callers that require current state should re-read node IDs
+        /// through graph APIs.
+        pub async fn search(
+            &mut self,
+            request: impl tonic::IntoRequest<super::SearchRequest>,
+        ) -> std::result::Result<tonic::Response<super::SearchResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.SearchService/Search",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("mycel.client.v1.SearchService", "Search"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// GetLexicalIndexStatus returns caller-visible lexical index freshness for a
+        /// space/domain. It is safe for applications to use when deciding whether to
+        /// show stale/rebuilding/unavailable warnings.
+        pub async fn get_lexical_index_status(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetLexicalIndexStatusRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetLexicalIndexStatusResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.SearchService/GetLexicalIndexStatus",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.SearchService",
+                        "GetLexicalIndexStatus",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDomainSchemaRequest {
     #[prost(string, tag = "1")]
     pub domain_id: ::prost::alloc::string::String,

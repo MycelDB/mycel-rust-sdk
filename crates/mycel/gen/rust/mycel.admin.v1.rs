@@ -6562,6 +6562,263 @@ pub mod admin_intelligence_access_usage_service_client {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetLexicalMaintenanceStatusRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetLexicalMaintenanceStatusResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<super::super::client::v1::LexicalIndexStatus>,
+    #[prost(bool, tag = "2")]
+    pub owner: bool,
+    #[prost(string, tag = "3")]
+    pub owner_node_id: ::prost::alloc::string::String,
+    #[prost(bool, tag = "4")]
+    pub forwarding_required: bool,
+    #[prost(int64, tag = "5")]
+    pub queued_change_count: i64,
+    #[prost(int64, tag = "6")]
+    pub disk_usage_bytes: i64,
+    #[prost(string, tag = "7")]
+    pub cursor_source: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "8")]
+    pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RebuildLexicalIndexRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    /// Force a rebuild even when the daemon believes the index is already fresh.
+    #[prost(bool, tag = "3")]
+    pub force: bool,
+    /// If true, validate the request and report what would happen without starting
+    /// rebuild work.
+    #[prost(bool, tag = "4")]
+    pub dry_run: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RebuildLexicalIndexResponse {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "LexicalRebuildState", tag = "3")]
+    pub state: i32,
+    #[prost(bool, tag = "4")]
+    pub accepted: bool,
+    #[prost(bool, tag = "5")]
+    pub dry_run: bool,
+    #[prost(string, tag = "6")]
+    pub rebuild_id: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "7")]
+    pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum LexicalRebuildState {
+    Unspecified = 0,
+    Queued = 1,
+    Running = 2,
+    SkippedAlreadyFresh = 3,
+    Rejected = 4,
+}
+impl LexicalRebuildState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "LEXICAL_REBUILD_STATE_UNSPECIFIED",
+            Self::Queued => "LEXICAL_REBUILD_STATE_QUEUED",
+            Self::Running => "LEXICAL_REBUILD_STATE_RUNNING",
+            Self::SkippedAlreadyFresh => "LEXICAL_REBUILD_STATE_SKIPPED_ALREADY_FRESH",
+            Self::Rejected => "LEXICAL_REBUILD_STATE_REJECTED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "LEXICAL_REBUILD_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "LEXICAL_REBUILD_STATE_QUEUED" => Some(Self::Queued),
+            "LEXICAL_REBUILD_STATE_RUNNING" => Some(Self::Running),
+            "LEXICAL_REBUILD_STATE_SKIPPED_ALREADY_FRESH" => {
+                Some(Self::SkippedAlreadyFresh)
+            }
+            "LEXICAL_REBUILD_STATE_REJECTED" => Some(Self::Rejected),
+            _ => None,
+        }
+    }
+}
+/// Generated client implementations.
+pub mod admin_lexical_maintenance_service_client {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    /// AdminLexicalMaintenanceService exposes operator-owned lexical index
+    /// diagnostics and rebuild controls. Lexical indexes are derived state; rebuilds
+    /// must not mutate graph data.
+    #[derive(Debug, Clone)]
+    pub struct AdminLexicalMaintenanceServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl AdminLexicalMaintenanceServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> AdminLexicalMaintenanceServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> AdminLexicalMaintenanceServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+        {
+            AdminLexicalMaintenanceServiceClient::new(
+                InterceptedService::new(inner, interceptor),
+            )
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        /// GetLexicalMaintenanceStatus returns detailed lexical index status for one
+        /// space/domain. Admin callers may receive operational details that normal
+        /// client status responses redact.
+        pub async fn get_lexical_maintenance_status(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetLexicalMaintenanceStatusRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetLexicalMaintenanceStatusResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminLexicalMaintenanceService/GetLexicalMaintenanceStatus",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminLexicalMaintenanceService",
+                        "GetLexicalMaintenanceStatus",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// RebuildLexicalIndex requests a rebuild of the derived lexical index for one
+        /// space/domain. The request is not idempotent with respect to operation
+        /// scheduling, but repeated requests must remain safe because rebuilds derive
+        /// from committed graph state.
+        pub async fn rebuild_lexical_index(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RebuildLexicalIndexRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::RebuildLexicalIndexResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminLexicalMaintenanceService/RebuildLexicalIndex",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminLexicalMaintenanceService",
+                        "RebuildLexicalIndex",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ListPrincipalsRequest {
     #[prost(int32, tag = "1")]
     pub page_size: i32,
