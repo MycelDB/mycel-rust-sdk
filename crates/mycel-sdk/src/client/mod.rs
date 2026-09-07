@@ -8,8 +8,9 @@ use mycel::client::v1::{
     import_export_service_client::ImportExportServiceClient,
     metadata_catalog_service_client::MetadataCatalogServiceClient,
     query_service_client::QueryServiceClient, schema_service_client::SchemaServiceClient,
-    semantic_service_client::SemanticServiceClient, session_service_client::SessionServiceClient,
-    space_service_client::SpaceServiceClient, transaction_service_client::TransactionServiceClient,
+    search_service_client::SearchServiceClient, semantic_service_client::SemanticServiceClient,
+    session_service_client::SessionServiceClient, space_service_client::SpaceServiceClient,
+    transaction_service_client::TransactionServiceClient,
 };
 use mycel::common::v1::{
     auth_service_client::AuthServiceClient, AccessScope, AuthPrincipal, ClientInfo,
@@ -49,6 +50,7 @@ pub struct Client {
     pub automation: AutomationServiceClient<AuthenticatedService>,
     pub import_export: ImportExportServiceClient<AuthenticatedService>,
     pub metadata: MetadataCatalogServiceClient<AuthenticatedService>,
+    pub search: SearchServiceClient<AuthenticatedService>,
     pub semantic: SemanticServiceClient<AuthenticatedService>,
     pub graph_change: GraphChangeServiceClient<AuthenticatedService>,
 
@@ -88,6 +90,7 @@ impl Client {
                 channel.clone(),
                 interceptor.clone(),
             ),
+            search: SearchServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             semantic: SemanticServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             graph_change: GraphChangeServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,

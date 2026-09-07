@@ -6,6 +6,10 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Regenerated Rust `prost`/`tonic` bindings for the lexical search APIs and exposed thin `Client.search` and `AdminClient.lexical_maintenance` service clients.
+
 ## [v0.9.0] - 2026-08-31
 
 ### Added
