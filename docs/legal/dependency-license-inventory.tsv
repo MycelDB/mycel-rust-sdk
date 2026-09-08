@@ -1,0 +1,159 @@
+Ecosystem	Package	Version	Scope	License	License files	Source
+cargo	aho-corasick	1.1.5	cargo-lock	Unlicense OR MIT		https://github.com/BurntSushi/aho-corasick
+cargo	anyhow	1.0.104	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/anyhow
+cargo	async-stream	0.3.6	cargo-lock	MIT		https://github.com/tokio-rs/async-stream
+cargo	async-stream-impl	0.3.6	cargo-lock	MIT		https://github.com/tokio-rs/async-stream
+cargo	async-trait	0.1.92	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/async-trait
+cargo	atomic-waker	1.1.2	cargo-lock	Apache-2.0 OR MIT		https://github.com/smol-rs/atomic-waker
+cargo	autocfg	1.5.1	cargo-lock	Apache-2.0 OR MIT		https://github.com/cuviper/autocfg
+cargo	axum	0.7.9	cargo-lock	MIT		https://github.com/tokio-rs/axum
+cargo	axum-core	0.4.5	cargo-lock	MIT		https://github.com/tokio-rs/axum
+cargo	base64	0.22.1	cargo-lock	MIT OR Apache-2.0		https://github.com/marshallpierce/rust-base64
+cargo	bitflags	2.13.1	cargo-lock	MIT OR Apache-2.0		https://github.com/bitflags/bitflags
+cargo	bumpalo	3.20.3	cargo-lock	MIT OR Apache-2.0		https://github.com/fitzgen/bumpalo
+cargo	bytes	1.12.1	cargo-lock	MIT		https://github.com/tokio-rs/bytes
+cargo	cc	1.4.2	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/cc-rs
+cargo	cfg-if	1.0.4	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/cfg-if
+cargo	core-foundation	0.10.1	cargo-lock	MIT OR Apache-2.0		https://github.com/servo/core-foundation-rs
+cargo	core-foundation-sys	0.8.7	cargo-lock	MIT OR Apache-2.0		https://github.com/servo/core-foundation-rs
+cargo	deranged	0.5.8	cargo-lock	MIT OR Apache-2.0		https://github.com/jhpratt/deranged
+cargo	either	1.17.0	cargo-lock	MIT OR Apache-2.0		https://github.com/rayon-rs/either
+cargo	equivalent	1.0.2	cargo-lock	Apache-2.0 OR MIT		https://github.com/indexmap-rs/equivalent
+cargo	errno	0.3.14	cargo-lock	MIT OR Apache-2.0		https://github.com/lambda-fairy/rust-errno
+cargo	fastrand	2.5.0	cargo-lock	Apache-2.0 OR MIT		https://github.com/smol-rs/fastrand
+cargo	find-msvc-tools	0.1.10	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/cc-rs
+cargo	fixedbitset	0.5.7	cargo-lock	MIT OR Apache-2.0		https://github.com/petgraph/fixedbitset
+cargo	fnv	1.0.7	cargo-lock	Apache-2.0 / MIT		https://github.com/servo/rust-fnv
+cargo	futures-channel	0.3.34	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/futures-rs
+cargo	futures-core	0.3.34	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/futures-rs
+cargo	futures-sink	0.3.34	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/futures-rs
+cargo	futures-task	0.3.34	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/futures-rs
+cargo	futures-util	0.3.34	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/futures-rs
+cargo	getrandom	0.2.17	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-random/getrandom
+cargo	getrandom	0.4.3	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-random/getrandom
+cargo	h2	0.4.15	cargo-lock	MIT		https://github.com/hyperium/h2
+cargo	hashbrown	0.12.3	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/hashbrown
+cargo	hashbrown	0.17.1	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/hashbrown
+cargo	heck	0.5.0	cargo-lock	MIT OR Apache-2.0		https://github.com/withoutboats/heck
+cargo	http	1.5.0	cargo-lock	MIT OR Apache-2.0		https://github.com/hyperium/http
+cargo	http-body	1.1.0	cargo-lock	MIT		https://github.com/hyperium/http-body
+cargo	http-body-util	0.1.5	cargo-lock	MIT		https://github.com/hyperium/http-body
+cargo	httparse	1.10.1	cargo-lock	MIT OR Apache-2.0		https://github.com/seanmonstar/httparse
+cargo	httpdate	1.0.3	cargo-lock	MIT OR Apache-2.0		https://github.com/pyfisch/httpdate
+cargo	hyper	1.11.0	cargo-lock	MIT		https://github.com/hyperium/hyper
+cargo	hyper-timeout	0.5.2	cargo-lock	MIT OR Apache-2.0		https://github.com/hjr3/hyper-timeout
+cargo	hyper-util	0.1.20	cargo-lock	MIT		https://github.com/hyperium/hyper-util
+cargo	indexmap	1.9.3	cargo-lock	Apache-2.0 OR MIT		https://github.com/bluss/indexmap
+cargo	indexmap	2.14.0	cargo-lock	Apache-2.0 OR MIT		https://github.com/indexmap-rs/indexmap
+cargo	itertools	0.14.0	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-itertools/itertools
+cargo	itoa	1.0.18	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/itoa
+cargo	js-sys	0.3.104	cargo-lock	MIT OR Apache-2.0		https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys
+cargo	libc	0.2.189	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/libc
+cargo	linux-raw-sys	0.12.1	cargo-lock	Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT		https://github.com/sunfishcode/linux-raw-sys
+cargo	log	0.4.33	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/log
+cargo	matchit	0.7.3	cargo-lock	MIT AND BSD-3-Clause		https://github.com/ibraheemdev/matchit
+cargo	memchr	2.8.3	cargo-lock	Unlicense OR MIT		https://github.com/BurntSushi/memchr
+cargo	mime	0.3.17	cargo-lock	MIT OR Apache-2.0		https://github.com/hyperium/mime
+cargo	mio	1.2.2	cargo-lock	MIT		https://github.com/tokio-rs/mio
+cargo	multimap	0.10.1	cargo-lock	MIT OR Apache-2.0		https://github.com/havarnov/multimap
+cargo	num-conv	0.2.2	cargo-lock	MIT OR Apache-2.0		https://github.com/jhpratt/num-conv
+cargo	once_cell	1.21.4	cargo-lock	MIT OR Apache-2.0		https://github.com/matklad/once_cell
+cargo	openssl-probe	0.2.1	cargo-lock	MIT OR Apache-2.0		https://github.com/rustls/openssl-probe
+cargo	percent-encoding	2.3.2	cargo-lock	MIT OR Apache-2.0		https://github.com/servo/rust-url/
+cargo	petgraph	0.7.1	cargo-lock	MIT OR Apache-2.0		https://github.com/petgraph/petgraph
+cargo	pin-project	1.1.13	cargo-lock	Apache-2.0 OR MIT		https://github.com/taiki-e/pin-project
+cargo	pin-project-internal	1.1.13	cargo-lock	Apache-2.0 OR MIT		https://github.com/taiki-e/pin-project
+cargo	pin-project-lite	0.2.17	cargo-lock	Apache-2.0 OR MIT		https://github.com/taiki-e/pin-project-lite
+cargo	powerfmt	0.2.0	cargo-lock	MIT OR Apache-2.0		https://github.com/jhpratt/powerfmt
+cargo	ppv-lite86	0.2.21	cargo-lock	MIT OR Apache-2.0		https://github.com/cryptocorrosion/cryptocorrosion
+cargo	prettyplease	0.2.37	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/prettyplease
+cargo	proc-macro2	1.0.107	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/proc-macro2
+cargo	prost	0.13.5	cargo-lock	Apache-2.0		https://github.com/tokio-rs/prost
+cargo	prost-build	0.13.5	cargo-lock	Apache-2.0		https://github.com/tokio-rs/prost
+cargo	prost-derive	0.13.5	cargo-lock	Apache-2.0		https://github.com/tokio-rs/prost
+cargo	prost-types	0.13.5	cargo-lock	Apache-2.0		https://github.com/tokio-rs/prost
+cargo	protoc-bin-vendored	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-linux-aarch_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-linux-ppcle_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-linux-s390_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-linux-x86_32	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-linux-x86_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-macos-aarch_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-macos-x86_64	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	protoc-bin-vendored-win32	3.2.0	cargo-lock	MIT		https://github.com/stepancheg/rust-protoc-bin-vendored/
+cargo	quote	1.0.47	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/quote
+cargo	r-efi	6.0.0	cargo-lock	MIT OR Apache-2.0 OR LGPL-2.1-or-later		https://github.com/r-efi/r-efi
+cargo	rand	0.8.7	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-random/rand
+cargo	rand_chacha	0.3.1	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-random/rand
+cargo	rand_core	0.6.4	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-random/rand
+cargo	regex	1.13.1	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/regex
+cargo	regex-automata	0.4.18	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/regex
+cargo	regex-syntax	0.8.11	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/regex
+cargo	ring	0.17.14	cargo-lock	Apache-2.0 AND ISC		https://github.com/briansmith/ring
+cargo	rustix	1.1.4	cargo-lock	Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT		https://github.com/bytecodealliance/rustix
+cargo	rustls	0.23.43	cargo-lock	Apache-2.0 OR ISC OR MIT		https://github.com/rustls/rustls
+cargo	rustls-native-certs	0.8.4	cargo-lock	Apache-2.0 OR ISC OR MIT		https://github.com/rustls/rustls-native-certs
+cargo	rustls-pemfile	2.2.0	cargo-lock	Apache-2.0 OR ISC OR MIT		https://github.com/rustls/pemfile
+cargo	rustls-pki-types	1.15.1	cargo-lock	MIT OR Apache-2.0		https://github.com/rustls/pki-types
+cargo	rustls-webpki	0.103.14	cargo-lock	ISC		https://github.com/rustls/webpki
+cargo	rustversion	1.0.23	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/rustversion
+cargo	schannel	0.1.29	cargo-lock	MIT		https://github.com/steffengy/schannel-rs
+cargo	security-framework	3.7.0	cargo-lock	MIT OR Apache-2.0		https://github.com/kornelski/rust-security-framework
+cargo	security-framework-sys	2.17.0	cargo-lock	MIT OR Apache-2.0		https://github.com/kornelski/rust-security-framework
+cargo	serde	1.0.229	cargo-lock	MIT OR Apache-2.0		https://github.com/serde-rs/serde
+cargo	serde_core	1.0.229	cargo-lock	MIT OR Apache-2.0		https://github.com/serde-rs/serde
+cargo	serde_derive	1.0.229	cargo-lock	MIT OR Apache-2.0		https://github.com/serde-rs/serde
+cargo	shlex	2.0.1	cargo-lock	MIT OR Apache-2.0		https://github.com/comex/rust-shlex
+cargo	slab	0.4.12	cargo-lock	MIT		https://github.com/tokio-rs/slab
+cargo	smallvec	1.15.2	cargo-lock	MIT OR Apache-2.0		https://github.com/servo/rust-smallvec
+cargo	socket2	0.5.10	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/socket2
+cargo	socket2	0.6.5	cargo-lock	MIT OR Apache-2.0		https://github.com/rust-lang/socket2
+cargo	subtle	2.6.1	cargo-lock	BSD-3-Clause		https://github.com/dalek-cryptography/subtle
+cargo	syn	2.0.119	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/syn
+cargo	syn	3.0.3	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/syn
+cargo	sync_wrapper	1.0.2	cargo-lock	Apache-2.0		https://github.com/Actyx/sync_wrapper
+cargo	tempfile	3.27.0	cargo-lock	MIT OR Apache-2.0		https://github.com/Stebalien/tempfile
+cargo	thiserror	1.0.69	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/thiserror
+cargo	thiserror-impl	1.0.69	cargo-lock	MIT OR Apache-2.0		https://github.com/dtolnay/thiserror
+cargo	time	0.3.55	cargo-lock	MIT OR Apache-2.0		https://github.com/time-rs/time
+cargo	time-core	0.1.9	cargo-lock	MIT OR Apache-2.0		https://github.com/time-rs/time
+cargo	time-macros	0.2.32	cargo-lock	MIT OR Apache-2.0		https://github.com/time-rs/time
+cargo	tokio	1.53.1	cargo-lock	MIT		https://github.com/tokio-rs/tokio
+cargo	tokio-macros	2.7.2	cargo-lock	MIT		https://github.com/tokio-rs/tokio
+cargo	tokio-rustls	0.26.4	cargo-lock	MIT OR Apache-2.0		https://github.com/rustls/tokio-rustls
+cargo	tokio-stream	0.1.19	cargo-lock	MIT		https://github.com/tokio-rs/tokio
+cargo	tokio-util	0.7.19	cargo-lock	MIT		https://github.com/tokio-rs/tokio
+cargo	tonic	0.12.3	cargo-lock	MIT		https://github.com/hyperium/tonic
+cargo	tonic-build	0.12.3	cargo-lock	MIT		https://github.com/hyperium/tonic
+cargo	tower	0.4.13	cargo-lock	MIT		https://github.com/tower-rs/tower
+cargo	tower	0.5.3	cargo-lock	MIT		https://github.com/tower-rs/tower
+cargo	tower-layer	0.3.3	cargo-lock	MIT		https://github.com/tower-rs/tower
+cargo	tower-service	0.3.3	cargo-lock	MIT		https://github.com/tower-rs/tower
+cargo	tracing	0.1.44	cargo-lock	MIT		https://github.com/tokio-rs/tracing
+cargo	tracing-attributes	0.1.31	cargo-lock	MIT		https://github.com/tokio-rs/tracing
+cargo	tracing-core	0.1.36	cargo-lock	MIT		https://github.com/tokio-rs/tracing
+cargo	try-lock	0.2.5	cargo-lock	MIT		https://github.com/seanmonstar/try-lock
+cargo	unicode-ident	1.0.24	cargo-lock	(MIT OR Apache-2.0) AND Unicode-3.0		https://github.com/dtolnay/unicode-ident
+cargo	untrusted	0.9.0	cargo-lock	ISC		https://github.com/briansmith/untrusted
+cargo	uuid	1.24.0	cargo-lock	Apache-2.0 OR MIT		https://github.com/uuid-rs/uuid
+cargo	want	0.3.1	cargo-lock	MIT		https://github.com/seanmonstar/want
+cargo	wasi	0.11.1+wasi-snapshot-preview1	cargo-lock	Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT		https://github.com/bytecodealliance/wasi
+cargo	wasm-bindgen	0.2.127	cargo-lock	MIT OR Apache-2.0		https://github.com/wasm-bindgen/wasm-bindgen
+cargo	wasm-bindgen-macro	0.2.127	cargo-lock	MIT OR Apache-2.0		https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro
+cargo	wasm-bindgen-macro-support	0.2.127	cargo-lock	MIT OR Apache-2.0		https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro-support
+cargo	wasm-bindgen-shared	0.2.127	cargo-lock	MIT OR Apache-2.0		https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared
+cargo	windows-link	0.2.1	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows-sys	0.52.0	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows-sys	0.61.2	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows-targets	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_aarch64_gnullvm	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_aarch64_msvc	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_i686_gnu	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_i686_gnullvm	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_i686_msvc	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_x86_64_gnu	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_x86_64_gnullvm	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	windows_x86_64_msvc	0.52.6	cargo-lock	MIT OR Apache-2.0		https://github.com/microsoft/windows-rs
+cargo	zerocopy	0.8.56	cargo-lock	BSD-2-Clause OR Apache-2.0 OR MIT		https://github.com/google/zerocopy
+cargo	zerocopy-derive	0.8.56	cargo-lock	BSD-2-Clause OR Apache-2.0 OR MIT		https://github.com/google/zerocopy
+cargo	zeroize	1.9.0	cargo-lock	Apache-2.0 OR MIT		https://github.com/RustCrypto/utils
