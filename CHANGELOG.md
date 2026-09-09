@@ -6,6 +6,8 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.12.0] - 2026-09-09
+
 ### Added
 
 - Regenerated Rust `prost`/`tonic` bindings for hybrid search API additions, including weighted fusion options, metadata filters, and source diagnostics.
