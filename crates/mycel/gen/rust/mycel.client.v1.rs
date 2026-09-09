@@ -1809,8 +1809,8 @@ pub struct SearchRequest {
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub domain_id: ::prost::alloc::string::String,
-    /// V1 supports SEARCH_MODE_LEXICAL. Unspecified mode defaults to lexical while
-    /// lexical search is the only implemented mode.
+    /// Unspecified mode defaults to lexical for backward compatibility. Hybrid mode
+    /// combines lexical and semantic candidate retrieval into one fused ranking.
     #[prost(enumeration = "SearchMode", tag = "3")]
     pub mode: i32,
     /// Lucene-style v1 query string. Supported syntax includes terms, quoted
@@ -1819,7 +1819,8 @@ pub struct SearchRequest {
     /// should return structured diagnostics rather than partial matches.
     #[prost(string, tag = "4")]
     pub query: ::prost::alloc::string::String,
-    /// Optional filters reserved for future metadata/hybrid search composition.
+    /// Optional hard eligibility filters. Filters constrain which candidate nodes
+    /// may be returned and do not contribute to score.
     #[prost(message, optional, tag = "5")]
     pub filters: ::core::option::Option<SearchFilters>,
     /// Maximum number of results to return. The daemon may cap this value.
@@ -1841,6 +1842,15 @@ pub struct SearchRequest {
     /// known. A value of 0 leaves the limit unset.
     #[prost(int64, tag = "10")]
     pub max_revision_lag: i64,
+    /// Hybrid-specific options. Used when mode is SEARCH_MODE_HYBRID.
+    #[prost(message, optional, tag = "11")]
+    pub hybrid: ::core::option::Option<HybridSearchOptions>,
+    /// Semantic candidate retrieval options used by hybrid mode.
+    #[prost(message, optional, tag = "12")]
+    pub semantic: ::core::option::Option<SemanticSearchOptions>,
+    /// Lexical candidate retrieval options used by lexical and hybrid modes.
+    #[prost(message, optional, tag = "13")]
+    pub lexical: ::core::option::Option<LexicalSearchOptions>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchResponse {
@@ -1882,12 +1892,86 @@ pub struct SearchResult {
     pub matched_field_paths: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(message, repeated, tag = "9")]
     pub score_components: ::prost::alloc::vec::Vec<SearchScoreComponent>,
+    /// Machine-readable source diagnostics for fused/hybrid results.
+    #[prost(message, repeated, tag = "10")]
+    pub sources: ::prost::alloc::vec::Vec<SearchResultSource>,
 }
-/// Reserved seam for future structured metadata filters. This empty message is
-/// intentionally present so clients can construct stable request shapes before
-/// hybrid/filter support lands.
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SearchFilters {}
+pub struct HybridSearchOptions {
+    /// Defaults to 0.5. The server normalizes non-zero weights, so 2/1 is
+    /// equivalent to 0.6667/0.3333.
+    #[prost(double, tag = "1")]
+    pub lexical_weight: f64,
+    /// Defaults to 0.5. The server normalizes non-zero weights.
+    #[prost(double, tag = "2")]
+    pub semantic_weight: f64,
+    /// Defaults to weighted reciprocal-rank fusion.
+    #[prost(enumeration = "HybridFusionStrategy", tag = "3")]
+    pub fusion_strategy: i32,
+    /// When false, a node may match either lexical or semantic retrieval. When
+    /// true, only nodes present in both result sets are returned.
+    #[prost(bool, tag = "4")]
+    pub require_both: bool,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct LexicalSearchOptions {
+    /// Number of lexical candidates to retrieve before filtering/fusion. If unset,
+    /// the daemon chooses a bounded default.
+    #[prost(int32, tag = "1")]
+    pub candidate_count: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticSearchOptions {
+    /// Optional. If omitted, the daemon searches all enabled searchable semantic
+    /// rule bindings for the domain that the caller can read.
+    #[prost(string, optional, tag = "1")]
+    pub semantic_rule_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Optional. Requires semantic_rule_id when set.
+    #[prost(string, optional, tag = "2")]
+    pub embedding_binding_key: ::core::option::Option<::prost::alloc::string::String>,
+    /// Optional minimum score threshold. Score meaning is model dependent but
+    /// higher scores should represent more relevant results.
+    #[prost(double, optional, tag = "3")]
+    pub min_score: ::core::option::Option<f64>,
+    /// Number of semantic candidates to retrieve before filtering/fusion. If unset,
+    /// the daemon chooses a bounded default.
+    #[prost(int32, tag = "4")]
+    pub candidate_count: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchFilters {
+    /// All listed labels must be present on a candidate node.
+    #[prost(string, repeated, tag = "1")]
+    pub node_labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// All listed property filters must match a candidate node.
+    #[prost(message, repeated, tag = "2")]
+    pub properties: ::prost::alloc::vec::Vec<PropertyFilter>,
+    /// Optional candidate node allow-list. If set, only these node IDs may be
+    /// returned.
+    #[prost(string, repeated, tag = "3")]
+    pub node_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PropertyFilter {
+    /// Dot-separated property path, for example "status" or "metadata.tags".
+    #[prost(string, tag = "1")]
+    pub path: ::prost::alloc::string::String,
+    #[prost(enumeration = "FilterOperator", tag = "2")]
+    pub operator: i32,
+    #[prost(string, repeated, tag = "3")]
+    pub values: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SearchResultSource {
+    #[prost(enumeration = "SearchResultSourceKind", tag = "1")]
+    pub kind: i32,
+    #[prost(double, tag = "2")]
+    pub raw_score: f64,
+    #[prost(int32, tag = "3")]
+    pub rank: i32,
+    #[prost(double, tag = "4")]
+    pub normalized_score: f64,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchFreshness {
     #[prost(enumeration = "SearchFreshnessState", tag = "1")]
@@ -1983,6 +2067,7 @@ pub struct LexicalIndexStatus {
 pub enum SearchMode {
     Unspecified = 0,
     Lexical = 1,
+    Hybrid = 2,
 }
 impl SearchMode {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -1993,6 +2078,7 @@ impl SearchMode {
         match self {
             Self::Unspecified => "SEARCH_MODE_UNSPECIFIED",
             Self::Lexical => "SEARCH_MODE_LEXICAL",
+            Self::Hybrid => "SEARCH_MODE_HYBRID",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -2000,6 +2086,7 @@ impl SearchMode {
         match value {
             "SEARCH_MODE_UNSPECIFIED" => Some(Self::Unspecified),
             "SEARCH_MODE_LEXICAL" => Some(Self::Lexical),
+            "SEARCH_MODE_HYBRID" => Some(Self::Hybrid),
             _ => None,
         }
     }
@@ -2009,6 +2096,7 @@ impl SearchMode {
 pub enum SearchScoreKind {
     Unspecified = 0,
     Bm25 = 1,
+    HybridFused = 2,
 }
 impl SearchScoreKind {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -2019,6 +2107,7 @@ impl SearchScoreKind {
         match self {
             Self::Unspecified => "SEARCH_SCORE_KIND_UNSPECIFIED",
             Self::Bm25 => "SEARCH_SCORE_KIND_BM25",
+            Self::HybridFused => "SEARCH_SCORE_KIND_HYBRID_FUSED",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -2026,6 +2115,106 @@ impl SearchScoreKind {
         match value {
             "SEARCH_SCORE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
             "SEARCH_SCORE_KIND_BM25" => Some(Self::Bm25),
+            "SEARCH_SCORE_KIND_HYBRID_FUSED" => Some(Self::HybridFused),
+            _ => None,
+        }
+    }
+}
+/// HybridFusionStrategy controls how independently ranked candidate sets are
+/// merged. V1 supports weighted reciprocal-rank fusion.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum HybridFusionStrategy {
+    Unspecified = 0,
+    WeightedReciprocalRank = 1,
+}
+impl HybridFusionStrategy {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "HYBRID_FUSION_STRATEGY_UNSPECIFIED",
+            Self::WeightedReciprocalRank => {
+                "HYBRID_FUSION_STRATEGY_WEIGHTED_RECIPROCAL_RANK"
+            }
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "HYBRID_FUSION_STRATEGY_UNSPECIFIED" => Some(Self::Unspecified),
+            "HYBRID_FUSION_STRATEGY_WEIGHTED_RECIPROCAL_RANK" => {
+                Some(Self::WeightedReciprocalRank)
+            }
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum FilterOperator {
+    Unspecified = 0,
+    Equals = 1,
+    NotEquals = 2,
+    In = 3,
+    Contains = 4,
+    Exists = 5,
+}
+impl FilterOperator {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "FILTER_OPERATOR_UNSPECIFIED",
+            Self::Equals => "FILTER_OPERATOR_EQUALS",
+            Self::NotEquals => "FILTER_OPERATOR_NOT_EQUALS",
+            Self::In => "FILTER_OPERATOR_IN",
+            Self::Contains => "FILTER_OPERATOR_CONTAINS",
+            Self::Exists => "FILTER_OPERATOR_EXISTS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "FILTER_OPERATOR_UNSPECIFIED" => Some(Self::Unspecified),
+            "FILTER_OPERATOR_EQUALS" => Some(Self::Equals),
+            "FILTER_OPERATOR_NOT_EQUALS" => Some(Self::NotEquals),
+            "FILTER_OPERATOR_IN" => Some(Self::In),
+            "FILTER_OPERATOR_CONTAINS" => Some(Self::Contains),
+            "FILTER_OPERATOR_EXISTS" => Some(Self::Exists),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SearchResultSourceKind {
+    Unspecified = 0,
+    Lexical = 1,
+    Semantic = 2,
+}
+impl SearchResultSourceKind {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEARCH_RESULT_SOURCE_KIND_UNSPECIFIED",
+            Self::Lexical => "SEARCH_RESULT_SOURCE_KIND_LEXICAL",
+            Self::Semantic => "SEARCH_RESULT_SOURCE_KIND_SEMANTIC",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEARCH_RESULT_SOURCE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEARCH_RESULT_SOURCE_KIND_LEXICAL" => Some(Self::Lexical),
+            "SEARCH_RESULT_SOURCE_KIND_SEMANTIC" => Some(Self::Semantic),
             _ => None,
         }
     }
@@ -2080,8 +2269,8 @@ pub mod search_service_client {
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     /// SearchService exposes first-class search over graph content. V1 supports
-    /// lexical search for one space/domain. Future modes may add semantic, metadata,
-    /// or hybrid orchestration without changing the existing lexical contract.
+    /// lexical search for one space/domain and hybrid lexical + semantic search.
+    /// Metadata filters are hard eligibility constraints, not scoring signals.
     #[derive(Debug, Clone)]
     pub struct SearchServiceClient<T> {
         inner: tonic::client::Grpc<T>,
