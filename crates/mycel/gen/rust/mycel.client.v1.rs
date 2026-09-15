@@ -2721,8 +2721,10 @@ pub struct UploadBlobMetadata {
     #[prost(string, tag = "1")]
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub declared_mime_type: ::prost::alloc::string::String,
+    pub domain_id: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
+    pub declared_mime_type: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
     pub original_filename: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2735,6 +2737,8 @@ pub struct DownloadBlobRequest {
     #[prost(string, tag = "1")]
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
     pub blob_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2757,6 +2761,8 @@ pub struct GetBlobRequest {
     #[prost(string, tag = "1")]
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
     pub blob_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2769,6 +2775,8 @@ pub struct DeleteBlobRequest {
     #[prost(string, tag = "1")]
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
     pub blob_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2783,22 +2791,24 @@ pub struct Blob {
     pub blob_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub domain_id: ::prost::alloc::string::String,
     /// Content digest, for example sha256:<hex>. The exact digest algorithm is
     /// daemon-defined but should be stable enough for deduplication and integrity
     /// checks.
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "4")]
     pub digest: ::prost::alloc::string::String,
-    #[prost(int64, tag = "4")]
+    #[prost(int64, tag = "5")]
     pub size_bytes: i64,
     /// Authoritative MIME type determined by the daemon when possible.
-    #[prost(string, tag = "5")]
+    #[prost(string, tag = "6")]
     pub mime_type: ::prost::alloc::string::String,
     /// Client-declared MIME type, if supplied.
-    #[prost(string, tag = "6")]
-    pub declared_mime_type: ::prost::alloc::string::String,
     #[prost(string, tag = "7")]
+    pub declared_mime_type: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
     pub original_filename: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "8")]
+    #[prost(message, optional, tag = "9")]
     pub create_time: ::core::option::Option<::prost_types::Timestamp>,
 }
 /// Generated client implementations.
