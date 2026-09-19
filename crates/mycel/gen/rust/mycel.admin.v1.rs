@@ -2608,6 +2608,9 @@ pub struct ClusterPeer {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterReadiness {
+    /// client_ready is the top-level readiness signal intended for service
+    /// readiness probes. In clustered Raft mode it is true only when write_ready is
+    /// true, so write-heavy dependents do not start before Raft leaders exist.
     #[prost(bool, tag = "1")]
     pub client_ready: bool,
     #[prost(bool, tag = "2")]
@@ -2624,6 +2627,26 @@ pub struct ClusterReadiness {
     pub expected_member_count: i32,
     #[prost(string, repeated, tag = "8")]
     pub readiness_blockers: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// process_ready means the daemon process is serving authenticated admin API
+    /// requests. It does not imply cluster metadata, Raft, read, or write safety.
+    #[prost(bool, tag = "9")]
+    pub process_ready: bool,
+    /// metadata_ready means authoritative cluster metadata is applied and
+    /// validated for this node.
+    #[prost(bool, tag = "10")]
+    pub metadata_ready: bool,
+    /// raft_ready means local Raft groups needed by this node are started and have
+    /// elected/known leaders.
+    #[prost(bool, tag = "11")]
+    pub raft_ready: bool,
+    /// read_ready means client reads can safely route through the current cluster
+    /// authority/read paths.
+    #[prost(bool, tag = "12")]
+    pub read_ready: bool,
+    /// write_ready means schema and graph-partition writes can route to known Raft
+    /// leaders. In clustered mode this is stronger than partition_groups_started.
+    #[prost(bool, tag = "13")]
+    pub write_ready: bool,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListClusterMembersRequest {}
