@@ -6,6 +6,16 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.15.0] - 2026-09-18
+
+### Added
+
+- Regenerated Rust `prost`/`tonic` bindings for `mycel-api` v0.15.0, including dimensioned cluster readiness fields.
+
+### Changed
+
+- Aligned published crate versions with the coordinated MycelDB v0.15.0 release train.
+
 ## [v0.12.0] - 2026-09-09
 
 ### Added
