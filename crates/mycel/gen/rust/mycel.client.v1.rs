@@ -3409,7 +3409,10 @@ pub struct EdgeCreate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GraphOperation {
-    #[prost(oneof = "graph_operation::Operation", tags = "1, 2, 3, 4, 5, 6, 7, 8, 9")]
+    #[prost(
+        oneof = "graph_operation::Operation",
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+    )]
     pub operation: ::core::option::Option<graph_operation::Operation>,
 }
 /// Nested message and enum types in `GraphOperation`.
@@ -3434,13 +3437,15 @@ pub mod graph_operation {
         MoveSubtree(super::SubtreeMove),
         #[prost(message, tag = "9")]
         ReorderChildren(super::ChildrenReorder),
+        #[prost(message, tag = "10")]
+        ReplaceReferences(super::ReferencesReplace),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GraphOperationResult {
     #[prost(
         oneof = "graph_operation_result::Result",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
     )]
     pub result: ::core::option::Option<graph_operation_result::Result>,
 }
@@ -3466,6 +3471,8 @@ pub mod graph_operation_result {
         MovedSubtreeEdge(super::Edge),
         #[prost(message, tag = "9")]
         ReorderedChildren(super::ChildrenReorderResult),
+        #[prost(message, tag = "10")]
+        ReplacedReferences(super::ReferencesReplaceResult),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -3531,6 +3538,82 @@ pub struct ChildrenReorder {
 pub struct ChildrenReorderResult {
     #[prost(message, repeated, tag = "1")]
     pub contains_edges: ::prost::alloc::vec::Vec<Edge>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferencesReplace {
+    #[prost(string, tag = "1")]
+    pub source_node_id: ::prost::alloc::string::String,
+    /// Labels identify the outgoing reference edge set. Existing edges match when
+    /// they contain every label. New edges are created with exactly these labels.
+    #[prost(string, repeated, tag = "2")]
+    pub labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "3")]
+    pub targets: ::prost::alloc::vec::Vec<ReferenceTarget>,
+    #[prost(enumeration = "ReferenceReplacementMode", tag = "4")]
+    pub mode: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferenceTarget {
+    #[prost(string, tag = "1")]
+    pub target_node_id: ::prost::alloc::string::String,
+    /// Optional client-supplied edge id for newly-created references.
+    #[prost(string, optional, tag = "2")]
+    pub edge_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// When present for an existing reference, these fields replace the existing
+    /// edge fields. Omit a field to leave that field unchanged on existing edges.
+    #[prost(message, optional, tag = "3")]
+    pub properties: ::core::option::Option<::prost_types::Struct>,
+    #[prost(message, optional, tag = "4")]
+    pub payload: ::core::option::Option<::prost_types::Struct>,
+    #[prost(message, optional, tag = "5")]
+    pub meta: ::core::option::Option<::prost_types::Struct>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferencesReplaceResult {
+    #[prost(message, repeated, tag = "1")]
+    pub added_edges: ::prost::alloc::vec::Vec<Edge>,
+    #[prost(message, repeated, tag = "2")]
+    pub updated_edges: ::prost::alloc::vec::Vec<Edge>,
+    #[prost(string, repeated, tag = "3")]
+    pub deleted_edge_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+/// ReferenceReplacementMode controls how ReferencesReplace reconciles outgoing
+/// reference edges for source_node_id and labels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ReferenceReplacementMode {
+    /// Defaults to REFERENCE_REPLACEMENT_MODE_REPLACE for backwards-safe clients.
+    Unspecified = 0,
+    /// Make the matching outgoing reference set exactly match targets.
+    Replace = 1,
+    /// Add/update only listed targets and leave other matching references intact.
+    Add = 2,
+    /// Remove listed targets; if targets is empty, remove all matching references.
+    Remove = 3,
+}
+impl ReferenceReplacementMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "REFERENCE_REPLACEMENT_MODE_UNSPECIFIED",
+            Self::Replace => "REFERENCE_REPLACEMENT_MODE_REPLACE",
+            Self::Add => "REFERENCE_REPLACEMENT_MODE_ADD",
+            Self::Remove => "REFERENCE_REPLACEMENT_MODE_REMOVE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "REFERENCE_REPLACEMENT_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "REFERENCE_REPLACEMENT_MODE_REPLACE" => Some(Self::Replace),
+            "REFERENCE_REPLACEMENT_MODE_ADD" => Some(Self::Add),
+            "REFERENCE_REPLACEMENT_MODE_REMOVE" => Some(Self::Remove),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod graph_service_client {
