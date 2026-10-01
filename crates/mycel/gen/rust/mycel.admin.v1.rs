@@ -2306,6 +2306,35 @@ pub struct ListRaftGroupsResponse {
     pub groups: ::prost::alloc::vec::Vec<RaftGroupStatus>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateRaftSnapshotRequest {
+    /// Optional local group IDs to snapshot. When empty, all local raft groups are snapshotted.
+    #[prost(string, repeated, tag = "1")]
+    pub group_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Compact raft logs through the snapshot index after successful snapshot creation.
+    #[prost(bool, tag = "2")]
+    pub compact: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateRaftSnapshotResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub results: ::prost::alloc::vec::Vec<RaftSnapshotResult>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RaftSnapshotResult {
+    #[prost(string, tag = "1")]
+    pub group_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "2")]
+    pub snapshot_index: u64,
+    #[prost(bool, tag = "3")]
+    pub compacted: bool,
+    #[prost(string, tag = "4")]
+    pub error: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "5")]
+    pub before: ::core::option::Option<RaftGroupStatus>,
+    #[prost(message, optional, tag = "6")]
+    pub after: ::core::option::Option<RaftGroupStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RaftGroupStatus {
     #[prost(string, tag = "1")]
     pub group_id: ::prost::alloc::string::String,
@@ -2520,6 +2549,150 @@ pub struct GraphForensicEntity {
     pub checksum: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub canonical_json: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateGraphCheckpointRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateGraphCheckpointResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<GraphCheckpointStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetGraphCheckpointStatusRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetGraphCheckpointStatusResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<GraphCheckpointStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GraphCheckpointStatus {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub current_revision: u64,
+    #[prost(bool, tag = "4")]
+    pub checkpoint_present: bool,
+    #[prost(uint64, tag = "5")]
+    pub checkpoint_revision: u64,
+    #[prost(string, tag = "6")]
+    pub checkpoint_created_at: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "7")]
+    pub node_count: u64,
+    #[prost(uint64, tag = "8")]
+    pub edge_count: u64,
+    #[prost(string, tag = "9")]
+    pub graph_checksum: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub checksum_algorithm: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "11")]
+    pub tail_revisions: u64,
+    #[prost(string, tag = "12")]
+    pub source: ::prost::alloc::string::String,
+    #[prost(bool, tag = "13")]
+    pub auto_checkpoint_enabled: bool,
+    #[prost(uint64, tag = "14")]
+    pub auto_checkpoint_revision_threshold: u64,
+    #[prost(string, tag = "15")]
+    pub auto_checkpoint_interval: ::prost::alloc::string::String,
+    #[prost(string, tag = "16")]
+    pub last_checkpoint_attempt_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "17")]
+    pub last_checkpoint_success_at: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "18")]
+    pub last_checkpoint_duration_ms: u64,
+    #[prost(string, tag = "19")]
+    pub last_checkpoint_error: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "20")]
+    pub checkpoint_age_seconds: u64,
+    #[prost(message, optional, tag = "21")]
+    pub persistent_index: ::core::option::Option<GraphPersistentIndexStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GraphPersistentIndexStatus {
+    #[prost(bool, tag = "1")]
+    pub present: bool,
+    #[prost(string, tag = "2")]
+    pub index_set_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub index_format: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "4")]
+    pub graph_revision: u64,
+    #[prost(string, tag = "5")]
+    pub graph_checksum: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub checksum_algorithm: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub graph_checkpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub created_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub load_result: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub fallback_reason: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "11")]
+    pub entries: ::prost::alloc::vec::Vec<GraphPersistentIndexEntryStatus>,
+    #[prost(message, repeated, tag = "12")]
+    pub query_indexes: ::prost::alloc::vec::Vec<GraphPersistentQueryIndexStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GraphPersistentIndexEntryStatus {
+    #[prost(string, tag = "1")]
+    pub kind: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub path: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub entry_count: u64,
+    #[prost(string, tag = "4")]
+    pub checksum: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GraphPersistentQueryIndexStatus {
+    #[prost(string, tag = "1")]
+    pub identity: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub schema_hash: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub definition_fingerprint: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub target_kind: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub target_type: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "8")]
+    pub labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, tag = "9")]
+    pub field_namespace: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub field_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub index_kind: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub direction: ::prost::alloc::string::String,
+    #[prost(string, tag = "13")]
+    pub build_state: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "14")]
+    pub last_indexed_graph_revision: u64,
+    #[prost(int32, tag = "15")]
+    pub key_encoding_version: i32,
+    #[prost(uint64, tag = "16")]
+    pub entry_count: u64,
+    #[prost(string, tag = "17")]
+    pub load_result: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LocalGraphConsistencyStats {
@@ -3354,6 +3527,38 @@ pub mod admin_cluster_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// CreateRaftSnapshot creates local Raft snapshots on this daemon's groups.
+        /// This is an operator/debug operation used to exercise raft snapshot catch-up;
+        /// it does not create graph checkpoints, backups, or cross-node snapshots.
+        pub async fn create_raft_snapshot(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CreateRaftSnapshotRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateRaftSnapshotResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminClusterService/CreateRaftSnapshot",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminClusterService",
+                        "CreateRaftSnapshot",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
         /// LookupSpaceRoute returns the Raft partition and replica set for a space ID.
         pub async fn lookup_space_route(
             &mut self,
@@ -3477,6 +3682,69 @@ pub mod admin_cluster_service_client {
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminClusterService",
                         "GetLocalGraphForensicExport",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// CreateGraphCheckpoint writes a local derived graph checkpoint for one
+        /// space/domain after the daemon has applied committed graph state. It is a
+        /// local storage operation, not a Raft snapshot or backup.
+        pub async fn create_graph_checkpoint(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CreateGraphCheckpointRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateGraphCheckpointResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminClusterService/CreateGraphCheckpoint",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminClusterService",
+                        "CreateGraphCheckpoint",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// GetGraphCheckpointStatus returns local latest checkpoint status for one
+        /// space/domain. It is read-only and does not collect from peers.
+        pub async fn get_graph_checkpoint_status(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetGraphCheckpointStatusRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetGraphCheckpointStatusResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminClusterService/GetGraphCheckpointStatus",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminClusterService",
+                        "GetGraphCheckpointStatus",
                     ),
                 );
             self.inner.unary(req, path, codec).await
