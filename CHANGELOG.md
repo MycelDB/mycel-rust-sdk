@@ -6,6 +6,16 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.17.0] - 2026-09-30
+
+### Added
+
+- Regenerated Rust `prost`/`tonic` bindings for `mycel-api` v0.17.0, including client space export job APIs, admin Raft snapshot APIs, and graph checkpoint/index status fields.
+
+### Changed
+
+- Aligned published crate versions with the coordinated MycelDB v0.17.0 release train.
+
 ## [v0.16.0] - 2026-09-24
 
 ### Added
