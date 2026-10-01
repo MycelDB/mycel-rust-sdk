@@ -3409,7 +3409,10 @@ pub struct EdgeCreate {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GraphOperation {
-    #[prost(oneof = "graph_operation::Operation", tags = "1, 2, 3, 4, 5, 6, 7, 8, 9")]
+    #[prost(
+        oneof = "graph_operation::Operation",
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+    )]
     pub operation: ::core::option::Option<graph_operation::Operation>,
 }
 /// Nested message and enum types in `GraphOperation`.
@@ -3434,13 +3437,15 @@ pub mod graph_operation {
         MoveSubtree(super::SubtreeMove),
         #[prost(message, tag = "9")]
         ReorderChildren(super::ChildrenReorder),
+        #[prost(message, tag = "10")]
+        ReplaceReferences(super::ReferencesReplace),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GraphOperationResult {
     #[prost(
         oneof = "graph_operation_result::Result",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
     )]
     pub result: ::core::option::Option<graph_operation_result::Result>,
 }
@@ -3466,6 +3471,8 @@ pub mod graph_operation_result {
         MovedSubtreeEdge(super::Edge),
         #[prost(message, tag = "9")]
         ReorderedChildren(super::ChildrenReorderResult),
+        #[prost(message, tag = "10")]
+        ReplacedReferences(super::ReferencesReplaceResult),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -3531,6 +3538,82 @@ pub struct ChildrenReorder {
 pub struct ChildrenReorderResult {
     #[prost(message, repeated, tag = "1")]
     pub contains_edges: ::prost::alloc::vec::Vec<Edge>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferencesReplace {
+    #[prost(string, tag = "1")]
+    pub source_node_id: ::prost::alloc::string::String,
+    /// Labels identify the outgoing reference edge set. Existing edges match when
+    /// they contain every label. New edges are created with exactly these labels.
+    #[prost(string, repeated, tag = "2")]
+    pub labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "3")]
+    pub targets: ::prost::alloc::vec::Vec<ReferenceTarget>,
+    #[prost(enumeration = "ReferenceReplacementMode", tag = "4")]
+    pub mode: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferenceTarget {
+    #[prost(string, tag = "1")]
+    pub target_node_id: ::prost::alloc::string::String,
+    /// Optional client-supplied edge id for newly-created references.
+    #[prost(string, optional, tag = "2")]
+    pub edge_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// When present for an existing reference, these fields replace the existing
+    /// edge fields. Omit a field to leave that field unchanged on existing edges.
+    #[prost(message, optional, tag = "3")]
+    pub properties: ::core::option::Option<::prost_types::Struct>,
+    #[prost(message, optional, tag = "4")]
+    pub payload: ::core::option::Option<::prost_types::Struct>,
+    #[prost(message, optional, tag = "5")]
+    pub meta: ::core::option::Option<::prost_types::Struct>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReferencesReplaceResult {
+    #[prost(message, repeated, tag = "1")]
+    pub added_edges: ::prost::alloc::vec::Vec<Edge>,
+    #[prost(message, repeated, tag = "2")]
+    pub updated_edges: ::prost::alloc::vec::Vec<Edge>,
+    #[prost(string, repeated, tag = "3")]
+    pub deleted_edge_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+/// ReferenceReplacementMode controls how ReferencesReplace reconciles outgoing
+/// reference edges for source_node_id and labels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ReferenceReplacementMode {
+    /// Defaults to REFERENCE_REPLACEMENT_MODE_REPLACE for backwards-safe clients.
+    Unspecified = 0,
+    /// Make the matching outgoing reference set exactly match targets.
+    Replace = 1,
+    /// Add/update only listed targets and leave other matching references intact.
+    Add = 2,
+    /// Remove listed targets; if targets is empty, remove all matching references.
+    Remove = 3,
+}
+impl ReferenceReplacementMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "REFERENCE_REPLACEMENT_MODE_UNSPECIFIED",
+            Self::Replace => "REFERENCE_REPLACEMENT_MODE_REPLACE",
+            Self::Add => "REFERENCE_REPLACEMENT_MODE_ADD",
+            Self::Remove => "REFERENCE_REPLACEMENT_MODE_REMOVE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "REFERENCE_REPLACEMENT_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "REFERENCE_REPLACEMENT_MODE_REPLACE" => Some(Self::Replace),
+            "REFERENCE_REPLACEMENT_MODE_ADD" => Some(Self::Add),
+            "REFERENCE_REPLACEMENT_MODE_REMOVE" => Some(Self::Remove),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod graph_service_client {
@@ -5038,6 +5121,126 @@ pub struct ImportDomainResponse {
     pub summary: ::core::option::Option<ImportSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSpaceExportRequest {
+    #[prost(message, optional, tag = "1")]
+    pub options: ::core::option::Option<SpaceExportOptions>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSpaceExportResponse {
+    #[prost(message, optional, tag = "1")]
+    pub job: ::core::option::Option<SpaceExportJob>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSpaceExportRequest {
+    #[prost(string, tag = "1")]
+    pub export_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSpaceExportResponse {
+    #[prost(message, optional, tag = "1")]
+    pub job: ::core::option::Option<SpaceExportJob>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSpaceExportsRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "2")]
+    pub page_size: i32,
+    #[prost(string, tag = "3")]
+    pub page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSpaceExportsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub jobs: ::prost::alloc::vec::Vec<SpaceExportJob>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DownloadSpaceExportRequest {
+    #[prost(string, tag = "1")]
+    pub export_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DownloadSpaceExportResponse {
+    #[prost(bytes = "vec", tag = "1")]
+    pub chunk: ::prost::alloc::vec::Vec<u8>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSpaceExportRequest {
+    #[prost(string, tag = "1")]
+    pub export_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSpaceExportResponse {
+    #[prost(string, tag = "1")]
+    pub export_id: ::prost::alloc::string::String,
+    #[prost(bool, tag = "2")]
+    pub deleted: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SpaceExportOptions {
+    /// Required target space. The authenticated principal must be allowed to read
+    /// the space and every requested domain.
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    /// Optional domain selection. If empty, the export includes all visible
+    /// non-system domains in the space, plus system domains when
+    /// include_system_domains is true.
+    #[prost(string, repeated, tag = "2")]
+    pub domain_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(bool, tag = "3")]
+    pub include_blobs: bool,
+    #[prost(bool, tag = "4")]
+    pub include_system_domains: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SpaceExportJob {
+    #[prost(string, tag = "1")]
+    pub export_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "SpaceExportStatus", tag = "2")]
+    pub status: i32,
+    #[prost(string, tag = "3")]
+    pub format_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub filename: ::prost::alloc::string::String,
+    #[prost(int64, tag = "5")]
+    pub size_bytes: i64,
+    #[prost(int32, tag = "6")]
+    pub progress_percent: i32,
+    #[prost(message, optional, tag = "7")]
+    pub counts: ::core::option::Option<SpaceExportCounts>,
+    #[prost(string, tag = "8")]
+    pub error_message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "9")]
+    pub create_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "10")]
+    pub update_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "11")]
+    pub complete_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "12")]
+    pub expire_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "13")]
+    pub options: ::core::option::Option<SpaceExportOptions>,
+    #[prost(string, tag = "14")]
+    pub requested_by_principal_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SpaceExportCounts {
+    #[prost(int32, tag = "1")]
+    pub spaces: i32,
+    #[prost(int32, tag = "2")]
+    pub domains: i32,
+    #[prost(int32, tag = "3")]
+    pub nodes: i32,
+    #[prost(int32, tag = "4")]
+    pub edges: i32,
+    #[prost(int32, tag = "5")]
+    pub blobs: i32,
+    #[prost(int32, tag = "6")]
+    pub files: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ImportDomainMetadata {
     /// Read-write transaction id. The transaction determines target space/domain.
     #[prost(string, tag = "1")]
@@ -5167,6 +5370,47 @@ pub struct BlobImportChunk {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+pub enum SpaceExportStatus {
+    Unspecified = 0,
+    Queued = 1,
+    Running = 2,
+    Succeeded = 3,
+    Failed = 4,
+    Deleted = 5,
+    Expired = 6,
+}
+impl SpaceExportStatus {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SPACE_EXPORT_STATUS_UNSPECIFIED",
+            Self::Queued => "SPACE_EXPORT_STATUS_QUEUED",
+            Self::Running => "SPACE_EXPORT_STATUS_RUNNING",
+            Self::Succeeded => "SPACE_EXPORT_STATUS_SUCCEEDED",
+            Self::Failed => "SPACE_EXPORT_STATUS_FAILED",
+            Self::Deleted => "SPACE_EXPORT_STATUS_DELETED",
+            Self::Expired => "SPACE_EXPORT_STATUS_EXPIRED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SPACE_EXPORT_STATUS_UNSPECIFIED" => Some(Self::Unspecified),
+            "SPACE_EXPORT_STATUS_QUEUED" => Some(Self::Queued),
+            "SPACE_EXPORT_STATUS_RUNNING" => Some(Self::Running),
+            "SPACE_EXPORT_STATUS_SUCCEEDED" => Some(Self::Succeeded),
+            "SPACE_EXPORT_STATUS_FAILED" => Some(Self::Failed),
+            "SPACE_EXPORT_STATUS_DELETED" => Some(Self::Deleted),
+            "SPACE_EXPORT_STATUS_EXPIRED" => Some(Self::Expired),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
 pub enum DomainExportFormat {
     Unspecified = 0,
     MycelStream = 1,
@@ -5276,8 +5520,8 @@ pub mod import_export_service_client {
     )]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
-    /// ImportExportService provides client/application data portability for a domain.
-    /// It is distinct from admin backup/restore. Format-specific importers such as
+    /// ImportExportService provides client/application data portability for domains
+    /// and space-scoped export artifacts. It is distinct from admin backup/restore. Format-specific importers such as
     /// Logseq importers convert source data into Mycel-native import streams before
     /// calling this service.
     #[derive(Debug, Clone)]
@@ -5421,6 +5665,162 @@ pub mod import_export_service_client {
                     ),
                 );
             self.inner.client_streaming(req, path, codec).await
+        }
+        /// CreateSpaceExport starts a ZIP export job for one authorized space. The job
+        /// can include one or more domains and produces a downloadable artifact stored
+        /// by the daemon for a bounded retention window.
+        pub async fn create_space_export(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CreateSpaceExportRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateSpaceExportResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.ImportExportService/CreateSpaceExport",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.ImportExportService",
+                        "CreateSpaceExport",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// GetSpaceExport returns status/progress and artifact metadata for a job
+        /// created by the authenticated principal.
+        pub async fn get_space_export(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetSpaceExportRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSpaceExportResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.ImportExportService/GetSpaceExport",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.ImportExportService",
+                        "GetSpaceExport",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// ListSpaceExports lists recent export jobs created by the authenticated
+        /// principal, optionally filtered by space.
+        pub async fn list_space_exports(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ListSpaceExportsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListSpaceExportsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.ImportExportService/ListSpaceExports",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.ImportExportService",
+                        "ListSpaceExports",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// DownloadSpaceExport streams a completed artifact created by the
+        /// authenticated principal.
+        pub async fn download_space_export(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DownloadSpaceExportRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::DownloadSpaceExportResponse>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.ImportExportService/DownloadSpaceExport",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.ImportExportService",
+                        "DownloadSpaceExport",
+                    ),
+                );
+            self.inner.server_streaming(req, path, codec).await
+        }
+        /// DeleteSpaceExport removes an artifact/job created by the authenticated
+        /// principal before automatic expiry.
+        pub async fn delete_space_export(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DeleteSpaceExportRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteSpaceExportResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.ImportExportService/DeleteSpaceExport",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.ImportExportService",
+                        "DeleteSpaceExport",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
         }
     }
 }
