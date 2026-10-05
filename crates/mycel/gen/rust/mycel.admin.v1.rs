@@ -1683,16 +1683,24 @@ pub struct DeleteBackupResponse {
     pub backup_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TriggerClusterBackupRequest {
+pub struct StartClusterBackupRequest {
     #[prost(string, tag = "1")]
     pub reason: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub output_dir: ::prost::alloc::string::String,
     #[prost(enumeration = "BackupArchiveFormat", tag = "3")]
     pub archive_format: i32,
+    /// Optional client-provided key for idempotent start retries. Servers may return the existing
+    /// operation for the same key instead of creating a duplicate operation.
+    #[prost(string, tag = "4")]
+    pub idempotency_key: ::prost::alloc::string::String,
+    /// Optional maximum time the operation may remain waiting for cluster convergence before failing.
+    /// Zero means the server default applies.
+    #[prost(int64, tag = "5")]
+    pub convergence_timeout_seconds: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TriggerClusterBackupResponse {
+pub struct StartClusterBackupResponse {
     #[prost(message, optional, tag = "1")]
     pub status: ::core::option::Option<ClusterBackupStatus>,
     #[prost(message, optional, tag = "2")]
@@ -1705,6 +1713,18 @@ pub struct GetClusterBackupStatusRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetClusterBackupStatusResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<ClusterBackupStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CancelClusterBackupRequest {
+    #[prost(string, tag = "1")]
+    pub backup_set_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub reason: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CancelClusterBackupResponse {
     #[prost(message, optional, tag = "1")]
     pub status: ::core::option::Option<ClusterBackupStatus>,
 }
@@ -1764,6 +1784,35 @@ pub struct ClusterBackupStatus {
     pub error: ::prost::alloc::string::String,
     #[prost(map = "string, uint64", tag = "13")]
     pub raft_barriers: ::std::collections::HashMap<::prost::alloc::string::String, u64>,
+    #[prost(enumeration = "ClusterBackupState", tag = "14")]
+    pub state_code: i32,
+    #[prost(message, repeated, tag = "15")]
+    pub blockers: ::prost::alloc::vec::Vec<ClusterBackupBlocker>,
+    #[prost(bool, tag = "16")]
+    pub cancel_requested: bool,
+    #[prost(string, tag = "17")]
+    pub current_phase: ::prost::alloc::string::String,
+    #[prost(int64, tag = "18")]
+    pub retry_after_seconds: i64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterBackupBlocker {
+    #[prost(string, tag = "1")]
+    pub node_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub node_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub raft_node_id: u64,
+    #[prost(string, tag = "4")]
+    pub raft_group: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub reason: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "6")]
+    pub applied_index: u64,
+    #[prost(uint64, tag = "7")]
+    pub commit_index: u64,
+    #[prost(string, tag = "8")]
+    pub detail: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterBackupSetSummary {
@@ -1844,6 +1893,64 @@ impl BackupArchiveFormat {
             "BACKUP_ARCHIVE_FORMAT_TAR" => Some(Self::Tar),
             "BACKUP_ARCHIVE_FORMAT_TAR_GZ" => Some(Self::TarGz),
             "BACKUP_ARCHIVE_FORMAT_TAR_ZST" => Some(Self::TarZst),
+            _ => None,
+        }
+    }
+}
+/// ClusterBackupState identifies the lifecycle state of an asynchronous cluster backup operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ClusterBackupState {
+    Unspecified = 0,
+    Pending = 1,
+    WaitingForClusterConvergence = 2,
+    Ready = 3,
+    Quiescing = 4,
+    Capturing = 5,
+    Validating = 6,
+    Succeeded = 7,
+    Failed = 8,
+    Canceling = 9,
+    Canceled = 10,
+}
+impl ClusterBackupState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "CLUSTER_BACKUP_STATE_UNSPECIFIED",
+            Self::Pending => "CLUSTER_BACKUP_STATE_PENDING",
+            Self::WaitingForClusterConvergence => {
+                "CLUSTER_BACKUP_STATE_WAITING_FOR_CLUSTER_CONVERGENCE"
+            }
+            Self::Ready => "CLUSTER_BACKUP_STATE_READY",
+            Self::Quiescing => "CLUSTER_BACKUP_STATE_QUIESCING",
+            Self::Capturing => "CLUSTER_BACKUP_STATE_CAPTURING",
+            Self::Validating => "CLUSTER_BACKUP_STATE_VALIDATING",
+            Self::Succeeded => "CLUSTER_BACKUP_STATE_SUCCEEDED",
+            Self::Failed => "CLUSTER_BACKUP_STATE_FAILED",
+            Self::Canceling => "CLUSTER_BACKUP_STATE_CANCELING",
+            Self::Canceled => "CLUSTER_BACKUP_STATE_CANCELED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "CLUSTER_BACKUP_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "CLUSTER_BACKUP_STATE_PENDING" => Some(Self::Pending),
+            "CLUSTER_BACKUP_STATE_WAITING_FOR_CLUSTER_CONVERGENCE" => {
+                Some(Self::WaitingForClusterConvergence)
+            }
+            "CLUSTER_BACKUP_STATE_READY" => Some(Self::Ready),
+            "CLUSTER_BACKUP_STATE_QUIESCING" => Some(Self::Quiescing),
+            "CLUSTER_BACKUP_STATE_CAPTURING" => Some(Self::Capturing),
+            "CLUSTER_BACKUP_STATE_VALIDATING" => Some(Self::Validating),
+            "CLUSTER_BACKUP_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "CLUSTER_BACKUP_STATE_FAILED" => Some(Self::Failed),
+            "CLUSTER_BACKUP_STATE_CANCELING" => Some(Self::Canceling),
+            "CLUSTER_BACKUP_STATE_CANCELED" => Some(Self::Canceled),
             _ => None,
         }
     }
@@ -2105,11 +2212,13 @@ pub mod admin_backup_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn trigger_cluster_backup(
+        /// StartClusterBackup creates an asynchronous cluster-wide backup operation. Implementations own
+        /// cluster-safety transitions such as waiting for Raft applied-index convergence before capture.
+        pub async fn start_cluster_backup(
             &mut self,
-            request: impl tonic::IntoRequest<super::TriggerClusterBackupRequest>,
+            request: impl tonic::IntoRequest<super::StartClusterBackupRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::TriggerClusterBackupResponse>,
+            tonic::Response<super::StartClusterBackupResponse>,
             tonic::Status,
         > {
             self.inner
@@ -2122,14 +2231,14 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/TriggerClusterBackup",
+                "/mycel.admin.v1.AdminBackupService/StartClusterBackup",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "TriggerClusterBackup",
+                        "StartClusterBackup",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -2159,6 +2268,37 @@ pub mod admin_backup_service_client {
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
                         "GetClusterBackupStatus",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// CancelClusterBackup requests cancellation of a pending or active cluster-wide backup operation.
+        /// Cancellation is idempotent for terminal operations.
+        pub async fn cancel_cluster_backup(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CancelClusterBackupRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CancelClusterBackupResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminBackupService/CancelClusterBackup",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminBackupService",
+                        "CancelClusterBackup",
                     ),
                 );
             self.inner.unary(req, path, codec).await

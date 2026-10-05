@@ -162,10 +162,12 @@ Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
 let policy = admin.get_backup_policy().await?;
 let status = admin.get_backup_status().await?;
 let trigger = admin.trigger_backup("before upgrade").await?;
-let cluster = admin.trigger_cluster_backup(
+let cluster = admin.start_cluster_backup(
     "before upgrade",
     "/mnt/mycel-backups",
     mycel::admin::v1::BackupArchiveFormat::TarZst,
+    "",
+    0,
 ).await?;
 let _ = (policy, status, trigger, cluster);
 ```

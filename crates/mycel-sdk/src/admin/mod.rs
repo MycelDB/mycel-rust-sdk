@@ -20,15 +20,16 @@ use mycel::admin::v1::{
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy, CreatePrincipalRequest,
+    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy,
+    CancelClusterBackupRequest, CancelClusterBackupResponse, CreatePrincipalRequest,
     CreateSpaceRequest, DeleteBackupRequest, DeleteBackupResponse, FindPrincipalRequest,
     GetBackupPolicyRequest, GetBackupStatusRequest, GetBackupStatusResponse,
     GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, ListBackupsRequest,
     ListBackupsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse, Principal,
     PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
     SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
-    TriggerBackupRequest, TriggerBackupResponse, TriggerClusterBackupRequest,
-    TriggerClusterBackupResponse, UpdateBackupPolicyRequest, ValidateClusterBackupSetRequest,
+    StartClusterBackupRequest, StartClusterBackupResponse, TriggerBackupRequest,
+    TriggerBackupResponse, UpdateBackupPolicyRequest, ValidateClusterBackupSetRequest,
     ValidateClusterBackupSetResponse,
 };
 use mycel::common::v1::{
@@ -732,27 +733,58 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn trigger_cluster_backup(
+    pub async fn start_cluster_backup(
         &mut self,
         reason: impl Into<String>,
         output_dir: impl Into<String>,
         archive_format: BackupArchiveFormat,
-    ) -> Result<TriggerClusterBackupResponse> {
+        idempotency_key: impl Into<String>,
+        convergence_timeout_seconds: i64,
+    ) -> Result<StartClusterBackupResponse> {
         let reason = reason.into();
         let output_dir = output_dir.into();
+        let idempotency_key = idempotency_key.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .trigger_cluster_backup(self.auth_request(TriggerClusterBackupRequest {
+                .start_cluster_backup(self.auth_request(StartClusterBackupRequest {
                     reason: reason.clone(),
                     output_dir: output_dir.clone(),
                     archive_format: archive_format as i32,
+                    idempotency_key: idempotency_key.clone(),
+                    convergence_timeout_seconds,
                 })),
             self.backup
-                .trigger_cluster_backup(self.auth_request(TriggerClusterBackupRequest {
+                .start_cluster_backup(self.auth_request(StartClusterBackupRequest {
                     reason,
                     output_dir,
                     archive_format: archive_format as i32,
+                    idempotency_key,
+                    convergence_timeout_seconds,
+                }))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn cancel_cluster_backup(
+        &mut self,
+        backup_set_id: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Result<CancelClusterBackupResponse> {
+        let backup_set_id = backup_set_id.into();
+        let reason = reason.into();
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .cancel_cluster_backup(self.auth_request(CancelClusterBackupRequest {
+                    backup_set_id: backup_set_id.clone(),
+                    reason: reason.clone(),
+                })),
+            self.backup
+                .cancel_cluster_backup(self.auth_request(CancelClusterBackupRequest {
+                    backup_set_id,
+                    reason,
                 }))
         )?
         .into_inner();
