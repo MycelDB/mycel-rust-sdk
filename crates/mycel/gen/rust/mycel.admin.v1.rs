@@ -9862,22 +9862,6 @@ pub struct DeleteSpaceRequest {
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct DeleteSpaceResponse {}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GrantSpacePrincipalRequest {
-    #[prost(string, tag = "1")]
-    pub space_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub principal_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub username: ::prost::alloc::string::String,
-    #[prost(enumeration = "super::super::common::v1::SpaceRole", tag = "4")]
-    pub role: i32,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GrantSpacePrincipalResponse {
-    #[prost(message, optional, tag = "1")]
-    pub grant: ::core::option::Option<super::super::common::v1::AccessGrant>,
-}
 /// Generated client implementations.
 pub mod admin_space_service_client {
     #![allow(
@@ -10069,35 +10053,6 @@ pub mod admin_space_service_client {
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new("mycel.admin.v1.AdminSpaceService", "DeleteSpace"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn grant_space_principal(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GrantSpacePrincipalRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GrantSpacePrincipalResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminSpaceService/GrantSpacePrincipal",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminSpaceService",
-                        "GrantSpacePrincipal",
-                    ),
                 );
             self.inner.unary(req, path, codec).await
         }
