@@ -6,6 +6,20 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.19.0] - 2026-10-09
+
+### Added
+
+- Regenerated Rust `prost`/`tonic` bindings for `mycel-api` v0.19.0 after the legacy admin space grant RPC was removed.
+
+### Changed
+
+- Aligned published crate versions with the coordinated MycelDB v0.19.0 release train.
+
+### Compatibility
+
+- Best used with Mycel daemon/API v0.19.0 for matching identity scoped space access semantics.
+
 ## [v0.18.0] - 2026-10-07
 
 ### Added
