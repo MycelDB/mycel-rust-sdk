@@ -1,7 +1,7 @@
 .PHONY: generate fmt test build ci
 
 generate:
-	MYCEL_GENERATE_PROTO=1 cargo build -p mycel
+	MYCEL_GENERATE_PROTO=1 cargo build -p myceldb-proto
 
 fmt:
 	cargo fmt --check
