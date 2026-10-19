@@ -7,7 +7,7 @@ Thank you for contributing to the MycelDB Rust SDK. This repository provides Rus
 This repo **does** contain:
 
 - `mycel-sdk`: ergonomic Rust client wrappers for connection, authentication, sessions, transactions, graph/query helpers, backup helpers, and watch helpers.
-- `mycel`: committed `prost`/`tonic` bindings generated from `mycel-api` protobuf contracts.
+- `myceldb-proto` (library/import name `mycel`): committed `prost`/`tonic` bindings generated from `mycel-api` protobuf contracts.
 - Tests and examples for Rust SDK behavior.
 - Build scripts for generating bindings from `mycel-api`.
 

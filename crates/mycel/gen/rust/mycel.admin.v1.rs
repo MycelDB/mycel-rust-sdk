@@ -2387,6 +2387,27 @@ pub struct GetClusterRuntimeStatusResponse {
     pub raft_groups_with_leader: i32,
     #[prost(message, optional, tag = "10")]
     pub raft_transport: ::core::option::Option<RaftTransportDiagnostics>,
+    #[prost(message, optional, tag = "11")]
+    pub graph_idempotency: ::core::option::Option<GraphIdempotencyDiagnostics>,
+}
+/// Process-local durable graph transaction idempotency diagnostics. Active and
+/// capacity records cover domain stores loaded by this daemon instance.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GraphIdempotencyDiagnostics {
+    #[prost(uint64, tag = "1")]
+    pub replay_hits: u64,
+    #[prost(uint64, tag = "2")]
+    pub replay_misses: u64,
+    #[prost(uint64, tag = "3")]
+    pub mismatches: u64,
+    #[prost(uint64, tag = "4")]
+    pub capacity_rejections: u64,
+    #[prost(uint64, tag = "5")]
+    pub evictions: u64,
+    #[prost(uint64, tag = "6")]
+    pub active_records: u64,
+    #[prost(uint64, tag = "7")]
+    pub capacity_records: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RaftTransportDiagnostics {
