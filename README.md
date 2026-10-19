@@ -102,6 +102,43 @@ let commit = client.commit_transaction_result(tx.transaction_id).await?;
 let _ = commit.operation_id; // matches operation_id
 ```
 
+For an ambiguous read-write commit outcome, persist a durable idempotency key
+before the first attempt and keep the exact key, space, domain, and canonical
+mutation for every retry:
+
+```rust
+let tx = client
+    .begin_idempotent_read_write_transaction(
+        session_id,
+        space_id,
+        domain_id,
+        "import-batch-2026-10-19-0001",
+    )
+    .await?;
+// Stage graph writes against tx.transaction.transaction_id.
+let result = client
+    .commit_idempotent_transaction_with_retry(
+        &tx,
+        mycel_sdk::IdempotentCommitRetryPolicy {
+            max_attempts: 3,
+            ..Default::default()
+        },
+    )
+    .await?;
+if result.idempotent_replay {
+    // result.commit is the original durable commit, not a new commit.
+}
+```
+
+The retry helper is opt-in and bounded. By default it retries only ambiguous
+transport, `Unavailable`, `DeadlineExceeded`, `Unknown`, or `Internal` errors;
+key conflicts, capacity failures, and validation errors return immediately.
+Keys are scoped to the authenticated principal, space, and domain, limited to
+128 UTF-8 bytes, and retained by the daemon for 30 days. Stable caller-assigned
+node or edge IDs are usually enough for retrying one idempotent upsert; use
+transaction-level idempotency for grouped writes or non-upsert mutations.
+`operation_id` remains correlation metadata and is not an idempotency key.
+
 Common structured query shapes can be built without hand-assembling every protobuf field:
 
 ```rust

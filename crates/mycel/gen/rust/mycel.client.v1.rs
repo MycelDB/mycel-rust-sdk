@@ -7085,11 +7085,38 @@ pub struct GetTransactionResponse {
 pub struct CommitTransactionRequest {
     #[prost(string, tag = "1")]
     pub transaction_id: ::prost::alloc::string::String,
+    /// Optional opaque key for durable commit idempotency. Keys are scoped by the
+    /// authenticated principal, space_id, and domain_id. A key is limited to 128
+    /// UTF-8 bytes, must not have leading or trailing whitespace, and must not
+    /// contain secrets.
+    ///
+    /// The first successful commit binds the key to the canonical graph mutation
+    /// and original TransactionCommit. A retry with the same key and mutation
+    /// returns that commit without advancing the graph revision or emitting
+    /// duplicate change events. Reusing the key for a different mutation fails
+    /// with ALREADY_EXISTS while the binding is retained.
+    ///
+    /// space_id and domain_id are required when this field is set. Callers should
+    /// persist all four fields until the commit outcome is reconciled so the
+    /// request remains retryable after daemon restart or leader change.
+    #[prost(string, tag = "2")]
+    pub idempotency_key: ::prost::alloc::string::String,
+    /// Scope used to recover a durable idempotent result when daemon-local
+    /// transaction lifecycle state is no longer available.
+    #[prost(string, tag = "3")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub domain_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CommitTransactionResponse {
     #[prost(message, optional, tag = "1")]
     pub commit: ::core::option::Option<TransactionCommit>,
+    /// True when commit is the result of an earlier successful request with the
+    /// same idempotency binding. False for the first successful commit and for
+    /// commits that do not use idempotency_key.
+    #[prost(bool, tag = "2")]
+    pub idempotent_replay: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RollbackTransactionRequest {
@@ -7188,6 +7215,14 @@ pub struct TransactionCommit {
     /// Client write correlation UUID associated with this commit.
     #[prost(string, tag = "10")]
     pub operation_id: ::prost::alloc::string::String,
+    /// Durable idempotency key associated with this commit, if one was supplied.
+    #[prost(string, tag = "11")]
+    pub idempotency_key: ::prost::alloc::string::String,
+    /// Time until which the daemon guarantees retention of this idempotency
+    /// binding. Absent when idempotency_key is empty. After this time, reusing the
+    /// key may create a new commit.
+    #[prost(message, optional, tag = "12")]
+    pub idempotency_expire_time: ::core::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -7651,7 +7686,8 @@ pub mod transaction_service_client {
             self.inner.unary(req, path, codec).await
         }
         /// CommitTransaction commits a read-write transaction and advances the domain
-        /// revision.
+        /// revision. An idempotency key may bind the commit to a durable result so an
+        /// ambiguous commit response can be retried safely.
         pub async fn commit_transaction(
             &mut self,
             request: impl tonic::IntoRequest<super::CommitTransactionRequest>,
