@@ -9,7 +9,7 @@ import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "legal" / "dependency-license-inventory.tsv"
-FIRST_PARTY = {"mycel", "mycel-sdk", "mycel-proto"}
+FIRST_PARTY = {"myceldb-proto", "mycel-sdk"}
 
 
 def main() -> None:
