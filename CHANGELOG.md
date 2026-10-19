@@ -6,10 +6,20 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.20.0] - 2026-10-19
+
 ### Added
 
-- Regenerated Rust bindings for durable graph transaction commit idempotency and graph idempotency diagnostics.
+- Regenerated Rust bindings from `mycel-api v0.20.0` for durable graph transaction commit idempotency and graph idempotency diagnostics.
 - Added explicit idempotent transaction helpers and an opt-in bounded retry policy for ambiguous commit outcomes.
+
+### Changed
+
+- Aligned both Rust package versions and the API submodule with the coordinated MycelDB v0.20.0 release train.
+
+### Compatibility
+
+- Best used with Mycel daemon/API v0.20.0. Existing non-idempotent transaction methods remain supported, and retries remain opt-in.
 
 ## [v0.19.0] - 2026-10-09
 
