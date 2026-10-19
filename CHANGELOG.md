@@ -16,6 +16,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 ### Changed
 
 - Aligned both Rust package versions and the API submodule with the coordinated MycelDB v0.20.0 release train.
+- Published the low-level bindings package as `myceldb-proto` because the `mycel` crates.io name belongs to an unrelated project; its Rust library/import name remains `mycel` for source compatibility.
 
 ### Compatibility
 

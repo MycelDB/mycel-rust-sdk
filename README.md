@@ -26,7 +26,7 @@ This SDK mirrors the Go SDK shape:
 
 ## Crates
 
-- `mycel`: committed `prost`/`tonic` protobuf and gRPC clients generated from the language-independent `mycel-api` protobuf contracts.
+- `myceldb-proto`: committed `prost`/`tonic` protobuf and gRPC clients generated from the language-independent `mycel-api` protobuf contracts. Its library/import name remains `mycel`.
 - `mycel-sdk`: ergonomic client wrapper around the generated clients.
 
 ## Protobuf generation
@@ -133,11 +133,14 @@ if result.idempotent_replay {
 The retry helper is opt-in and bounded. By default it retries only ambiguous
 transport, `Unavailable`, `DeadlineExceeded`, `Unknown`, or `Internal` errors;
 key conflicts, capacity failures, and validation errors return immediately.
-Keys are scoped to the authenticated principal, space, and domain, limited to
-128 UTF-8 bytes, and retained by the daemon for 30 days. Stable caller-assigned
-node or edge IDs are usually enough for retrying one idempotent upsert; use
-transaction-level idempotency for grouped writes or non-upsert mutations.
-`operation_id` remains correlation metadata and is not an idempotency key.
+Keys are scoped to the authenticated principal, space, and domain and limited
+to 128 UTF-8 bytes. Persist and honor the returned
+`TransactionCommit.idempotency_expire_time`, which is the authoritative
+retention boundary; retrying after that time may create a new commit. Stable
+caller-assigned node or edge IDs are usually enough for retrying one idempotent
+upsert; use transaction-level idempotency for grouped writes or non-upsert
+mutations. `operation_id` remains correlation metadata and is not an
+idempotency key.
 
 Common structured query shapes can be built without hand-assembling every protobuf field:
 
