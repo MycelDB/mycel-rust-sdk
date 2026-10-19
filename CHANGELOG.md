@@ -6,6 +6,11 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Regenerated Rust bindings for durable graph transaction commit idempotency and graph idempotency diagnostics.
+- Added explicit idempotent transaction helpers and an opt-in bounded retry policy for ambiguous commit outcomes.
+
 ## [v0.19.0] - 2026-10-09
 
 ### Added

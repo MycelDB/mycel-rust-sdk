@@ -15,6 +15,10 @@ pub use error::{
 pub use mycel as proto;
 
 pub use admin::AdminClient;
+pub use client::session::{
+    is_ambiguous_commit_error, CommitTransactionOptions, IdempotentCommitBackoff,
+    IdempotentCommitRetryPolicy, IdempotentCommitRetryPredicate, IdempotentTransaction,
+};
 pub use client::Client;
 pub use operation::new_operation_id;
 
