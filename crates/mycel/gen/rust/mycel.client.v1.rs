@@ -5068,8 +5068,8 @@ pub mod graph_change_service_client {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExportDomainRequest {
     /// Readable transaction id. The transaction determines space/domain and read
-    /// consistency. Read-only exports are current reads in V1, not pinned
-    /// historical snapshots.
+    /// consistency. Read-only exports use the graph snapshot pinned to the
+    /// transaction's base_revision.
     #[prost(string, tag = "1")]
     pub transaction_id: ::prost::alloc::string::String,
     #[prost(enumeration = "DomainExportFormat", tag = "2")]
@@ -6873,8 +6873,8 @@ pub mod query_service_client {
             self
         }
         /// ExecuteQuery executes a read-only structured graph query inside a
-        /// transaction read context. Read-only transactions are current-read contexts
-        /// in V1 and do not pin historical snapshots.
+        /// transaction read context. Read-only transactions use the graph snapshot
+        /// pinned to their base_revision.
         pub async fn execute_query(
             &mut self,
             request: impl tonic::IntoRequest<super::ExecuteQueryRequest>,
@@ -7157,9 +7157,9 @@ pub struct GraphSession {
     pub expire_time: ::core::option::Option<::prost_types::Timestamp>,
 }
 /// GraphTransaction is an atomic read or write unit inside a GraphSession.
-/// In the current daemon, read-only transactions are linearizable current-read
-/// contexts, not historical repeatable snapshots: base_revision records the
-/// revision observed at begin time, while later reads may observe newer commits.
+/// Read-only transactions are repeatable-read graph snapshots pinned to the
+/// base_revision observed through the strong-read path when they begin. Later
+/// graph and query reads in the transaction do not observe newer commits.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GraphTransaction {
     #[prost(string, tag = "1")]
@@ -7175,9 +7175,8 @@ pub struct GraphTransaction {
     #[prost(enumeration = "TransactionState", tag = "6")]
     pub state: i32,
     /// Domain revision observed when the transaction began. The daemon is
-    /// authoritative for this value. For read-only transactions this is a
-    /// freshness floor and diagnostic/cache-validation value, not a pinned
-    /// historical snapshot revision.
+    /// authoritative for this value. For read-only transactions this is the
+    /// pinned graph snapshot revision used by subsequent reads.
     #[prost(int64, tag = "7")]
     pub base_revision: i64,
     #[prost(message, optional, tag = "8")]
