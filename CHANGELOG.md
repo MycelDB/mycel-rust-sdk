@@ -6,6 +6,14 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.
+
+### Compatibility
+
+- Generated additions require a daemon advertising the corresponding semantic reliability capability when applications depend on the new RPCs.
+
 ## [v0.20.1] - 2026-10-20
 
 ### Fixed

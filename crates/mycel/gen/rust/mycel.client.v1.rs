@@ -4171,6 +4171,16 @@ pub struct SemanticSearchRequest {
     /// higher scores should represent more relevant results.
     #[prost(double, optional, tag = "7")]
     pub min_score: ::core::option::Option<f64>,
+    /// Opaque direct-semantic continuation. The daemon binds this token to the
+    /// authenticated visibility scope, graph/index view, query, rule, binding,
+    /// route, ranking version, and continuation position.
+    #[prost(string, optional, tag = "8")]
+    pub page_token: ::core::option::Option<::prost::alloc::string::String>,
+    /// Optional hard-eligibility filter for direct semantic candidates. The
+    /// daemon authorizes graph visibility before evaluating properties and
+    /// applies eligibility before score thresholding and page truncation.
+    #[prost(message, optional, tag = "9")]
+    pub filter: ::core::option::Option<SemanticEligibilityFilter>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticSearchResponse {
@@ -4181,6 +4191,39 @@ pub struct SemanticSearchResponse {
     /// must not include secrets.
     #[prost(string, repeated, tag = "2")]
     pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Opaque continuation for the same direct-semantic request and authorized
+    /// read/index view. A stale or mismatched token fails explicitly.
+    #[prost(string, tag = "3")]
+    pub next_page_token: ::prost::alloc::string::String,
+    /// "semantic_index_pushdown" or "authorized_candidate_post_filter".
+    #[prost(string, tag = "4")]
+    pub filter_execution_mode: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub examined_semantic_candidates: i32,
+    #[prost(int32, tag = "6")]
+    pub eligible_semantic_candidates: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticEligibilityFilter {
+    /// Every listed label is required.
+    #[prost(string, repeated, tag = "1")]
+    pub node_labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// When non-empty, only these exact node IDs are eligible.
+    #[prost(string, repeated, tag = "2")]
+    pub node_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Every property predicate is required. Property keys are top-level payload
+    /// keys. Missing is distinct from a present null value.
+    #[prost(message, repeated, tag = "3")]
+    pub properties: ::prost::alloc::vec::Vec<SemanticPropertyPredicate>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticPropertyPredicate {
+    #[prost(string, tag = "1")]
+    pub key: ::prost::alloc::string::String,
+    #[prost(enumeration = "SemanticPropertyOperator", tag = "2")]
+    pub operator: i32,
+    #[prost(message, optional, tag = "3")]
+    pub value: ::core::option::Option<::prost_types::Value>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticSearchResult {
@@ -4202,6 +4245,45 @@ pub struct SemanticSearchResult {
     pub matched_chunk_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, tag = "8")]
     pub snippet: ::prost::alloc::string::String,
+    /// Safe, authorization-scoped generation evidence. It excludes credentials,
+    /// raw vectors, projected source text, and source-content digests.
+    #[prost(message, optional, tag = "9")]
+    pub provenance: ::core::option::Option<SemanticResultProvenance>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticResultProvenance {
+    #[prost(uint64, tag = "1")]
+    pub source_graph_revision: u64,
+    #[prost(uint64, tag = "2")]
+    pub semantic_generation: u64,
+    #[prost(string, tag = "3")]
+    pub semantic_configuration_hash: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub opaque_source_version: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub dimensions: i32,
+    #[prost(string, tag = "6")]
+    pub vector_space_key: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub configured_intelligence_profile_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub configured_model_endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub configured_model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub configured_capability_id: ::prost::alloc::string::String,
+    #[prost(bool, tag = "11")]
+    pub actual_route_known: bool,
+    #[prost(string, tag = "12")]
+    pub actual_model_endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "13")]
+    pub actual_model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "14")]
+    pub actual_capability_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "15")]
+    pub rebuild_epoch: ::prost::alloc::string::String,
+    #[prost(string, tag = "16")]
+    pub generated_at: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticGenerationRuleSummary {
@@ -4272,6 +4354,41 @@ pub struct SemanticRuleStatus {
     pub last_backfill_at: ::prost::alloc::string::String,
     #[prost(string, tag = "7")]
     pub last_error: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticPropertyOperator {
+    Unspecified = 0,
+    Equal = 1,
+    NotEqual = 2,
+    Exists = 3,
+    Missing = 4,
+}
+impl SemanticPropertyOperator {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROPERTY_OPERATOR_UNSPECIFIED",
+            Self::Equal => "SEMANTIC_PROPERTY_OPERATOR_EQUAL",
+            Self::NotEqual => "SEMANTIC_PROPERTY_OPERATOR_NOT_EQUAL",
+            Self::Exists => "SEMANTIC_PROPERTY_OPERATOR_EXISTS",
+            Self::Missing => "SEMANTIC_PROPERTY_OPERATOR_MISSING",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROPERTY_OPERATOR_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEMANTIC_PROPERTY_OPERATOR_EQUAL" => Some(Self::Equal),
+            "SEMANTIC_PROPERTY_OPERATOR_NOT_EQUAL" => Some(Self::NotEqual),
+            "SEMANTIC_PROPERTY_OPERATOR_EXISTS" => Some(Self::Exists),
+            "SEMANTIC_PROPERTY_OPERATOR_MISSING" => Some(Self::Missing),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
