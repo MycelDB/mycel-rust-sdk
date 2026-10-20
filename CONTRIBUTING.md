@@ -90,7 +90,7 @@ Before a stable `1.0.0` release, the crates may still evolve, but PRs should sti
 - Do not block the async runtime; use async I/O or `spawn_blocking` for blocking work when needed.
 - Do not log credentials, refresh tokens, bearer tokens, TLS key material, or private data.
 - Keep default network behavior safe; insecure TLS settings must remain explicit opt-ins.
-- Keep feature flags additive and document default features before publishing crates.
+- Keep feature flags additive and document default features for source releases. Any future registry publication requires a separate release decision.
 - Do not commit `Cargo.lock` for this library workspace unless the project intentionally changes that policy.
 
 ## Pull request expectations

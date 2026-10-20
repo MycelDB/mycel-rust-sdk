@@ -1,8 +1,6 @@
 # Mycel Rust SDK
 
 [![CI](https://github.com/MycelDB/mycel-rust-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/MycelDB/mycel-rust-sdk/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/mycel-sdk.svg)](https://crates.io/crates/mycel-sdk)
-[![Docs.rs](https://docs.rs/mycel-sdk/badge.svg)](https://docs.rs/mycel-sdk)
 [![License](https://img.shields.io/github/license/MycelDB/mycel-rust-sdk)](LICENSE)
 
 Rust connector for MycelDB daemon APIs.
@@ -24,6 +22,18 @@ This SDK mirrors the Go SDK shape:
 - Admin backup policy/status/list/trigger/delete helpers
 - Admin cluster backup trigger/status/list/validate helpers
 
+## Distribution
+
+Releases are distributed as Git tags and GitHub source archives. Neither
+`mycel-sdk` nor `myceldb-proto` is published to crates.io. Both package
+manifests set `publish = false`; any future registry distribution requires an
+explicit policy and release change. Consumers should pin the Git tag or use a
+checked-out path dependency; Mycel Console uses the latter. For example:
+
+```toml
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.20.1" }
+```
+
 ## Crates
 
 - `myceldb-proto`: committed `prost`/`tonic` protobuf and gRPC clients generated from the language-independent `mycel-api` protobuf contracts. Its library/import name remains `mycel`.
@@ -33,7 +43,7 @@ This SDK mirrors the Go SDK shape:
 
 Generated Rust protobuf/gRPC bindings are committed under `crates/mycel/gen/rust/` so tagged crate releases are self-contained. Normal `cargo build` and `cargo test` use the committed generated files and do not require a `mycel-api` checkout.
 
-The current release line is aligned with `mycel-api` `v0.20.0`.
+The current release line is aligned with `mycel-api` `v0.20.1`.
 
 To regenerate bindings, use a matching `mycel-api` checkout and run:
 
