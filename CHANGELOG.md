@@ -6,6 +6,22 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.20.1] - 2026-10-20
+
+### Fixed
+
+- Regenerated committed Rust protobuf/gRPC bindings from `mycel-api v0.20.1` so session, structured-query, and domain-export comments describe read-only operations as repeatable reads pinned to `base_revision`.
+
+### Changed
+
+- Aligned both Cargo package versions and the API submodule with the immutable `mycel-api v0.20.1` correction.
+- Removed crates.io/docs.rs badges, marked both Cargo packages `publish = false`, and clarified Git tag/GitHub source-only distribution.
+
+### Compatibility
+
+- Documentation-only generated-binding correction. Rust APIs and protobuf wire behavior are unchanged from v0.20.0; use with Mycel daemon/API v0.20.1 or later in the v0.20 line for the corrected public contract documentation.
+- Distribution remains Git tag/GitHub source release only; neither package is published to crates.io.
+
 ## [v0.20.0] - 2026-10-19
 
 ### Added
@@ -16,7 +32,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 ### Changed
 
 - Aligned both Rust package versions and the API submodule with the coordinated MycelDB v0.20.0 release train.
-- Published the low-level bindings package as `myceldb-proto` because the `mycel` crates.io name belongs to an unrelated project; its Rust library/import name remains `mycel` for source compatibility.
+- Renamed the low-level Cargo package to `myceldb-proto` because the `mycel` crates.io name belongs to an unrelated project; its Rust library/import name remains `mycel` for source compatibility.
 
 ### Compatibility
 
@@ -30,7 +46,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Aligned published crate versions with the coordinated MycelDB v0.19.0 release train.
+- Aligned Cargo package versions with the coordinated MycelDB v0.19.0 release train.
 
 ### Compatibility
 
@@ -45,7 +61,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Aligned published crate versions with the coordinated MycelDB v0.18.0 release train.
+- Aligned Cargo package versions with the coordinated MycelDB v0.18.0 release train.
 - Updated backup helper documentation to steer cluster backup callers toward the asynchronous operation API.
 
 ### Compatibility
@@ -60,7 +76,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Aligned published crate versions with the coordinated MycelDB v0.17.0 release train.
+- Aligned Cargo package versions with the coordinated MycelDB v0.17.0 release train.
 
 ## [v0.16.0] - 2026-09-24
 
@@ -70,7 +86,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Aligned published crate versions with the coordinated MycelDB v0.16.0 release train.
+- Aligned Cargo package versions with the coordinated MycelDB v0.16.0 release train.
 
 ## [v0.15.0] - 2026-09-18
 
@@ -80,7 +96,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Aligned published crate versions with the coordinated MycelDB v0.15.0 release train.
+- Aligned Cargo package versions with the coordinated MycelDB v0.15.0 release train.
 
 ## [v0.12.0] - 2026-09-09
 
