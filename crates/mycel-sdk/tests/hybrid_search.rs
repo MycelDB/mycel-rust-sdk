@@ -9,7 +9,6 @@ fn hybrid_search_request_constructs() {
         space_id: "space".to_string(),
         domain_id: "domain".to_string(),
         mode: SearchMode::Hybrid as i32,
-        query: "raft recovery".to_string(),
         filters: Some(SearchFilters {
             node_labels: vec!["Note".to_string()],
             properties: vec![PropertyFilter {
@@ -35,10 +34,13 @@ fn hybrid_search_request_constructs() {
             embedding_binding_key: None,
             min_score: Some(0.2),
             candidate_count: 100,
+            query: Some("raft recovery".to_string()),
         }),
         lexical: Some(LexicalSearchOptions {
             candidate_count: 100,
+            query: Some("raft recovery".to_string()),
         }),
+        ..Default::default()
     };
 
     assert_eq!(request.mode, SearchMode::Hybrid as i32);

@@ -1813,10 +1813,11 @@ pub struct SearchRequest {
     /// combines lexical and semantic candidate retrieval into one fused ranking.
     #[prost(enumeration = "SearchMode", tag = "3")]
     pub mode: i32,
-    /// Lucene-style v1 query string. Supported syntax includes terms, quoted
-    /// phrases, AND, OR, NOT, unary '-', and parentheses. The implicit operator is
-    /// AND. Wildcard, fuzzy, range, and fielded lexical syntax are reserved and
-    /// should return structured diagnostics rather than partial matches.
+    /// Deprecated compatibility query used as the fallback for both lexical and
+    /// semantic retrieval when their channel-specific query is omitted. New
+    /// callers should set lexical.query and semantic.query explicitly because the
+    /// lexical query language and semantic embedding text have different syntax.
+    #[deprecated]
     #[prost(string, tag = "4")]
     pub query: ::prost::alloc::string::String,
     /// Optional hard eligibility filters. Filters constrain which candidate nodes
@@ -1913,12 +1914,20 @@ pub struct HybridSearchOptions {
     #[prost(bool, tag = "4")]
     pub require_both: bool,
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LexicalSearchOptions {
     /// Number of lexical candidates to retrieve before filtering/fusion. If unset,
     /// the daemon chooses a bounded default.
     #[prost(int32, tag = "1")]
     pub candidate_count: i32,
+    /// Optional Lucene-style v1 query string for lexical retrieval. Supported
+    /// syntax includes terms, quoted phrases, AND, OR, NOT, unary '-', and
+    /// parentheses. The implicit operator is AND. Wildcard, fuzzy, range, and
+    /// fielded syntax are reserved and should return structured diagnostics rather
+    /// than partial matches. If omitted or empty, SearchRequest.query is used for
+    /// backward compatibility.
+    #[prost(string, optional, tag = "2")]
+    pub query: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticSearchOptions {
@@ -1937,6 +1946,10 @@ pub struct SemanticSearchOptions {
     /// the daemon chooses a bounded default.
     #[prost(int32, tag = "4")]
     pub candidate_count: i32,
+    /// Optional natural-language text to embed for semantic retrieval. If omitted
+    /// or empty, SearchRequest.query is used for backward compatibility.
+    #[prost(string, optional, tag = "5")]
+    pub query: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchFilters {
@@ -4172,13 +4185,20 @@ pub struct SemanticSearchRequest {
     #[prost(double, optional, tag = "7")]
     pub min_score: ::core::option::Option<f64>,
     /// Opaque direct-semantic continuation. The daemon binds this token to the
-    /// authenticated visibility scope, graph/index view, query, rule, binding,
-    /// route, ranking version, and continuation position.
+    /// authenticated visibility scope, graph/index view, ranking version,
+    /// continuation position, canonical normalized filter, and every
+    /// result-affecting request field except page_token, including the query,
+    /// limit, score threshold, rule, and binding. A malformed or integrity-invalid
+    /// token fails with INVALID_ARGUMENT. A valid token used with a different
+    /// request/scope or a stale graph, rule, binding, route, generation, ranking,
+    /// or candidate view fails with FAILED_PRECONDITION.
     #[prost(string, optional, tag = "8")]
     pub page_token: ::core::option::Option<::prost::alloc::string::String>,
     /// Optional hard-eligibility filter for direct semantic candidates. The
     /// daemon authorizes graph visibility before evaluating properties and
-    /// applies eligibility before score thresholding and page truncation.
+    /// applies eligibility before score thresholding, ranking, and page
+    /// truncation. All labels, node IDs, and property predicates are combined
+    /// with logical AND.
     #[prost(message, optional, tag = "9")]
     pub filter: ::core::option::Option<SemanticEligibilityFilter>,
 }
@@ -4192,14 +4212,26 @@ pub struct SemanticSearchResponse {
     #[prost(string, repeated, tag = "2")]
     pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     /// Opaque continuation for the same direct-semantic request and authorized
-    /// read/index view. A stale or mismatched token fails explicitly.
+    /// read/index view. See SemanticSearchRequest.page_token for binding and
+    /// error semantics.
     #[prost(string, tag = "3")]
     pub next_page_token: ::prost::alloc::string::String,
+    /// Empty when no filter was requested; otherwise
     /// "semantic_index_pushdown" or "authorized_candidate_post_filter".
     #[prost(string, tag = "4")]
     pub filter_execution_mode: ::prost::alloc::string::String,
+    /// Number of caller-visible, authorized semantic candidates examined. This
+    /// never includes candidates hidden by graph or semantic authorization.
+    /// Implementations that cannot produce this count without disclosure return
+    /// zero rather than exposing a pre-authorization count.
     #[prost(int32, tag = "5")]
     pub examined_semantic_candidates: i32,
+    /// Number of caller-visible, authorized candidates satisfying the hard
+    /// filter. In authorized_candidate_post_filter mode this is counted before
+    /// minimum-score evaluation, ranking, and page truncation. When execution mode
+    /// is empty because no hard filter was requested, it equals
+    /// examined_semantic_candidates after any backend minimum-score evaluation.
+    /// Implementations that cannot produce this safely return zero.
     #[prost(int32, tag = "6")]
     pub eligible_semantic_candidates: i32,
 }
@@ -4220,8 +4252,16 @@ pub struct SemanticEligibilityFilter {
 pub struct SemanticPropertyPredicate {
     #[prost(string, tag = "1")]
     pub key: ::prost::alloc::string::String,
+    /// UNSPECIFIED and unknown operators are invalid and fail with
+    /// INVALID_ARGUMENT.
     #[prost(enumeration = "SemanticPropertyOperator", tag = "2")]
     pub operator: i32,
+    /// EQUAL and NOT_EQUAL require value. Equality is exact, type-sensitive
+    /// protobuf Value equality: scalar kinds and values must match, list order and
+    /// elements must match, and struct key/value mappings must match. A missing
+    /// key satisfies neither EQUAL nor NOT_EQUAL. EXISTS and MISSING reject a
+    /// supplied value; EXISTS is true for a present key including null, while
+    /// MISSING is true only when the key is absent.
     #[prost(message, optional, tag = "3")]
     pub value: ::core::option::Option<::prost_types::Value>,
 }

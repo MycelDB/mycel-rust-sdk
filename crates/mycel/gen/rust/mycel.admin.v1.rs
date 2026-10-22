@@ -9222,7 +9222,17 @@ pub struct GetSemanticReliabilityStatusResponse {
     /// field is not a semantic freshness claim.
     #[prost(uint64, tag = "5")]
     pub analyzed_through_graph_revision: u64,
-    /// Highest contiguous revision whose required semantic outcomes are terminal.
+    /// Highest contiguous revision whose required semantic outcomes completed
+    /// successfully for semantic_generation. Successful outcomes are a published
+    /// current record, an applied delete, an explicit policy no-op/skip, or work
+    /// reconciled by a completed rebuild. Pending, running, retryable/permanent
+    /// failure, or cancellation never permits this frontier to cross the affected
+    /// revision.
+    ///
+    /// Freshness through revision R is proved only when this field is >= R and
+    /// the same response has the expected semantic_generation, zero unresolved
+    /// gaps, capacity_state "ok", degraded false, and rebuild_required false,
+    /// with rebuild.state neither "required", "running", nor "failed".
     #[prost(uint64, tag = "6")]
     pub fresh_through_graph_revision: u64,
     /// Bounded unresolved interval diagnostics; these expose no node/source text.
@@ -9234,10 +9244,14 @@ pub struct GetSemanticReliabilityStatusResponse {
     pub configured_frontier_limit: u64,
     #[prost(uint64, tag = "10")]
     pub retained_work_item_count: u64,
-    /// Generation rotates for incompatible semantic configuration changes.
+    /// Generation rotates for incompatible semantic configuration changes. A
+    /// rotation resets fresh_through_graph_revision and requires a rebuilt
+    /// baseline for the new generation; values from different generations must
+    /// never be combined into one freshness claim.
     #[prost(uint64, tag = "11")]
     pub semantic_generation: u64,
-    /// "ok" or "exhausted". Exhaustion is restart-safe and requires rebuild.
+    /// "ok" or "exhausted". Exhaustion is restart-safe, invalidates freshness,
+    /// and requires rebuild.
     #[prost(string, tag = "12")]
     pub capacity_state: ::prost::alloc::string::String,
     #[prost(bool, tag = "13")]
@@ -9264,20 +9278,37 @@ pub struct GetSemanticReliabilityStatusResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticRebuildStatus {
+    /// Unique identity for one accepted rebuild invocation. Each accepted request
+    /// creates a new epoch; clients use it to detect replacement or takeover.
     #[prost(string, tag = "1")]
     pub rebuild_epoch: ::prost::alloc::string::String,
+    /// Closed value set: empty means no rebuild has been recorded; "required"
+    /// means the current generation lacks a valid baseline; "running" is
+    /// non-terminal; "completed" is successful terminal state; and "failed" is
+    /// unsuccessful terminal state. Unknown values must be treated as not ready.
     #[prost(string, tag = "2")]
     pub state: ::prost::alloc::string::String,
+    /// Graph revision pinned for the reconciled full baseline.
     #[prost(uint64, tag = "3")]
     pub pinned_target_graph_revision: u64,
+    /// Latest graph revision accounted by delta catch-up. On completed state it
+    /// reaches at least the latest revision observed before completion.
     #[prost(uint64, tag = "4")]
     pub delta_catchup_graph_revision: u64,
+    /// Generation rebuilt by this epoch. Rebuild itself does not rotate the
+    /// generation; incompatible configuration changes rotate it before rebuild.
     #[prost(uint64, tag = "5")]
     pub semantic_generation: u64,
+    /// RFC 3339 timestamps. completed_at identifies the most recent successfully
+    /// completed baseline for this epoch. It may remain populated if a later
+    /// configuration change or capacity marker changes state from "completed" to
+    /// "required"; it is not evidence that the current state is completed.
     #[prost(string, tag = "6")]
     pub started_at: ::prost::alloc::string::String,
     #[prost(string, tag = "7")]
     pub completed_at: ::prost::alloc::string::String,
+    /// Bounded operator-safe failure detail; credentials and provider bodies are
+    /// excluded.
     #[prost(string, tag = "8")]
     pub error_message_sanitized: ::prost::alloc::string::String,
 }
@@ -9629,6 +9660,20 @@ pub mod admin_semantic_maintenance_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// Synchronously starts and executes a full reconciled baseline at a pinned
+        /// graph revision followed by bounded delta catch-up. Success returns only
+        /// after state is "completed". Failure returns a non-OK status and normally
+        /// persists "failed" after an epoch starts. If leadership or durable-state
+        /// transition fails, the epoch may remain "running" until its owner is fenced;
+        /// clients must inspect GetSemanticReliabilityStatus after every non-OK
+        /// result. A concurrent request for the same rule/binding fails with
+        /// FAILED_PRECONDITION, except that a new leader may fence an abandoned
+        /// running owner and start a new epoch.
+        ///
+        /// This method is not idempotent: every accepted request, including one after
+        /// a completed or failed rebuild, starts a new rebuild_epoch. After an
+        /// ambiguous transport outcome, clients must inspect
+        /// GetSemanticReliabilityStatus before retrying.
         pub async fn rebuild_semantic_rule(
             &mut self,
             request: impl tonic::IntoRequest<super::RebuildSemanticRuleRequest>,

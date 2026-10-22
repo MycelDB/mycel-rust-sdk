@@ -9,10 +9,12 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 ### Added
 
 - Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.
+- Regenerated the intervening merged search contract with channel-specific lexical and semantic query overrides.
 
 ### Compatibility
 
 - Generated additions require a daemon advertising the corresponding semantic reliability capability when applications depend on the new RPCs.
+- Additive protobuf fields add members to generated Rust structs. Exhaustive struct literals must initialize the new members or use `..Default::default()`; protobuf wire compatibility is preserved.
 
 ## [v0.20.1] - 2026-10-20
 
