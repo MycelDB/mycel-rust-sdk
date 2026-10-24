@@ -445,6 +445,12 @@ pub struct GetAutomationRunRequest {
 pub struct GetAutomationRunResponse {
     #[prost(string, tag = "1")]
     pub run_json: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "2")]
+    pub inference_usage_event_ids: ::prost::alloc::vec::Vec<
+        ::prost::alloc::string::String,
+    >,
+    #[prost(message, optional, tag = "3")]
+    pub run: ::core::option::Option<super::super::common::v1::AutomationRun>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RetryAutomationInvocationRequest {
@@ -550,6 +556,127 @@ pub struct UpdateGraphProcedureResponse {
 pub struct GetGraphProcedureResponse {
     #[prost(string, tag = "1")]
     pub procedure_json: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EnableGraphProcedureRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub procedure_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EnableGraphProcedureResponse {
+    #[prost(string, tag = "1")]
+    pub procedure_json: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub control: ::core::option::Option<
+        super::super::common::v1::ProcedureControlBarrier,
+    >,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DisableGraphProcedureRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub procedure_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DisableGraphProcedureResponse {
+    #[prost(string, tag = "1")]
+    pub procedure_json: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub control: ::core::option::Option<
+        super::super::common::v1::ProcedureControlBarrier,
+    >,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetProcedureInferenceAttemptRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub attempt_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetProcedureInferenceAttemptResponse {
+    #[prost(message, optional, tag = "1")]
+    pub attempt: ::core::option::Option<
+        super::super::common::v1::ProcedureInferenceAttempt,
+    >,
+}
+/// space_id is mandatory and exactly one space is allowed. page_token is opaque,
+/// snapshot-bound, and bound to the exact space and filter. page_size defaults
+/// to 100 and must not exceed 500.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListProcedureInferenceAttemptsRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub filter: ::core::option::Option<
+        super::super::common::v1::ProcedureInferenceAttemptFilter,
+    >,
+    #[prost(int32, tag = "3")]
+    pub page_size: i32,
+    #[prost(string, tag = "4")]
+    pub page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListProcedureInferenceAttemptsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub attempts: ::prost::alloc::vec::Vec<
+        super::super::common::v1::ProcedureInferenceAttempt,
+    >,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub snapshot_high_water_sequence: u64,
+    #[prost(uint64, tag = "4")]
+    pub earliest_retained_state_sequence: u64,
+    /// snapshot_cursor resumes the immutable change feed strictly after the
+    /// snapshot_high_water_sequence without a snapshot-to-poll race.
+    #[prost(string, tag = "5")]
+    pub snapshot_cursor: ::prost::alloc::string::String,
+}
+/// space_id is mandatory and exactly one space is allowed. after_cursor is
+/// opaque and bound to the exact space and filter. page_size defaults to 100 and
+/// must not exceed 500. Changes are returned by ascending per-space sequence.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListProcedureInferenceAttemptChangesRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub filter: ::core::option::Option<
+        super::super::common::v1::ProcedureInferenceAttemptFilter,
+    >,
+    #[prost(int32, tag = "3")]
+    pub page_size: i32,
+    #[prost(string, tag = "4")]
+    pub after_cursor: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListProcedureInferenceAttemptChangesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub changes: ::prost::alloc::vec::Vec<
+        super::super::common::v1::ProcedureInferenceAttemptChange,
+    >,
+    #[prost(string, tag = "2")]
+    pub next_cursor: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub high_water_sequence: u64,
+    #[prost(uint64, tag = "4")]
+    pub earliest_retained_sequence: u64,
+    #[prost(uint64, tag = "5")]
+    pub earliest_retained_state_sequence: u64,
+    /// high_water_sequence is the highest committed sequence observed for this
+    /// space. next_cursor identifies the last examined sequence even when no
+    /// change matched. history_gap requires rebuilding from a fresh current-state
+    /// snapshot and resuming with its snapshot_cursor; the server never silently
+    /// restarts at earliest_retained_sequence.
+    #[prost(bool, tag = "6")]
+    pub history_gap: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ValidateGraphAutomationBindingRequest {
@@ -1264,6 +1391,157 @@ pub mod admin_automation_service_client {
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminAutomationService",
                         "ListGraphProcedures",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// EnableGraphProcedure is idempotent and returns only after its cross-partition barrier completes.
+        pub async fn enable_graph_procedure(
+            &mut self,
+            request: impl tonic::IntoRequest<super::EnableGraphProcedureRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::EnableGraphProcedureResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminAutomationService/EnableGraphProcedure",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminAutomationService",
+                        "EnableGraphProcedure",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// DisableGraphProcedure is idempotent and returns only after its cross-partition barrier completes.
+        pub async fn disable_graph_procedure(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DisableGraphProcedureRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DisableGraphProcedureResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminAutomationService/DisableGraphProcedure",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminAutomationService",
+                        "DisableGraphProcedure",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_procedure_inference_attempt(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetProcedureInferenceAttemptRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetProcedureInferenceAttemptResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminAutomationService/GetProcedureInferenceAttempt",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminAutomationService",
+                        "GetProcedureInferenceAttempt",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn list_procedure_inference_attempts(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::ListProcedureInferenceAttemptsRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::ListProcedureInferenceAttemptsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminAutomationService/ListProcedureInferenceAttempts",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminAutomationService",
+                        "ListProcedureInferenceAttempts",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn list_procedure_inference_attempt_changes(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::ListProcedureInferenceAttemptChangesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::ListProcedureInferenceAttemptChangesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminAutomationService/ListProcedureInferenceAttemptChanges",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminAutomationService",
+                        "ListProcedureInferenceAttemptChanges",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -5308,6 +5586,12 @@ pub struct AdminIntelligenceAccessPolicyServiceCreateAccessPolicyRequest {
     pub reason: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "10")]
     pub expires_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(string, repeated, tag = "11")]
+    pub endpoint_refs: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "12")]
+    pub model_refs: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "13")]
+    pub capability_refs: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AdminIntelligenceAccessPolicyServiceCreateAccessPolicyResponse {
@@ -5686,6 +5970,14 @@ pub struct IntelligenceAccessPolicy {
     pub revoked_by: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "25")]
     pub revoked_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(string, repeated, tag = "26")]
+    pub model_endpoint_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "27")]
+    pub model_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "28")]
+    pub model_endpoint_capability_ids: ::prost::alloc::vec::Vec<
+        ::prost::alloc::string::String,
+    >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IntelligenceAccessPolicyDecision {
