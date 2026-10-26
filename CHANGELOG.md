@@ -13,6 +13,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Regenerated the intervening merged search contract with channel-specific lexical and semantic query overrides.
 - Regenerated procedure-inference attempt polling, typed automation-run, procedure control-barrier, and procedure/binding Intelligence Access bindings from the matching pinned API submodule.
 - Regenerated daemon-owned semantic provider-budget policy, capability, status, retained-scope, immutable attempt-event, usage, denial, and pagination bindings from `mycel-api` merge commit `e4027b26bcabc546170563434357da63867ad80f`.
+- Regenerated vector-store UUID identity, normalized key/display-name uniqueness documentation, and structured catalog-conflict bindings.
 
 ### Compatibility
 

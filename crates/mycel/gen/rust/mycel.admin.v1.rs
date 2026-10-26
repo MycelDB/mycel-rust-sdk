@@ -4382,6 +4382,14 @@ pub struct AdminInferenceCatalogServiceApplyInferencePackageRequest {
     pub model_endpoints: ::prost::alloc::vec::Vec<ModelEndpoint>,
     #[prost(message, repeated, tag = "6")]
     pub models: ::prost::alloc::vec::Vec<InferenceModel>,
+    /// Vector stores are created or updated by authoritative vector_store_id when
+    /// supplied. A definition without an ID may update the single store having the
+    /// same normalized key for package compatibility; an ambiguous key is rejected.
+    /// Key or name uniqueness conflicts fail with ALREADY_EXISTS and a
+    /// VectorStoreCatalogConflict status detail. Blank definitions fail with
+    /// INVALID_ARGUMENT. The implementation must validate the complete vector-store
+    /// set before making package changes visible; it never renames, merges, replaces,
+    /// or deletes a resource to resolve a collision.
     #[prost(message, repeated, tag = "7")]
     pub vector_stores: ::prost::alloc::vec::Vec<VectorStore>,
     #[prost(message, repeated, tag = "8")]
@@ -4459,6 +4467,9 @@ pub struct AdminInferenceCatalogServiceListVectorStoresRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AdminInferenceCatalogServiceListVectorStoresResponse {
+    /// Legacy catalogs containing blank or duplicate normalized keys or names remain
+    /// readable so operators can diagnose them. Clients must use vector_store_id as
+    /// identity and must not resolve an ambiguous legacy key or name themselves.
     #[prost(message, repeated, tag = "1")]
     pub vector_stores: ::prost::alloc::vec::Vec<VectorStore>,
     #[prost(string, tag = "2")]
@@ -4676,12 +4687,31 @@ pub struct InferenceModel {
     #[prost(bool, tag = "15")]
     pub enabled: bool,
 }
+/// VectorStore is one entry in the system-scoped vector-store catalog.
+///
+/// vector_store_id is the immutable authoritative identity and durable foreign
+/// reference. key is a stable machine/configuration identifier. name is the
+/// operator-facing display name and may be changed without changing the ID or
+/// breaking UUID-based references. New and updated stores require non-empty key
+/// and name values, and both are unique after deterministic normalization within
+/// the system catalog.
+///
+/// Normalization removes leading and trailing Unicode whitespace and applies the
+/// Unicode default lowercase mapping. The key is stored in normalized form; the
+/// display name preserves its trimmed spelling. Names are labels, not foreign
+/// keys. Legacy ambiguous catalogs remain listable for remediation, but ambiguous
+/// key/name lookup and unrelated colliding mutations fail closed. Snapshot or
+/// backup restore rejects ambiguous or blank catalogs rather than silently
+/// renaming, merging, replacing, or deleting entries.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct VectorStore {
+    /// Immutable authoritative UUID identity.
     #[prost(string, tag = "1")]
     pub vector_store_id: ::prost::alloc::string::String,
+    /// Required stable machine key, unique after catalog normalization.
     #[prost(string, tag = "2")]
     pub key: ::prost::alloc::string::String,
+    /// Required renameable display label, unique after catalog normalization.
     #[prost(string, tag = "3")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
@@ -4694,6 +4724,21 @@ pub struct VectorStore {
     pub config: ::core::option::Option<::prost_types::Struct>,
     #[prost(enumeration = "super::super::common::v1::InferencePrivacyClass", tag = "8")]
     pub privacy_class_value: i32,
+}
+/// VectorStoreCatalogConflict is attached to an ALREADY_EXISTS or
+/// FAILED_PRECONDITION gRPC status when a vector-store mutation conflicts with a
+/// unique key/name or encounters ambiguous legacy data. Values are normalized and
+/// contain no vector-store configuration or secret material.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct VectorStoreCatalogConflict {
+    #[prost(enumeration = "VectorStoreCatalogConflictReason", tag = "1")]
+    pub reason: i32,
+    #[prost(string, tag = "2")]
+    pub normalized_value: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "3")]
+    pub conflicting_vector_store_ids: ::prost::alloc::vec::Vec<
+        ::prost::alloc::string::String,
+    >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ModelEndpointCapability {
@@ -4744,6 +4789,57 @@ pub struct ModelEndpointCapabilityDefinition {
     pub model_name_override: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "8")]
     pub metadata: ::core::option::Option<::prost_types::Struct>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum VectorStoreCatalogConflictReason {
+    Unspecified = 0,
+    KeyAlreadyExists = 1,
+    NameAlreadyExists = 2,
+    LegacyAmbiguousKey = 3,
+    LegacyAmbiguousName = 4,
+}
+impl VectorStoreCatalogConflictReason {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "VECTOR_STORE_CATALOG_CONFLICT_REASON_UNSPECIFIED",
+            Self::KeyAlreadyExists => {
+                "VECTOR_STORE_CATALOG_CONFLICT_REASON_KEY_ALREADY_EXISTS"
+            }
+            Self::NameAlreadyExists => {
+                "VECTOR_STORE_CATALOG_CONFLICT_REASON_NAME_ALREADY_EXISTS"
+            }
+            Self::LegacyAmbiguousKey => {
+                "VECTOR_STORE_CATALOG_CONFLICT_REASON_LEGACY_AMBIGUOUS_KEY"
+            }
+            Self::LegacyAmbiguousName => {
+                "VECTOR_STORE_CATALOG_CONFLICT_REASON_LEGACY_AMBIGUOUS_NAME"
+            }
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "VECTOR_STORE_CATALOG_CONFLICT_REASON_UNSPECIFIED" => Some(Self::Unspecified),
+            "VECTOR_STORE_CATALOG_CONFLICT_REASON_KEY_ALREADY_EXISTS" => {
+                Some(Self::KeyAlreadyExists)
+            }
+            "VECTOR_STORE_CATALOG_CONFLICT_REASON_NAME_ALREADY_EXISTS" => {
+                Some(Self::NameAlreadyExists)
+            }
+            "VECTOR_STORE_CATALOG_CONFLICT_REASON_LEGACY_AMBIGUOUS_KEY" => {
+                Some(Self::LegacyAmbiguousKey)
+            }
+            "VECTOR_STORE_CATALOG_CONFLICT_REASON_LEGACY_AMBIGUOUS_NAME" => {
+                Some(Self::LegacyAmbiguousName)
+            }
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod admin_inference_catalog_service_client {
