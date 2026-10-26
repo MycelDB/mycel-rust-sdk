@@ -9063,6 +9063,12 @@ pub struct SemanticGenerationRule {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticTriggerPolicy {
+    /// Deprecated compatibility representation. New clients should use
+    /// event_types. During migration a client may send both fields when they
+    /// describe the same normalized set. Conflicting representations are invalid.
+    /// Responses populate both fields so clients generated from older contracts
+    /// continue to observe the configured triggers.
+    #[deprecated]
     #[prost(string, repeated, tag = "1")]
     pub events: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "2")]
@@ -9070,6 +9076,11 @@ pub struct SemanticTriggerPolicy {
     /// Go duration string such as "120s". Empty uses daemon default.
     #[prost(string, tag = "3")]
     pub debounce: ::prost::alloc::string::String,
+    /// Typed trigger events. Explicit UNSPECIFIED and unknown numeric values are
+    /// invalid. If both event representations are empty, the policy defaults to
+    /// SEMANTIC_TRIGGER_EVENT_TYPE_CHANGED.
+    #[prost(enumeration = "SemanticTriggerEventType", repeated, tag = "4")]
+    pub event_types: ::prost::alloc::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticTargetSelector {
@@ -9235,6 +9246,55 @@ pub struct SemanticRuleValidationDiagnostic {
     pub path: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
+}
+/// SemanticTriggerEventType identifies a committed graph change that can make
+/// semantic output stale. The values in a trigger policy are treated as a set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticTriggerEventType {
+    Unspecified = 0,
+    Changed = 1,
+    NodeCreated = 2,
+    NodeUpdated = 3,
+    NodeDeleted = 4,
+    EdgeChanged = 5,
+    EdgeCreated = 6,
+    EdgeUpdated = 7,
+    EdgeDeleted = 8,
+}
+impl SemanticTriggerEventType {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_TRIGGER_EVENT_TYPE_UNSPECIFIED",
+            Self::Changed => "SEMANTIC_TRIGGER_EVENT_TYPE_CHANGED",
+            Self::NodeCreated => "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_CREATED",
+            Self::NodeUpdated => "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_UPDATED",
+            Self::NodeDeleted => "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_DELETED",
+            Self::EdgeChanged => "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_CHANGED",
+            Self::EdgeCreated => "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_CREATED",
+            Self::EdgeUpdated => "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_UPDATED",
+            Self::EdgeDeleted => "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_DELETED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_TRIGGER_EVENT_TYPE_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_CHANGED" => Some(Self::Changed),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_CREATED" => Some(Self::NodeCreated),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_UPDATED" => Some(Self::NodeUpdated),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_NODE_DELETED" => Some(Self::NodeDeleted),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_CHANGED" => Some(Self::EdgeChanged),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_CREATED" => Some(Self::EdgeCreated),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_UPDATED" => Some(Self::EdgeUpdated),
+            "SEMANTIC_TRIGGER_EVENT_TYPE_EDGE_DELETED" => Some(Self::EdgeDeleted),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
