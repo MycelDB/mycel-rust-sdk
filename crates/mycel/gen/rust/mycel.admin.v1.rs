@@ -9121,6 +9121,91 @@ pub struct SemanticEmbeddingBinding {
     pub enabled: bool,
     #[prost(message, optional, tag = "8")]
     pub metadata: ::core::option::Option<::prost_types::Struct>,
+    /// Optional daemon-owned provider budget for this rule/binding. Clients
+    /// configure limits but never create scopes, reserve attempts, or release
+    /// capacity. The daemon pins the resolved route and creates the durable scope
+    /// before provider-backed work becomes eligible. Deterministic scope
+    /// preflight failures leave no rule. Once a create or update transition is
+    /// durably staged, an ambiguous storage or cluster failure can return an
+    /// error while leaving an ineligible pending rule; the daemon rolls that
+    /// journal forward before provider-backed work becomes eligible. An update
+    /// that changes the profile, route, or policy fails with FAILED_PRECONDITION
+    /// while the current scope has reserved or ambiguous attempts; otherwise it
+    /// completes and retains the old scope, then installs a new current scope.
+    /// Disable/delete prevents new attempts but retains prior scope evidence until
+    /// retention_until.
+    #[prost(message, optional, tag = "9")]
+    pub provider_budget: ::core::option::Option<SemanticProviderBudgetPolicy>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetPolicy {
+    /// Operator correlation only: 1..128 ASCII characters from \[A-Za-z0-9._:-\].
+    /// It must not contain credentials, source text, or provider identifiers.
+    #[prost(string, tag = "1")]
+    pub correlation_id: ::prost::alloc::string::String,
+    /// Every field in this policy is required; optional scalars are used to retain
+    /// wire presence. Every optional field must be explicitly present when the
+    /// policy is configured. Omitted fields, negative values, zero values (except
+    /// the two retry limits), unspecified batching, non-positive durations, and
+    /// inconsistent aggregate/per-request limits are invalid. The attempt limit
+    /// is derived with overflow checking as max_requests + max_retry_attempts.
+    /// max_retries_per_request must not exceed max_retry_attempts;
+    /// max_input_tokens_per_request must not exceed max_input_tokens; single-item
+    /// batching requires max_batch_items == 1; and request_timeout must not exceed
+    /// total_timeout. This strict shape prevents an omitted hard limit from
+    /// becoming an implicit unlimited value.
+    #[prost(int64, optional, tag = "2")]
+    pub max_requests: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "3")]
+    pub max_retry_attempts: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "4")]
+    pub max_retries_per_request: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "5")]
+    pub max_concurrent_provider_calls: ::core::option::Option<i64>,
+    #[prost(enumeration = "SemanticProviderBatchingMode", optional, tag = "6")]
+    pub batching_mode: ::core::option::Option<i32>,
+    #[prost(int64, optional, tag = "7")]
+    pub max_batch_items: ::core::option::Option<i64>,
+    /// Before reservation the daemon must derive a conservative upper bound from
+    /// the exact serialized input under the pinned route tokenizer. It must deny
+    /// work when no such bound can be proven.
+    #[prost(int64, optional, tag = "8")]
+    pub max_input_tokens_per_request: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "9")]
+    pub max_input_tokens: ::core::option::Option<i64>,
+    /// Reserved before every provider attempt. The daemon applies the earliest of
+    /// this timeout and the caller/context deadline.
+    #[prost(message, optional, tag = "10")]
+    pub request_timeout: ::core::option::Option<::prost_types::Duration>,
+    /// Measured from durable scope creation and never extended by retries.
+    #[prost(message, optional, tag = "11")]
+    pub total_timeout: ::core::option::Option<::prost_types::Duration>,
+    #[prost(message, optional, tag = "12")]
+    pub cost: ::core::option::Option<SemanticProviderCostLimit>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderCostLimit {
+    /// All fields are required and non-zero. Currency is an uppercase ISO 4217
+    /// code. The immutable definition version must identify pricing for the
+    /// pinned endpoint/model/capability route.
+    #[prost(string, tag = "1")]
+    pub currency: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub price_definition_version: ::prost::alloc::string::String,
+    #[prost(int64, optional, tag = "3")]
+    pub input_micros_per_million_tokens: ::core::option::Option<i64>,
+    /// Per-attempt reserved cost is ceil(reserved_input_tokens *
+    /// input_micros_per_million_tokens / 1,000,000). Implementations must use
+    /// overflow-checked integer arithmetic and deny the attempt on overflow.
+    /// Final cost uses the same formula with charged tokens. If charged tokens,
+    /// provider duration, or cost exceeds its reservation, the daemon charges the
+    /// checked actual value, records immutable overage evidence, exhausts the
+    /// scope for accounting failure, and admits no later provider attempt. If the
+    /// final per-attempt cost is not representable as int64, the event and
+    /// aggregate cost saturate at int64 max, charged_cost_saturated and
+    /// accounting_overflow are set, and the scope is exhausted with ACCOUNTING.
+    #[prost(int64, optional, tag = "4")]
+    pub max_estimated_cost_micros: ::core::option::Option<i64>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticMaintenancePolicy {
@@ -9150,6 +9235,35 @@ pub struct SemanticRuleValidationDiagnostic {
     pub path: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticProviderBatchingMode {
+    Unspecified = 0,
+    Single = 1,
+    Batch = 2,
+}
+impl SemanticProviderBatchingMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROVIDER_BATCHING_MODE_UNSPECIFIED",
+            Self::Single => "SEMANTIC_PROVIDER_BATCHING_MODE_SINGLE",
+            Self::Batch => "SEMANTIC_PROVIDER_BATCHING_MODE_BATCH",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROVIDER_BATCHING_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEMANTIC_PROVIDER_BATCHING_MODE_SINGLE" => Some(Self::Single),
+            "SEMANTIC_PROVIDER_BATCHING_MODE_BATCH" => Some(Self::Batch),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod admin_semantic_service_client {
@@ -9569,6 +9683,331 @@ pub struct GetSemanticReliabilityStatusResponse {
     pub retained_serialized_bytes: u64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSemanticProviderBudgetCapabilitiesRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSemanticProviderBudgetCapabilitiesResponse {
+    #[prost(string, tag = "1")]
+    pub contract_version: ::prost::alloc::string::String,
+    #[prost(bool, tag = "2")]
+    pub daemon_owned_scopes: bool,
+    #[prost(bool, tag = "3")]
+    pub pre_provider_attempt_reservation: bool,
+    #[prost(bool, tag = "4")]
+    pub durable_restart_recovery: bool,
+    #[prost(bool, tag = "5")]
+    pub raft_replicated: bool,
+    #[prost(bool, tag = "6")]
+    pub request_limit: bool,
+    #[prost(bool, tag = "7")]
+    pub derived_attempt_limit: bool,
+    #[prost(bool, tag = "8")]
+    pub aggregate_retry_limit: bool,
+    #[prost(bool, tag = "9")]
+    pub per_request_retry_limit: bool,
+    #[prost(bool, tag = "10")]
+    pub provider_concurrency_limit: bool,
+    #[prost(bool, tag = "11")]
+    pub single_item_batching: bool,
+    #[prost(bool, tag = "12")]
+    pub multi_item_batching: bool,
+    #[prost(bool, tag = "13")]
+    pub per_request_input_token_limit: bool,
+    #[prost(bool, tag = "14")]
+    pub aggregate_input_token_limit: bool,
+    #[prost(bool, tag = "15")]
+    pub request_timeout: bool,
+    #[prost(bool, tag = "16")]
+    pub total_timeout: bool,
+    #[prost(bool, tag = "17")]
+    pub versioned_cost_limit: bool,
+    #[prost(bool, tag = "18")]
+    pub conservative_ambiguous_reservations: bool,
+    #[prost(bool, tag = "19")]
+    pub append_only_attempt_events: bool,
+    #[prost(string, repeated, tag = "20")]
+    pub supported_currencies: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(int32, tag = "21")]
+    pub maximum_attempt_event_page_size: i32,
+    #[prost(int32, tag = "22")]
+    pub maximum_scope_page_size: i32,
+    #[prost(bool, tag = "23")]
+    pub overage_exhaustion: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetBindingSelector {
+    #[prost(string, tag = "1")]
+    pub semantic_rule_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub embedding_binding_key: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSemanticProviderBudgetStatusRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(
+        oneof = "get_semantic_provider_budget_status_request::Selector",
+        tags = "2, 3"
+    )]
+    pub selector: ::core::option::Option<
+        get_semantic_provider_budget_status_request::Selector,
+    >,
+}
+/// Nested message and enum types in `GetSemanticProviderBudgetStatusRequest`.
+pub mod get_semantic_provider_budget_status_request {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Selector {
+        /// Selects a retained immutable scope across rule/binding rollover.
+        #[prost(string, tag = "2")]
+        BudgetScopeId(::prost::alloc::string::String),
+        /// Selects the current scope only.
+        #[prost(message, tag = "3")]
+        CurrentBinding(super::SemanticProviderBudgetBindingSelector),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSemanticProviderBudgetStatusResponse {
+    #[prost(message, optional, tag = "1")]
+    pub status: ::core::option::Option<SemanticProviderBudgetStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetStatus {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub semantic_rule_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub embedding_binding_key: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub budget_scope_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub correlation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub model_endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub model_endpoint_capability_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "SemanticProviderBudgetScopeState", tag = "9")]
+    pub state: i32,
+    #[prost(message, optional, tag = "10")]
+    pub limits: ::core::option::Option<SemanticProviderBudgetPolicy>,
+    #[prost(message, optional, tag = "11")]
+    pub usage: ::core::option::Option<SemanticProviderBudgetUsage>,
+    #[prost(uint64, tag = "12")]
+    pub earliest_retained_event_sequence: u64,
+    #[prost(uint64, tag = "13")]
+    pub high_water_event_sequence: u64,
+    #[prost(message, optional, tag = "14")]
+    pub created_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "15")]
+    pub updated_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "16")]
+    pub expires_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "17")]
+    pub retention_until: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(enumeration = "SemanticProviderBudgetDenialReason", tag = "18")]
+    pub denial_reason: i32,
+    /// Monotonic within a space, never reused, and retained across restart.
+    #[prost(uint64, tag = "19")]
+    pub scope_sequence: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSemanticProviderBudgetScopesRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    /// At least correlation_id or semantic_rule_id is required. When both are
+    /// supplied all filters are conjunctive. embedding_binding_key requires
+    /// semantic_rule_id.
+    #[prost(string, tag = "2")]
+    pub correlation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub semantic_rule_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub embedding_binding_key: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub page_size: i32,
+    /// Opaque and bound to principal, space, all filters, and the fixed matching
+    /// scope set selected by the first page. A continuation supplies page_token
+    /// and the identical filters; changing filters is INVALID_ARGUMENT.
+    #[prost(string, tag = "6")]
+    pub page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSemanticProviderBudgetScopesResponse {
+    /// Strictly ascending by scope_sequence. References are immutable discovery
+    /// records; retrieve current counters with GetSemanticProviderBudgetStatus.
+    /// The first page is linearized to a fixed set of matching retained scopes;
+    /// scopes created later are excluded from every continuation. If retention
+    /// removes a selected scope between pages, continuation fails with
+    /// FAILED_PRECONDITION and no partial page. Expired or malformed tokens are
+    /// INVALID_ARGUMENT. An empty result is not proof that no matching scope ever
+    /// existed; callers expecting one must fail their reconciliation.
+    #[prost(message, repeated, tag = "1")]
+    pub scopes: ::prost::alloc::vec::Vec<SemanticProviderBudgetScopeReference>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetScopeReference {
+    #[prost(uint64, tag = "1")]
+    pub scope_sequence: u64,
+    #[prost(string, tag = "2")]
+    pub budget_scope_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub semantic_rule_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub embedding_binding_key: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub correlation_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "6")]
+    pub created_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "7")]
+    pub retention_until: ::core::option::Option<::prost_types::Timestamp>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetUsage {
+    /// A request is one logical embedding operation with one stable request id.
+    /// A provider batch is one request regardless of batch_items. The first
+    /// reservation consumes one request; each reservation consumes one attempt;
+    /// and every retry_index > 0 also consumes one retry attempt.
+    #[prost(int64, tag = "1")]
+    pub requests: i64,
+    #[prost(int64, tag = "2")]
+    pub attempts: i64,
+    #[prost(int64, tag = "3")]
+    pub retry_attempts: i64,
+    #[prost(int64, tag = "4")]
+    pub batch_items: i64,
+    /// Includes reserved attempts and terminal attempts with unresolved provider
+    /// effects, so ambiguity cannot free concurrency.
+    #[prost(int64, tag = "5")]
+    pub active_provider_calls: i64,
+    /// Token, duration, and cost totals use charged values only when known and no
+    /// greater than their reservations; otherwise they retain the conservative
+    /// reserved values. Reserved, expired-reserved, and ambiguous attempts remain
+    /// counted. Unknown provider effects are never released as unused capacity.
+    /// A charged overage is counted at its checked actual value, immediately
+    /// exhausts the scope with ACCOUNTING, and is recorded in its terminal event.
+    /// Summation overflow saturates the affected counter at int64 max, sets
+    /// accounting_overflow, exhausts the scope, and prevents later attempts.
+    #[prost(int64, tag = "6")]
+    pub input_tokens: i64,
+    #[prost(int64, tag = "7")]
+    pub provider_millis: i64,
+    #[prost(int64, tag = "8")]
+    pub estimated_cost_micros: i64,
+    #[prost(int64, tag = "9")]
+    pub ambiguous_attempts: i64,
+    #[prost(bool, tag = "10")]
+    pub accounting_overflow: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSemanticProviderBudgetAttemptEventsRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub budget_scope_id: ::prost::alloc::string::String,
+    /// Optional exclusive sequence. It is mutually exclusive with page_token.
+    /// retry_index is zero for the original attempt and increases by one for each
+    /// later attempt with the same request_id.
+    #[prost(uint64, tag = "3")]
+    pub after_sequence: u64,
+    /// Bounded to maximum_attempt_event_page_size advertised by the daemon.
+    #[prost(int32, tag = "4")]
+    pub page_size: i32,
+    /// Opaque and bound to principal, space, scope, after_sequence, and the fixed
+    /// snapshot_high_water_sequence selected by the first page.
+    #[prost(string, tag = "5")]
+    pub page_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListSemanticProviderBudgetAttemptEventsResponse {
+    /// Strictly ascending by event_sequence. Each event is immutable. A provider
+    /// attempt has exactly one RESERVED event before any provider effect and at
+    /// most one later terminal event with the same attempt_id and version 2.
+    #[prost(message, repeated, tag = "1")]
+    pub events: ::prost::alloc::vec::Vec<SemanticProviderBudgetAttemptEvent>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub earliest_retained_event_sequence: u64,
+    /// Fixed on the first page and unchanged on every continuation page. Events
+    /// appended later are excluded; callers start another read after this value.
+    #[prost(uint64, tag = "4")]
+    pub snapshot_high_water_sequence: u64,
+    /// Current high-water at the response linearization point; it may exceed the
+    /// snapshot boundary on continuation pages.
+    #[prost(uint64, tag = "5")]
+    pub current_high_water_sequence: u64,
+    /// True exactly when after_sequence + 1 is less than the earliest retained
+    /// sequence, including an initial after_sequence of zero. Arithmetic is
+    /// overflow checked. When no event has ever existed, earliest retained and
+    /// both high-water values are zero and history_gap is false. When events once
+    /// existed but all are pruned, earliest retained is zero, current high-water
+    /// remains non-zero, and history_gap is true exactly when after_sequence is
+    /// less than snapshot_high_water_sequence. A maximum uint64 after_sequence is
+    /// INVALID_ARGUMENT. If retention removes a required event
+    /// between pages, the continuation fails with FAILED_PRECONDITION and returns
+    /// no partial page. Expired, malformed, or filter-mismatched tokens are
+    /// INVALID_ARGUMENT. Callers must fail reconciliation on history_gap.
+    #[prost(bool, tag = "6")]
+    pub history_gap: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SemanticProviderBudgetAttemptEvent {
+    #[prost(uint64, tag = "1")]
+    pub event_sequence: u64,
+    #[prost(string, tag = "2")]
+    pub budget_scope_id: ::prost::alloc::string::String,
+    /// Daemon-generated opaque identities. They must not encode graph identities,
+    /// source text, credentials, provider request ids, or provider bodies.
+    #[prost(string, tag = "3")]
+    pub attempt_id: ::prost::alloc::string::String,
+    /// Exactly 1 for RESERVED and exactly 2 for the optional terminal event.
+    #[prost(uint32, tag = "4")]
+    pub attempt_version: u32,
+    #[prost(string, tag = "5")]
+    pub request_id: ::prost::alloc::string::String,
+    #[prost(int64, tag = "6")]
+    pub retry_index: i64,
+    #[prost(enumeration = "SemanticProviderBudgetAttemptState", tag = "7")]
+    pub state: i32,
+    #[prost(int64, tag = "8")]
+    pub batch_items: i64,
+    #[prost(int64, tag = "9")]
+    pub reserved_input_tokens: i64,
+    #[prost(int64, tag = "10")]
+    pub charged_input_tokens: i64,
+    #[prost(int64, tag = "11")]
+    pub reserved_provider_millis: i64,
+    #[prost(int64, tag = "12")]
+    pub charged_provider_millis: i64,
+    #[prost(int64, tag = "13")]
+    pub reserved_cost_micros: i64,
+    #[prost(int64, tag = "14")]
+    pub charged_cost_micros: i64,
+    #[prost(bool, tag = "15")]
+    pub usage_known: bool,
+    #[prost(bool, tag = "16")]
+    pub outcome_known: bool,
+    #[prost(bool, tag = "17")]
+    pub provider_duration_known: bool,
+    #[prost(enumeration = "SemanticProviderBudgetOutcomeCategory", tag = "18")]
+    pub outcome_category: i32,
+    #[prost(message, optional, tag = "19")]
+    pub recorded_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "20")]
+    pub reserved_until: ::core::option::Option<::prost_types::Timestamp>,
+    /// True only when final cost multiplication or ceiling division exceeded
+    /// int64. charged_cost_micros is then int64 max, the aggregate cost saturates,
+    /// accounting_overflow is true, and the scope is exhausted with ACCOUNTING.
+    #[prost(bool, tag = "21")]
+    pub charged_cost_saturated: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticRebuildStatus {
     /// Unique identity for one accepted rebuild invocation. Each accepted request
     /// creates a new epoch; clients use it to detect replacement or takeover.
@@ -9799,6 +10238,233 @@ pub struct BackfillFailure {
     #[prost(string, tag = "2")]
     pub error: ::prost::alloc::string::String,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticProviderBudgetScopeState {
+    Unspecified = 0,
+    Active = 1,
+    Completed = 2,
+    Expired = 3,
+    Exhausted = 4,
+}
+impl SemanticProviderBudgetScopeState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_UNSPECIFIED",
+            Self::Active => "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_ACTIVE",
+            Self::Completed => "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_COMPLETED",
+            Self::Expired => "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_EXPIRED",
+            Self::Exhausted => "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_EXHAUSTED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_ACTIVE" => Some(Self::Active),
+            "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_COMPLETED" => Some(Self::Completed),
+            "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_EXPIRED" => Some(Self::Expired),
+            "SEMANTIC_PROVIDER_BUDGET_SCOPE_STATE_EXHAUSTED" => Some(Self::Exhausted),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticProviderBudgetDenialReason {
+    Unspecified = 0,
+    None = 1,
+    RequestLimit = 2,
+    AttemptLimit = 3,
+    RetryLimit = 4,
+    PerRequestRetryLimit = 5,
+    ConcurrencyLimit = 6,
+    BatchLimit = 7,
+    InputTokenLimit = 8,
+    ProviderTimeLimit = 9,
+    Deadline = 10,
+    CostLimit = 11,
+    RouteMismatch = 12,
+    Accounting = 13,
+    Capacity = 14,
+}
+impl SemanticProviderBudgetDenialReason {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_UNSPECIFIED",
+            Self::None => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_NONE",
+            Self::RequestLimit => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_REQUEST_LIMIT",
+            Self::AttemptLimit => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ATTEMPT_LIMIT",
+            Self::RetryLimit => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_RETRY_LIMIT",
+            Self::PerRequestRetryLimit => {
+                "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_PER_REQUEST_RETRY_LIMIT"
+            }
+            Self::ConcurrencyLimit => {
+                "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_CONCURRENCY_LIMIT"
+            }
+            Self::BatchLimit => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_BATCH_LIMIT",
+            Self::InputTokenLimit => {
+                "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_INPUT_TOKEN_LIMIT"
+            }
+            Self::ProviderTimeLimit => {
+                "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_PROVIDER_TIME_LIMIT"
+            }
+            Self::Deadline => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_DEADLINE",
+            Self::CostLimit => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_COST_LIMIT",
+            Self::RouteMismatch => {
+                "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ROUTE_MISMATCH"
+            }
+            Self::Accounting => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ACCOUNTING",
+            Self::Capacity => "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_CAPACITY",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_UNSPECIFIED" => {
+                Some(Self::Unspecified)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_NONE" => Some(Self::None),
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_REQUEST_LIMIT" => {
+                Some(Self::RequestLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ATTEMPT_LIMIT" => {
+                Some(Self::AttemptLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_RETRY_LIMIT" => {
+                Some(Self::RetryLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_PER_REQUEST_RETRY_LIMIT" => {
+                Some(Self::PerRequestRetryLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_CONCURRENCY_LIMIT" => {
+                Some(Self::ConcurrencyLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_BATCH_LIMIT" => {
+                Some(Self::BatchLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_INPUT_TOKEN_LIMIT" => {
+                Some(Self::InputTokenLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_PROVIDER_TIME_LIMIT" => {
+                Some(Self::ProviderTimeLimit)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_DEADLINE" => Some(Self::Deadline),
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_COST_LIMIT" => Some(Self::CostLimit),
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ROUTE_MISMATCH" => {
+                Some(Self::RouteMismatch)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_ACCOUNTING" => Some(Self::Accounting),
+            "SEMANTIC_PROVIDER_BUDGET_DENIAL_REASON_CAPACITY" => Some(Self::Capacity),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticProviderBudgetAttemptState {
+    Unspecified = 0,
+    Reserved = 1,
+    Succeeded = 2,
+    Failed = 3,
+    Canceled = 4,
+    Ambiguous = 5,
+}
+impl SemanticProviderBudgetAttemptState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_UNSPECIFIED",
+            Self::Reserved => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_RESERVED",
+            Self::Succeeded => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_SUCCEEDED",
+            Self::Failed => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_FAILED",
+            Self::Canceled => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_CANCELED",
+            Self::Ambiguous => "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_AMBIGUOUS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_UNSPECIFIED" => {
+                Some(Self::Unspecified)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_RESERVED" => Some(Self::Reserved),
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_FAILED" => Some(Self::Failed),
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_CANCELED" => Some(Self::Canceled),
+            "SEMANTIC_PROVIDER_BUDGET_ATTEMPT_STATE_AMBIGUOUS" => Some(Self::Ambiguous),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SemanticProviderBudgetOutcomeCategory {
+    Unspecified = 0,
+    None = 1,
+    Success = 2,
+    TransientFailure = 3,
+    PermanentFailure = 4,
+    CanceledBeforeEffect = 5,
+    Ambiguous = 6,
+}
+impl SemanticProviderBudgetOutcomeCategory {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_UNSPECIFIED",
+            Self::None => "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_NONE",
+            Self::Success => "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_SUCCESS",
+            Self::TransientFailure => {
+                "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_TRANSIENT_FAILURE"
+            }
+            Self::PermanentFailure => {
+                "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_PERMANENT_FAILURE"
+            }
+            Self::CanceledBeforeEffect => {
+                "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_CANCELED_BEFORE_EFFECT"
+            }
+            Self::Ambiguous => "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_AMBIGUOUS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_UNSPECIFIED" => {
+                Some(Self::Unspecified)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_NONE" => Some(Self::None),
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_SUCCESS" => Some(Self::Success),
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_TRANSIENT_FAILURE" => {
+                Some(Self::TransientFailure)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_PERMANENT_FAILURE" => {
+                Some(Self::PermanentFailure)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_CANCELED_BEFORE_EFFECT" => {
+                Some(Self::CanceledBeforeEffect)
+            }
+            "SEMANTIC_PROVIDER_BUDGET_OUTCOME_CATEGORY_AMBIGUOUS" => {
+                Some(Self::Ambiguous)
+            }
+            _ => None,
+        }
+    }
+}
 /// Generated client implementations.
 pub mod admin_semantic_maintenance_service_client {
     #![allow(
@@ -9811,7 +10477,9 @@ pub mod admin_semantic_maintenance_service_client {
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     /// AdminSemanticMaintenanceService runs daemon-owned semantic generation rule
-    /// maintenance work.
+    /// maintenance work. Provider-budget RPCs require CAPABILITY_SEMANTIC_MANAGE
+    /// scoped to request.space_id. An authenticated caller without that grant
+    /// receives PERMISSION_DENIED without disclosure of resource existence.
     #[derive(Debug, Clone)]
     pub struct AdminSemanticMaintenanceServiceClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -10165,6 +10833,136 @@ pub mod admin_semantic_maintenance_service_client {
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminSemanticMaintenanceService",
                         "BackfillSemanticRule",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Returns authenticated daemon capabilities before a live credential is
+        /// resolved or persisted. Capabilities describe enforcement, not merely
+        /// accepted configuration fields.
+        pub async fn get_semantic_provider_budget_capabilities(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::GetSemanticProviderBudgetCapabilitiesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSemanticProviderBudgetCapabilitiesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminSemanticMaintenanceService/GetSemanticProviderBudgetCapabilities",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminSemanticMaintenanceService",
+                        "GetSemanticProviderBudgetCapabilities",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Read-only for either the current rule/binding scope or a retained scope id.
+        pub async fn get_semantic_provider_budget_status(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::GetSemanticProviderBudgetStatusRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSemanticProviderBudgetStatusResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminSemanticMaintenanceService/GetSemanticProviderBudgetStatus",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminSemanticMaintenanceService",
+                        "GetSemanticProviderBudgetStatus",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Discovers current and retained scopes without granting scope mutation.
+        pub async fn list_semantic_provider_budget_scopes(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::ListSemanticProviderBudgetScopesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::ListSemanticProviderBudgetScopesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminSemanticMaintenanceService/ListSemanticProviderBudgetScopes",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminSemanticMaintenanceService",
+                        "ListSemanticProviderBudgetScopes",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Returns append-only attempt transition events for one immutable scope.
+        pub async fn list_semantic_provider_budget_attempt_events(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::ListSemanticProviderBudgetAttemptEventsRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::ListSemanticProviderBudgetAttemptEventsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminSemanticMaintenanceService/ListSemanticProviderBudgetAttemptEvents",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminSemanticMaintenanceService",
+                        "ListSemanticProviderBudgetAttemptEvents",
                     ),
                 );
             self.inner.unary(req, path, codec).await

@@ -11,11 +11,13 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.
 - Regenerated the intervening merged search contract with channel-specific lexical and semantic query overrides.
 - Regenerated procedure-inference attempt polling, typed automation-run, procedure control-barrier, and procedure/binding Intelligence Access bindings from the matching pinned API submodule.
+- Regenerated daemon-owned semantic provider-budget policy, capability, status, retained-scope, immutable attempt-event, usage, denial, and pagination bindings from `mycel-api` merge commit `e4027b26bcabc546170563434357da63867ad80f`.
 
 ### Compatibility
 
 - Generated additions require a daemon advertising the corresponding semantic reliability capability when applications depend on the new RPCs.
-- Additive protobuf fields, including procedure-inference and control fields, add members to generated Rust structs. Exhaustive struct literals must initialize the new members or use `..Default::default()`; protobuf wire compatibility is preserved.
+- Additive protobuf fields, including procedure-inference, control, and semantic provider-budget fields, add members to generated Rust structs. Exhaustive struct literals must initialize the new members or use `..Default::default()`; protobuf wire compatibility is preserved.
+- The new semantic provider-budget maintenance RPCs are additive generated client methods. Applications may configure and inspect budgets, but scope creation and provider-attempt reservation remain daemon-owned.
 - Generated `SearchRequest::query` is deprecated in favor of `LexicalSearchOptions::query` and `SemanticSearchOptions::query`; consumers that deny deprecation warnings must migrate before updating.
 - `LexicalSearchOptions` no longer implements `Copy` because its channel-specific query is an `Option<String>`; callers must borrow or clone it where they previously relied on implicit copying.
 
