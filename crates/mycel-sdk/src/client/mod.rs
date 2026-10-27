@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::SystemTime};
+use std::{future::Future, pin::Pin, sync::Arc, time::SystemTime};
 
 use mycel::client::v1::{
     automation_service_client::AutomationServiceClient, blob_service_client::BlobServiceClient,
@@ -21,7 +21,10 @@ use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Request};
 
 use crate::{
-    auth::{is_expired_unauthenticated, timestamp_to_system_time, AuthInterceptor, TokenSource},
+    auth::{
+        is_expired_unauthenticated, refresh_generation_once, timestamp_to_system_time,
+        AuthGeneration, AuthInterceptor, TokenSource,
+    },
     config::Config,
     error::{Error, Result},
     transport::connect_channel,
@@ -63,9 +66,40 @@ pub struct Client {
 impl Client {
     pub async fn dial(cfg: Config) -> Result<Self> {
         let tokens = TokenSource::from_config(&cfg);
+        let refresh_lock = Arc::new(Mutex::new(()));
+        let mut client = Self::dial_with_auth(cfg, tokens, refresh_lock).await?;
+
+        if !client.cfg.username.is_empty() || !client.cfg.password.is_empty() {
+            let username = client.cfg.username.clone();
+            let password = client.cfg.password.clone();
+            client.login(username, password).await?;
+        }
+
+        Ok(client)
+    }
+
+    pub(crate) async fn dial_with_auth(
+        cfg: Config,
+        tokens: TokenSource,
+        refresh_lock: Arc<Mutex<()>>,
+    ) -> Result<Self> {
         let channel = connect_channel(&cfg).await?;
+        Ok(Self::with_channel_and_auth(
+            cfg,
+            channel,
+            tokens,
+            refresh_lock,
+        ))
+    }
+
+    pub(crate) fn with_channel_and_auth(
+        cfg: Config,
+        channel: Channel,
+        tokens: TokenSource,
+        refresh_lock: Arc<Mutex<()>>,
+    ) -> Self {
         let interceptor = tokens.interceptor();
-        let mut client = Self {
+        Self {
             auth: AuthServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             space: SpaceServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
             domain: DomainServiceClient::with_interceptor(channel.clone(), interceptor.clone()),
@@ -95,17 +129,9 @@ impl Client {
             graph_change: GraphChangeServiceClient::with_interceptor(channel.clone(), interceptor),
             channel,
             tokens,
-            refresh_lock: Arc::new(Mutex::new(())),
+            refresh_lock,
             cfg,
-        };
-
-        if !client.cfg.username.is_empty() || !client.cfg.password.is_empty() {
-            let username = client.cfg.username.clone();
-            let password = client.cfg.password.clone();
-            client.login(username, password).await?;
         }
-
-        Ok(client)
     }
 
     pub fn channel(&self) -> Channel {
@@ -192,6 +218,7 @@ impl Client {
 
     pub async fn who_am_i(&mut self) -> Result<PrincipalInfo> {
         self.refresh_if_needed().await?;
+        let generation = self.tokens.generation();
         match self
             .auth
             .who_am_i(self.auth_request(WhoAmIRequest {}))
@@ -199,7 +226,7 @@ impl Client {
         {
             Ok(res) => Ok(principal_info(res.into_inner().principal)),
             Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
-                self.refresh_after_expired().await?;
+                self.refresh_after_expired(generation).await?;
                 let res = self
                     .auth
                     .who_am_i(self.auth_request(WhoAmIRequest {}))
@@ -216,6 +243,7 @@ impl Client {
         scope: Option<AccessScope>,
     ) -> Result<GetMyAccessResponse> {
         self.refresh_if_needed().await?;
+        let generation = self.tokens.generation();
         match self
             .auth
             .get_my_access(self.auth_request(GetMyAccessRequest {
@@ -225,12 +253,36 @@ impl Client {
         {
             Ok(res) => Ok(res.into_inner()),
             Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
-                self.refresh_after_expired().await?;
+                self.refresh_after_expired(generation).await?;
                 Ok(self
                     .auth
                     .get_my_access(self.auth_request(GetMyAccessRequest { scope }))
                     .await?
                     .into_inner())
+            }
+            Err(status) => Err(status.into()),
+        }
+    }
+
+    /// Invokes one generated data-plane RPC through the SDK refresh boundary.
+    ///
+    /// The call refreshes proactively and retries once only when the daemon
+    /// rejects the first request as using an expired access token.
+    pub async fn authenticated_call<T, F>(&mut self, mut call: F) -> Result<T>
+    where
+        F: for<'a> FnMut(
+            &'a mut Self,
+        ) -> Pin<
+            Box<dyn Future<Output = std::result::Result<T, tonic::Status>> + Send + 'a>,
+        >,
+    {
+        self.refresh_if_needed().await?;
+        let generation = self.tokens.generation();
+        match call(self).await {
+            Ok(response) => Ok(response),
+            Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
+                self.refresh_after_expired(generation).await?;
+                Ok(call(self).await?)
             }
             Err(status) => Err(status.into()),
         }
@@ -248,13 +300,20 @@ impl Client {
         self.refresh(None).await.map(|_| ())
     }
 
-    pub(crate) async fn refresh_after_expired(&mut self) -> Result<()> {
+    pub(crate) async fn refresh_after_expired(
+        &mut self,
+        rejected_generation: AuthGeneration,
+    ) -> Result<()> {
         if !self.tokens.can_refresh() {
             return Ok(());
         }
-        let refresh_lock = self.refresh_lock.clone();
-        let _guard = refresh_lock.lock().await;
-        self.refresh(None).await.map(|_| ())
+        refresh_generation_once(
+            self.tokens.clone(),
+            self.refresh_lock.clone(),
+            rejected_generation,
+            || async { self.refresh(None).await.map(|_| ()) },
+        )
+        .await
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
