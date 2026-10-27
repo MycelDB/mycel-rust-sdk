@@ -34,19 +34,27 @@ fn hybrid_search_request_constructs() {
             embedding_binding_key: None,
             min_score: Some(0.2),
             candidate_count: 100,
-            query: Some("raft recovery".to_string()),
+            query: Some("how raft recovery works".to_string()),
         }),
         lexical: Some(LexicalSearchOptions {
             candidate_count: 100,
-            query: Some("raft recovery".to_string()),
+            query: Some("title:\"raft recovery\"".to_string()),
         }),
         ..Default::default()
     };
 
     assert_eq!(request.mode, SearchMode::Hybrid as i32);
-    assert_eq!(request.hybrid.unwrap().lexical_weight, 0.6);
+    assert_eq!(request.hybrid.as_ref().unwrap().lexical_weight, 0.6);
     assert_eq!(
-        request.filters.unwrap().properties[0].operator,
+        request.lexical.as_ref().unwrap().query.as_deref(),
+        Some("title:\"raft recovery\"")
+    );
+    assert_eq!(
+        request.semantic.as_ref().unwrap().query.as_deref(),
+        Some("how raft recovery works")
+    );
+    assert_eq!(
+        request.filters.as_ref().unwrap().properties[0].operator,
         FilterOperator::Contains as i32
     );
 }
