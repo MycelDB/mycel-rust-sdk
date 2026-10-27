@@ -6,6 +6,8 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.21.0] - 2026-10-27
+
 ### Added
 
 - Added shared Admin/data authentication composition and a guarded authenticated-call boundary that coordinates proactive refresh and one exact expired-token retry across rotating refresh-token generations.
@@ -17,8 +19,13 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Regenerated daemon-owned semantic provider-budget policy, capability, status, retained-scope, immutable attempt-event, usage, denial, and pagination bindings from `mycel-api` merge commit `e4027b26bcabc546170563434357da63867ad80f`.
 - Regenerated vector-store UUID identity, normalized key/display-name uniqueness documentation, and structured catalog-conflict bindings.
 
+### Changed
+
+- Aligned both Rust package versions and the API submodule with the coordinated MycelDB v0.21.0 release train.
+
 ### Compatibility
 
+- Best used with Mycel daemon/API v0.21.0.
 - Generated additions require a daemon advertising the corresponding semantic reliability capability when applications depend on the new RPCs.
 - Additive protobuf fields, including procedure-inference, control, and semantic provider-budget fields, add members to generated Rust structs. Exhaustive struct literals must initialize the new members or use `..Default::default()`; protobuf wire compatibility is preserved.
 - The new semantic provider-budget maintenance RPCs are additive generated client methods. Applications may configure and inspect budgets, but scope creation and provider-attempt reservation remain daemon-owned.
