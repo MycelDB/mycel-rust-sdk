@@ -8,7 +8,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
-- Regenerated Rust bindings with typed semantic trigger events while retaining the deprecated string field for compatible dual-write migration.
+- Regenerated Rust bindings for the enum-only `SemanticTriggerPolicy.events` contract; the legacy string representation and transitional `event_types` field are removed. This is intentionally source- and wire-incompatible with earlier unreleased bindings.
 - Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.
 - Regenerated the intervening merged search contract with channel-specific lexical and semantic query overrides.
 - Regenerated procedure-inference attempt polling, typed automation-run, procedure control-barrier, and procedure/binding Intelligence Access bindings from the matching pinned API submodule.

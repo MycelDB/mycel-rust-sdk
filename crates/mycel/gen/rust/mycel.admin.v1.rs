@@ -9159,24 +9159,15 @@ pub struct SemanticGenerationRule {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticTriggerPolicy {
-    /// Deprecated compatibility representation. New clients should use
-    /// event_types. During migration a client may send both fields when they
-    /// describe the same normalized set. Conflicting representations are invalid.
-    /// Responses populate both fields so clients generated from older contracts
-    /// continue to observe the configured triggers.
-    #[deprecated]
-    #[prost(string, repeated, tag = "1")]
-    pub events: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Typed trigger events. Explicit UNSPECIFIED and unknown numeric values are
+    /// invalid. An empty set defaults to SEMANTIC_TRIGGER_EVENT_TYPE_CHANGED.
+    #[prost(enumeration = "SemanticTriggerEventType", repeated, tag = "1")]
+    pub events: ::prost::alloc::vec::Vec<i32>,
     #[prost(string, repeated, tag = "2")]
     pub labels: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     /// Go duration string such as "120s". Empty uses daemon default.
     #[prost(string, tag = "3")]
     pub debounce: ::prost::alloc::string::String,
-    /// Typed trigger events. Explicit UNSPECIFIED and unknown numeric values are
-    /// invalid. If both event representations are empty, the policy defaults to
-    /// SEMANTIC_TRIGGER_EVENT_TYPE_CHANGED.
-    #[prost(enumeration = "SemanticTriggerEventType", repeated, tag = "4")]
-    pub event_types: ::prost::alloc::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SemanticTargetSelector {
