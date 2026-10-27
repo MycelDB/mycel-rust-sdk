@@ -31,7 +31,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.20.1" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.0" }
 ```
 
 ## Crates
@@ -43,7 +43,7 @@ mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.2
 
 Generated Rust protobuf/gRPC bindings are committed under `crates/mycel/gen/rust/` so tagged crate releases are self-contained. Normal `cargo build` and `cargo test` use the committed generated files and do not require a `mycel-api` checkout.
 
-The current release line is aligned with `mycel-api` `v0.20.1`.
+The current release line is aligned with `mycel-api` `v0.21.0`.
 
 To regenerate bindings, use a matching `mycel-api` checkout and run:
 
