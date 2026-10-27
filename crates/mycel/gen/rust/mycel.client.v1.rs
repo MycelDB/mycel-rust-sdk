@@ -2087,13 +2087,6 @@ pub struct SearchRequest {
     /// combines lexical and semantic candidate retrieval into one fused ranking.
     #[prost(enumeration = "SearchMode", tag = "3")]
     pub mode: i32,
-    /// Deprecated compatibility query used as the fallback for both lexical and
-    /// semantic retrieval when their channel-specific query is omitted. New
-    /// callers should set lexical.query and semantic.query explicitly because the
-    /// lexical query language and semantic embedding text have different syntax.
-    #[deprecated]
-    #[prost(string, tag = "4")]
-    pub query: ::prost::alloc::string::String,
     /// Optional hard eligibility filters. Filters constrain which candidate nodes
     /// may be returned and do not contribute to score.
     #[prost(message, optional, tag = "5")]
@@ -2194,12 +2187,11 @@ pub struct LexicalSearchOptions {
     /// the daemon chooses a bounded default.
     #[prost(int32, tag = "1")]
     pub candidate_count: i32,
-    /// Optional Lucene-style v1 query string for lexical retrieval. Supported
+    /// Lucene-style v1 query string for lexical retrieval. Supported
     /// syntax includes terms, quoted phrases, AND, OR, NOT, unary '-', and
     /// parentheses. The implicit operator is AND. Wildcard, fuzzy, range, and
     /// fielded syntax are reserved and should return structured diagnostics rather
-    /// than partial matches. If omitted or empty, SearchRequest.query is used for
-    /// backward compatibility.
+    /// than partial matches. Required whenever lexical retrieval is enabled.
     #[prost(string, optional, tag = "2")]
     pub query: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -2220,8 +2212,8 @@ pub struct SemanticSearchOptions {
     /// the daemon chooses a bounded default.
     #[prost(int32, tag = "4")]
     pub candidate_count: i32,
-    /// Optional natural-language text to embed for semantic retrieval. If omitted
-    /// or empty, SearchRequest.query is used for backward compatibility.
+    /// Natural-language text to embed for semantic retrieval. Required
+    /// whenever semantic retrieval is enabled.
     #[prost(string, optional, tag = "5")]
     pub query: ::core::option::Option<::prost::alloc::string::String>,
 }

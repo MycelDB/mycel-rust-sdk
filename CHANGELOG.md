@@ -8,6 +8,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Regenerated Rust bindings for channel-owned Search queries; deprecated top-level `SearchRequest::query` is removed and callers must populate `lexical.query` and/or `semantic.query`.
 - Regenerated Rust bindings for the enum-only `SemanticTriggerPolicy.events` contract; the legacy string representation and transitional `event_types` field are removed. This is intentionally source- and wire-incompatible with earlier unreleased bindings.
 - Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.
 - Regenerated the intervening merged search contract with channel-specific lexical and semantic query overrides.
@@ -20,7 +21,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Generated additions require a daemon advertising the corresponding semantic reliability capability when applications depend on the new RPCs.
 - Additive protobuf fields, including procedure-inference, control, and semantic provider-budget fields, add members to generated Rust structs. Exhaustive struct literals must initialize the new members or use `..Default::default()`; protobuf wire compatibility is preserved.
 - The new semantic provider-budget maintenance RPCs are additive generated client methods. Applications may configure and inspect budgets, but scope creation and provider-attempt reservation remain daemon-owned.
-- Generated `SearchRequest::query` is deprecated in favor of `LexicalSearchOptions::query` and `SemanticSearchOptions::query`; consumers that deny deprecation warnings must migrate before updating.
+- Removing generated `SearchRequest::query` is intentionally source-incompatible. Search callers must migrate to `LexicalSearchOptions::query` and/or `SemanticSearchOptions::query`.
 - `LexicalSearchOptions` no longer implements `Copy` because its channel-specific query is an `Option<String>`; callers must borrow or clone it where they previously relied on implicit copying.
 
 ## [v0.20.1] - 2026-10-20
