@@ -1,6 +1,6 @@
 [package]
 name = "myceldb-proto"
-version = "0.20.1"
+version = "0.21.0"
 publish = false
 description = "prost/tonic protobuf bindings for MycelDB daemon APIs"
 edition.workspace = true

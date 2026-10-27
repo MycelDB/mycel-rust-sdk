@@ -190,6 +190,376 @@ impl InferenceNetworkClass {
         }
     }
 }
+/// ProcedureInferenceAttempt contains sanitized execution evidence. Prompts,
+/// outputs, graph content, credentials, provider request IDs, raw errors, and
+/// arbitrary provider metadata are intentionally excluded.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProcedureInferenceAttempt {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "2")]
+    pub record_version: u64,
+    #[prost(string, tag = "3")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "6")]
+    pub procedure_version: i32,
+    #[prost(string, tag = "7")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "8")]
+    pub binding_version: i32,
+    #[prost(string, tag = "9")]
+    pub invocation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub run_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "11")]
+    pub run_attempt_number: i32,
+    #[prost(string, tag = "12")]
+    pub workflow_step_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "13")]
+    pub provider_attempt_number: i32,
+    #[prost(string, tag = "14")]
+    pub source_event_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "15")]
+    pub source_transaction_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "16")]
+    pub source_graph_revision: u64,
+    #[prost(string, tag = "17")]
+    pub event_origin_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub actor_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "19")]
+    pub owner_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "20")]
+    pub on_behalf_of_principal_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "InferenceOperation", tag = "21")]
+    pub operation: i32,
+    #[prost(string, tag = "22")]
+    pub profile_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "23")]
+    pub endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "24")]
+    pub model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "25")]
+    pub capability_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "26")]
+    pub policy_decision_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "27")]
+    pub credential_grant_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "28")]
+    pub authorization_revision: u64,
+    #[prost(uint64, tag = "29")]
+    pub configuration_revision: u64,
+    #[prost(enumeration = "ProcedureInferenceAttemptState", tag = "30")]
+    pub state: i32,
+    #[prost(string, tag = "31")]
+    pub outcome_category: ::prost::alloc::string::String,
+    #[prost(int64, tag = "32")]
+    pub input_tokens: i64,
+    #[prost(int64, tag = "33")]
+    pub output_tokens: i64,
+    #[prost(int64, tag = "34")]
+    pub total_tokens: i64,
+    #[prost(string, tag = "35")]
+    pub token_count_authority: ::prost::alloc::string::String,
+    #[prost(int64, tag = "36")]
+    pub provider_duration_millis: i64,
+    #[prost(string, tag = "37")]
+    pub publication_disposition: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "38")]
+    pub requested_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "39")]
+    pub authorized_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "40")]
+    pub started_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "41")]
+    pub completed_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+/// ProcedureInferenceAttemptChange is immutable and append-only. Sequence is
+/// contiguous and strictly increasing within one space_id; event_id is stable
+/// for at-least-once deduplication across repeated reads.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProcedureInferenceAttemptChange {
+    #[prost(string, tag = "1")]
+    pub event_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub schema_version: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "4")]
+    pub sequence: u64,
+    #[prost(string, tag = "5")]
+    pub change_kind: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub attempt_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "7")]
+    pub record_version: u64,
+    #[prost(message, optional, tag = "8")]
+    pub attempt: ::core::option::Option<ProcedureInferenceAttempt>,
+    #[prost(message, optional, tag = "9")]
+    pub occurred_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "10")]
+    pub committed_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProcedureInferenceAttemptFilter {
+    #[prost(string, tag = "1")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub procedure_version: i32,
+    #[prost(string, tag = "4")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub binding_version: i32,
+    #[prost(string, tag = "6")]
+    pub invocation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub run_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub workflow_step_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub capability_id: ::prost::alloc::string::String,
+    #[prost(enumeration = "InferenceOperation", tag = "12")]
+    pub operation: i32,
+    #[prost(enumeration = "ProcedureInferenceAttemptState", repeated, tag = "13")]
+    pub states: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, tag = "14")]
+    pub event_origin_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "15")]
+    pub actor_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "16")]
+    pub owner_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "17")]
+    pub on_behalf_of_principal_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "18")]
+    pub requested_at_or_after: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "19")]
+    pub requested_before: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "20")]
+    pub completed_at_or_after: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "21")]
+    pub completed_before: ::core::option::Option<::prost_types::Timestamp>,
+}
+/// AutomationRun is the typed sanitized run projection. Large attempt sets are
+/// retrieved from ListProcedureInferenceAttempts.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AutomationRun {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub invocation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub binding_version: i32,
+    #[prost(string, tag = "6")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "7")]
+    pub procedure_version: i32,
+    #[prost(int32, tag = "8")]
+    pub attempt_number: i32,
+    #[prost(enumeration = "AutomationRunState", tag = "9")]
+    pub state: i32,
+    #[prost(string, tag = "10")]
+    pub outcome_category: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub actor_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub owner_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "13")]
+    pub on_behalf_of_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "14")]
+    pub event_origin_principal_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "15")]
+    pub inference_profile: ::prost::alloc::string::String,
+    #[prost(string, tag = "16")]
+    pub inference_profile_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "17")]
+    pub policy_decision_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub endpoint_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "19")]
+    pub model_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "20")]
+    pub capability_id: ::prost::alloc::string::String,
+    #[prost(int64, tag = "21")]
+    pub input_tokens: i64,
+    #[prost(int64, tag = "22")]
+    pub output_tokens: i64,
+    #[prost(int64, tag = "23")]
+    pub total_tokens: i64,
+    #[prost(string, tag = "24")]
+    pub token_count_authority: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "25")]
+    pub inference_attempt_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "26")]
+    pub started_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "27")]
+    pub completed_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+/// ProcedureControlBarrier is returned only after all affected partitions have
+/// acknowledged the target epoch. A completed disable prevents any later
+/// provider-start or output-publication transition at an older epoch. Attempts
+/// already in STARTED may finish but unpublished output remains fenced.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProcedureControlBarrier {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "4")]
+    pub procedure_version: i32,
+    #[prost(enumeration = "ProcedureControlTargetStatus", tag = "5")]
+    pub target_status: i32,
+    #[prost(uint64, tag = "6")]
+    pub control_epoch: u64,
+    #[prost(string, tag = "7")]
+    pub controlling_principal_id: ::prost::alloc::string::String,
+    #[prost(uint32, repeated, tag = "8")]
+    pub affected_partitions: ::prost::alloc::vec::Vec<u32>,
+    #[prost(uint32, repeated, tag = "9")]
+    pub acknowledged_partitions: ::prost::alloc::vec::Vec<u32>,
+    #[prost(bool, tag = "10")]
+    pub completed: bool,
+    #[prost(uint64, tag = "11")]
+    pub completion_revision: u64,
+    #[prost(message, optional, tag = "12")]
+    pub committed_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "13")]
+    pub completed_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+/// ProcedureInferenceAttemptState is the authoritative lifecycle state for one
+/// possible provider side effect initiated by a graph procedure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ProcedureInferenceAttemptState {
+    Unspecified = 0,
+    Requested = 1,
+    Authorized = 2,
+    Started = 3,
+    Succeeded = 4,
+    Failed = 5,
+    Denied = 6,
+    Canceled = 7,
+    Ambiguous = 8,
+}
+impl ProcedureInferenceAttemptState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "PROCEDURE_INFERENCE_ATTEMPT_STATE_UNSPECIFIED",
+            Self::Requested => "PROCEDURE_INFERENCE_ATTEMPT_STATE_REQUESTED",
+            Self::Authorized => "PROCEDURE_INFERENCE_ATTEMPT_STATE_AUTHORIZED",
+            Self::Started => "PROCEDURE_INFERENCE_ATTEMPT_STATE_STARTED",
+            Self::Succeeded => "PROCEDURE_INFERENCE_ATTEMPT_STATE_SUCCEEDED",
+            Self::Failed => "PROCEDURE_INFERENCE_ATTEMPT_STATE_FAILED",
+            Self::Denied => "PROCEDURE_INFERENCE_ATTEMPT_STATE_DENIED",
+            Self::Canceled => "PROCEDURE_INFERENCE_ATTEMPT_STATE_CANCELED",
+            Self::Ambiguous => "PROCEDURE_INFERENCE_ATTEMPT_STATE_AMBIGUOUS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_REQUESTED" => Some(Self::Requested),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_AUTHORIZED" => Some(Self::Authorized),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_STARTED" => Some(Self::Started),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_FAILED" => Some(Self::Failed),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_DENIED" => Some(Self::Denied),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_CANCELED" => Some(Self::Canceled),
+            "PROCEDURE_INFERENCE_ATTEMPT_STATE_AMBIGUOUS" => Some(Self::Ambiguous),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum AutomationRunState {
+    Unspecified = 0,
+    Running = 1,
+    Succeeded = 2,
+    Skipped = 3,
+    Retryable = 4,
+    Failed = 5,
+    Canceled = 6,
+}
+impl AutomationRunState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "AUTOMATION_RUN_STATE_UNSPECIFIED",
+            Self::Running => "AUTOMATION_RUN_STATE_RUNNING",
+            Self::Succeeded => "AUTOMATION_RUN_STATE_SUCCEEDED",
+            Self::Skipped => "AUTOMATION_RUN_STATE_SKIPPED",
+            Self::Retryable => "AUTOMATION_RUN_STATE_RETRYABLE",
+            Self::Failed => "AUTOMATION_RUN_STATE_FAILED",
+            Self::Canceled => "AUTOMATION_RUN_STATE_CANCELED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "AUTOMATION_RUN_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "AUTOMATION_RUN_STATE_RUNNING" => Some(Self::Running),
+            "AUTOMATION_RUN_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "AUTOMATION_RUN_STATE_SKIPPED" => Some(Self::Skipped),
+            "AUTOMATION_RUN_STATE_RETRYABLE" => Some(Self::Retryable),
+            "AUTOMATION_RUN_STATE_FAILED" => Some(Self::Failed),
+            "AUTOMATION_RUN_STATE_CANCELED" => Some(Self::Canceled),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ProcedureControlTargetStatus {
+    Unspecified = 0,
+    Enabled = 1,
+    Disabled = 2,
+}
+impl ProcedureControlTargetStatus {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "PROCEDURE_CONTROL_TARGET_STATUS_UNSPECIFIED",
+            Self::Enabled => "PROCEDURE_CONTROL_TARGET_STATUS_ENABLED",
+            Self::Disabled => "PROCEDURE_CONTROL_TARGET_STATUS_DISABLED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "PROCEDURE_CONTROL_TARGET_STATUS_UNSPECIFIED" => Some(Self::Unspecified),
+            "PROCEDURE_CONTROL_TARGET_STATUS_ENABLED" => Some(Self::Enabled),
+            "PROCEDURE_CONTROL_TARGET_STATUS_DISABLED" => Some(Self::Disabled),
+            _ => None,
+        }
+    }
+}
 /// Principal identifies an actor that can own resources or receive access.
 ///
 /// Principal types describe the actor shape. Administration is represented by
@@ -584,7 +954,12 @@ impl SpaceRole {
 }
 /// IntelligenceAccessScope scopes grants, policies, decisions, and usage
 /// telemetry across automations, semantic generation rules, and future
-/// intelligence workloads.
+/// intelligence workloads. Populated selectors are conjunctive. An unset
+/// version matches all versions of its populated ID; a populated version
+/// requires the corresponding ID. A procedure_id with no procedure_version is
+/// therefore a logical-procedure scope across versions. Procedure-scoped
+/// positive authorization requires an exact version; deny policy may omit the
+/// version to revoke the logical procedure across versions.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IntelligenceAccessScope {
     #[prost(string, tag = "1")]
@@ -599,6 +974,18 @@ pub struct IntelligenceAccessScope {
     pub include_descendants: bool,
     #[prost(string, tag = "6")]
     pub embedding_binding_key: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "8")]
+    pub procedure_version: i32,
+    #[prost(string, tag = "9")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "10")]
+    pub binding_version: i32,
+    #[prost(string, tag = "11")]
+    pub invocation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub run_id: ::prost::alloc::string::String,
 }
 /// IntelligenceAccessUsageMode describes why mycel is invoking an intelligence
 /// workload.

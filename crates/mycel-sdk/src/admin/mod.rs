@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::SystemTime};
+use std::{future::Future, pin::Pin, sync::Arc, time::SystemTime};
 
 use mycel::admin::v1::find_principal_request;
 use mycel::admin::v1::{
@@ -41,7 +41,11 @@ use tokio::sync::Mutex;
 use tonic::{service::interceptor::InterceptedService, transport::Channel, Code, Request};
 
 use crate::{
-    auth::{is_expired_unauthenticated, timestamp_to_system_time, AuthInterceptor, TokenSource},
+    auth::{
+        is_expired_unauthenticated, refresh_generation_once, timestamp_to_system_time,
+        AuthGeneration, AuthInterceptor, TokenSource,
+    },
+    client::Client,
     config::Config,
     error::{Error, Result},
     transport::connect_channel,
@@ -52,10 +56,11 @@ pub type AuthenticatedService = InterceptedService<Channel, AuthInterceptor>;
 macro_rules! admin_call_with_refresh {
     ($client:ident, $call:expr, $retry:expr) => {{
         $client.refresh_if_needed().await?;
+        let generation = $client.tokens.generation();
         match $call.await {
             Ok(res) => Ok(res),
             Err(status) if is_expired_unauthenticated(&status) && $client.tokens.can_refresh() => {
-                $client.refresh_after_expired().await?;
+                $client.refresh_after_expired(generation).await?;
                 Ok($retry.await?)
             }
             Err(status) => Err(Error::from(status)),
@@ -231,6 +236,24 @@ impl AdminClient {
 
     pub fn channel(&self) -> Channel {
         self.channel.clone()
+    }
+
+    /// Builds a data-plane client sharing this Admin client's token source and
+    /// refresh coordinator. A rotation performed by either client is published
+    /// atomically to both.
+    pub fn data_client(&self) -> Client {
+        let mut cfg = self.cfg.clone();
+        cfg.username.clear();
+        cfg.password.clear();
+        cfg.access_token.clear();
+        cfg.access_token_expire_time = None;
+        cfg.refresh_token.clear();
+        Client::with_channel_and_auth(
+            cfg,
+            self.channel.clone(),
+            self.tokens.clone(),
+            self.refresh_lock.clone(),
+        )
     }
 
     pub fn access_token(&self) -> String {
@@ -854,6 +877,30 @@ impl AdminClient {
         Ok(res)
     }
 
+    /// Invokes one generated Admin RPC through the SDK refresh boundary.
+    ///
+    /// The call refreshes proactively and retries once only when the daemon
+    /// rejects the first request as using an expired access token.
+    pub async fn authenticated_call<T, F>(&mut self, mut call: F) -> Result<T>
+    where
+        F: for<'a> FnMut(
+            &'a mut Self,
+        ) -> Pin<
+            Box<dyn Future<Output = std::result::Result<T, tonic::Status>> + Send + 'a>,
+        >,
+    {
+        self.refresh_if_needed().await?;
+        let generation = self.tokens.generation();
+        match call(self).await {
+            Ok(response) => Ok(response),
+            Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
+                self.refresh_after_expired(generation).await?;
+                Ok(call(self).await?)
+            }
+            Err(status) => Err(status.into()),
+        }
+    }
+
     pub(crate) async fn refresh_if_needed(&mut self) -> Result<()> {
         if !self.tokens.needs_refresh(SystemTime::now()) {
             return Ok(());
@@ -866,13 +913,20 @@ impl AdminClient {
         self.refresh_principal(None).await.map(|_| ())
     }
 
-    pub(crate) async fn refresh_after_expired(&mut self) -> Result<()> {
+    pub(crate) async fn refresh_after_expired(
+        &mut self,
+        rejected_generation: AuthGeneration,
+    ) -> Result<()> {
         if !self.tokens.can_refresh() {
             return Ok(());
         }
-        let refresh_lock = self.refresh_lock.clone();
-        let _guard = refresh_lock.lock().await;
-        self.refresh_principal(None).await.map(|_| ())
+        refresh_generation_once(
+            self.tokens.clone(),
+            self.refresh_lock.clone(),
+            rejected_generation,
+            || async { self.refresh_principal(None).await.map(|_| ()) },
+        )
+        .await
     }
 
     pub(crate) fn request<T>(&self, message: T) -> Request<T> {
