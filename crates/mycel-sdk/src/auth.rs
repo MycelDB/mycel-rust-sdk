@@ -4,6 +4,7 @@ use std::{
 };
 
 use prost_types::Timestamp;
+use tokio::sync::Mutex;
 use tonic::{metadata::MetadataValue, service::Interceptor, Code, Request, Status};
 
 use crate::config::Config;
@@ -22,7 +23,11 @@ struct TokenState {
     access_token_expire_time: Option<SystemTime>,
     refresh_token: String,
     refresh_before: Duration,
+    generation: u64,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AuthGeneration(u64);
 
 impl Default for TokenSource {
     fn default() -> Self {
@@ -38,6 +43,7 @@ impl TokenSource {
                 access_token_expire_time: None,
                 refresh_token: String::new(),
                 refresh_before: DEFAULT_REFRESH_BEFORE,
+                generation: 0,
             })),
         }
     }
@@ -58,6 +64,7 @@ impl TokenSource {
         let mut state = self.state.write().expect("token lock poisoned");
         state.access_token = token.into().trim().to_string();
         state.access_token_expire_time = expire_time;
+        state.generation = state.generation.wrapping_add(1);
     }
 
     pub fn set_refresh_token(&self, token: impl Into<String>) {
@@ -80,6 +87,7 @@ impl TokenSource {
         if !refresh_token.is_empty() {
             state.refresh_token = refresh_token;
         }
+        state.generation = state.generation.wrapping_add(1);
     }
 
     pub fn clear(&self) {
@@ -87,6 +95,7 @@ impl TokenSource {
         state.access_token.clear();
         state.access_token_expire_time = None;
         state.refresh_token.clear();
+        state.generation = state.generation.wrapping_add(1);
     }
 
     pub fn set_refresh_before(&self, refresh_before: Duration) {
@@ -125,6 +134,14 @@ impl TokenSource {
 
     pub fn can_refresh(&self) -> bool {
         !self.refresh_token().is_empty()
+    }
+
+    pub fn generation(&self) -> AuthGeneration {
+        AuthGeneration(self.state.read().expect("token lock poisoned").generation)
+    }
+
+    pub fn is_generation(&self, generation: AuthGeneration) -> bool {
+        self.generation() == generation
     }
 
     pub fn needs_refresh(&self, now: SystemTime) -> bool {
@@ -185,6 +202,23 @@ pub fn timestamp_to_system_time(timestamp: Option<Timestamp>) -> Option<SystemTi
     Some(SystemTime::UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32))
 }
 
+pub(crate) async fn refresh_generation_once<F, Fut, E>(
+    tokens: TokenSource,
+    refresh_lock: Arc<Mutex<()>>,
+    rejected_generation: AuthGeneration,
+    refresh: F,
+) -> std::result::Result<(), E>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = std::result::Result<(), E>>,
+{
+    let _guard = refresh_lock.lock().await;
+    if !tokens.is_generation(rejected_generation) {
+        return Ok(());
+    }
+    refresh().await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,6 +263,24 @@ mod tests {
     }
 
     #[test]
+    fn cloned_token_sources_publish_rotations_and_clear_atomically() {
+        let tokens = TokenSource::new("access-1");
+        tokens.set_refresh_token("refresh-1");
+        let shared = tokens.clone();
+        let rejected_generation = tokens.generation();
+
+        shared.set_tokens("access-2", None, "refresh-2");
+
+        assert_eq!(tokens.token(), "access-2");
+        assert_eq!(tokens.refresh_token(), "refresh-2");
+        assert!(!tokens.is_generation(rejected_generation));
+
+        shared.clear();
+        assert_eq!(tokens.token(), "");
+        assert_eq!(tokens.refresh_token(), "");
+    }
+
+    #[test]
     fn expired_unauthenticated_matches_daemon_message() {
         assert!(is_expired_unauthenticated(&Status::unauthenticated(
             "authorization token is expired"
@@ -236,5 +288,45 @@ mod tests {
         assert!(!is_expired_unauthenticated(&Status::unauthenticated(
             "bad credentials"
         )));
+    }
+
+    #[tokio::test]
+    async fn concurrent_recovery_refreshes_one_shared_generation_once() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::sync::Barrier;
+
+        let tokens = TokenSource::new("access-1");
+        tokens.set_refresh_token("refresh-1");
+        let generation = tokens.generation();
+        let refresh_lock = Arc::new(Mutex::new(()));
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let barrier = Arc::new(Barrier::new(3));
+        let mut tasks = Vec::new();
+
+        for _ in 0..2 {
+            let task_tokens = tokens.clone();
+            let update_tokens = tokens.clone();
+            let task_lock = refresh_lock.clone();
+            let task_attempts = attempts.clone();
+            let task_barrier = barrier.clone();
+            tasks.push(tokio::spawn(async move {
+                task_barrier.wait().await;
+                refresh_generation_once(task_tokens, task_lock, generation, || async move {
+                    task_attempts.fetch_add(1, Ordering::SeqCst);
+                    update_tokens.set_tokens("access-2", None, "refresh-2");
+                    Ok::<(), ()>(())
+                })
+                .await
+            }));
+        }
+
+        barrier.wait().await;
+        for task in tasks {
+            task.await.expect("refresh task").expect("refresh result");
+        }
+
+        assert_eq!(attempts.load(Ordering::SeqCst), 1);
+        assert_eq!(tokens.token(), "access-2");
+        assert_eq!(tokens.refresh_token(), "refresh-2");
     }
 }

@@ -8,6 +8,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added shared Admin/data authentication composition and a guarded authenticated-call boundary that coordinates proactive refresh and one exact expired-token retry across rotating refresh-token generations.
 - Regenerated Rust bindings for channel-owned Search queries; deprecated top-level `SearchRequest::query` is removed and callers must populate `lexical.query` and/or `semantic.query`.
 - Regenerated Rust bindings for the enum-only `SemanticTriggerPolicy.events` contract; the legacy string representation and transitional `event_types` field are removed. This is intentionally source- and wire-incompatible with earlier unreleased bindings.
 - Regenerated Rust bindings for direct semantic pagination, hard-eligibility filters, safe result provenance, and Admin semantic reliability/rebuild diagnostics.

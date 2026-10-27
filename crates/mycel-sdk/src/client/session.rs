@@ -61,10 +61,11 @@ pub fn is_ambiguous_commit_error(err: &Error) -> bool {
 macro_rules! client_call_with_refresh {
     ($client:ident, $call:expr, $retry:expr) => {{
         $client.refresh_if_needed().await?;
+        let generation = $client.tokens.generation();
         match $call.await {
             Ok(res) => Ok(res),
             Err(status) if is_expired_unauthenticated(&status) && $client.tokens.can_refresh() => {
-                $client.refresh_after_expired().await?;
+                $client.refresh_after_expired(generation).await?;
                 Ok($retry.await?)
             }
             Err(status) => Err(Error::from(status)),
