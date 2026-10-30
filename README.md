@@ -31,7 +31,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.0" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.1" }
 ```
 
 ## Crates
