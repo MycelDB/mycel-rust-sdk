@@ -1,6 +1,6 @@
 [package]
 name = "mycel-sdk"
-version = "0.21.0"
+version = "0.21.1"
 publish = false
 description = "Ergonomic Rust SDK for MycelDB daemon APIs"
 edition.workspace = true
@@ -11,7 +11,7 @@ keywords = ["myceldb", "grpc", "sdk", "database"]
 categories = ["api-bindings", "database", "network-programming"]
 
 [dependencies]
-mycel = { package = "myceldb-proto", path = "../mycel", version = "0.21.0" }
+mycel = { package = "myceldb-proto", path = "../mycel", version = "0.21.1" }
 tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true
@@ -22,3 +22,4 @@ uuid.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
+tokio-stream = { version = "0.1", features = ["net"] }

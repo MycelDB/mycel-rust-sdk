@@ -5,6 +5,7 @@ pub mod config;
 pub mod error;
 pub mod operation;
 pub mod query;
+pub mod semantic;
 mod transport;
 
 pub use auth::TokenSource;

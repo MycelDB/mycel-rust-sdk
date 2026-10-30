@@ -31,7 +31,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.0" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.1" }
 ```
 
 ## Crates
@@ -168,6 +168,37 @@ let _ = (diagnostics.plan, result.result);
 ```
 
 Other builders include `ordered_node_query`, `text_predicate_query`, `semantic_predicate_query`, `path_query`, `aggregate_count_query`, `aggregate_property_query`, and `Client::explain_gql`.
+
+Direct semantic search supports typed hard-eligibility filters and opaque continuation tokens from Mycel API/daemon v0.21.0 or later:
+
+```rust
+use mycel_sdk::{
+    proto::client::v1::SemanticSearchRequest,
+    semantic::{string_value, SemanticEligibilityFilterBuilder},
+};
+
+let filter = SemanticEligibilityFilterBuilder::new()
+    .require_label("Article")
+    .equal("status", string_value("published"))
+    .missing("deleted_at")
+    .build();
+let mut request = SemanticSearchRequest {
+    space_id,
+    domain_id,
+    query: "raft recovery".into(),
+    limit: 25,
+    filter: Some(filter),
+    ..Default::default()
+};
+let page = client.semantic_search(request.clone()).await?;
+if !page.next_page_token.is_empty() {
+    request.page_token = Some(page.next_page_token);
+    let next_page = client.semantic_search(request).await?;
+    let _ = next_page;
+}
+```
+
+Continuation tokens are request- and visibility-bound. Keep them opaque, preserve every result-affecting request field, and surface stale or mismatched-token errors instead of silently restarting pagination. `semantic::null_value()` represents explicit protobuf null; use the `missing` predicate for an absent key.
 
 Graph changes can be watched with `GraphChangeService.WatchGraphChanges` through the SDK helper. Persist the last processed `event.revision` and use it as `after_revision` when reconnecting:
 
