@@ -6,6 +6,10 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Added typed direct-semantic search and hard-eligibility filter helpers over the existing v0.21 contract, preserving opaque continuation tokens, coordinated authentication refresh, and daemon-owned diagnostics.
+
 ## [v0.21.0] - 2026-10-27
 
 ### Added
