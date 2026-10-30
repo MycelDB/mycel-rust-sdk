@@ -6,9 +6,20 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.21.1] - 2026-10-30
+
 ### Added
 
 - Added typed direct-semantic search and hard-eligibility filter helpers over the existing v0.21 contract, preserving opaque continuation tokens, coordinated authentication refresh, and daemon-owned diagnostics.
+
+### Changed
+
+- Aligned both Rust package versions with the v0.21.1 source release. The pinned v0.21.0 API contract is unchanged.
+
+### Compatibility
+
+- Requires Mycel API/daemon v0.21.0 or later for direct-semantic pagination and filter support. This additive SDK release introduces no protobuf, wire, or API-submodule change.
+- Distribution remains Git tag/GitHub source release only; neither package is published to crates.io.
 
 ## [v0.21.0] - 2026-10-27
 
