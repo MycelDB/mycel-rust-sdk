@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "component": "mycel-rust-sdk",
+  "component_release": "v0.21.1",
+  "source_revision": "f8c9b1d95d976f8b12b0acba22cba4a1f81d44a7",
+  "mycel_api_line": "0.21",
+  "supported_daemon_api_lines": [
+    "0.21"
+  ],
+  "incompatible_daemon_api_lines": [
+    {
+      "line": "0.20",
+      "contracts": [
+        "search-channel-owned-query-v1",
+        "semantic-trigger-events-enum-v1"
+      ]
+    }
+  ],
+  "published_at": "2026-10-30T21:42:47Z"
+}
