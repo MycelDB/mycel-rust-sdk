@@ -1,3 +1,6 @@
+// Prost-generated oneof enums reflect the wire contract and cannot be boxed locally.
+#![allow(clippy::large_enum_variant)]
+
 pub mod mycel {
     pub mod common {
         pub mod v1 {

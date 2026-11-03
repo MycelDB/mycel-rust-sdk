@@ -126,6 +126,7 @@ pub fn semantic_predicate_query(
     }
 }
 
+#[allow(clippy::needless_update)] // Keep generated struct literals forward-compatible.
 pub fn path_query(
     path_alias: impl Into<String>,
     start_alias: impl Into<String>,
@@ -246,6 +247,7 @@ pub fn aggregate_value(value: ValueExpr) -> AggregateArgument {
     }
 }
 
+#[allow(clippy::needless_update)] // Keep generated struct literals forward-compatible.
 fn node_return(alias: String, output_name: String) -> ReturnProjection {
     ReturnProjection {
         alias,

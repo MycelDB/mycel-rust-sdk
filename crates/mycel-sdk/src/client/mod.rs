@@ -181,7 +181,7 @@ impl Client {
         let res = self.auth.login(req).await?.into_inner();
         self.set_auth_tokens(
             res.access_token.clone(),
-            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            timestamp_to_system_time(res.access_token_expire_time),
             res.refresh_token.clone().unwrap_or_default(),
         );
         Ok(res)
@@ -199,7 +199,7 @@ impl Client {
         let res = self.auth.refresh(req).await?.into_inner();
         self.set_auth_tokens(
             res.access_token.clone(),
-            timestamp_to_system_time(res.access_token_expire_time.clone()),
+            timestamp_to_system_time(res.access_token_expire_time),
             res.refresh_token.clone().unwrap_or_default(),
         );
         Ok(res)

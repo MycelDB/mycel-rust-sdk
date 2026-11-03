@@ -22,6 +22,68 @@ This SDK mirrors the Go SDK shape:
 - Admin backup policy/status/list/trigger/delete helpers
 - Admin cluster backup trigger/status/list/validate helpers
 
+## Compatibility
+
+The SDK major/minor line must match the Mycel API/daemon major/minor line for generated contracts. A successful gRPC connection or health check does not prove that an RPC's protobuf wire contract is compatible.
+
+| Rust SDK line | Generated API line | Supported daemon line | Notes |
+| --- | --- | --- | --- |
+| `v0.20.x` | `v0.20` | `v0.20.x` | Do not use for Mycel v0.21 semantic Admin RPCs. Its string-valued semantic trigger field is wire-incompatible with the v0.21 enum field. |
+| `v0.21.x` | `v0.21` | `v0.21.x` | Required for channel-owned Search queries and enum-only semantic trigger events. Older daemon lines are not certified. |
+
+The approved immutable v0.21 consumer target is [`v0.21.1`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.21.1). The breaking generated-contract migration began at the immutable [`v0.21.0` source tag](https://github.com/MycelDB/mycel-rust-sdk/tree/v0.21.0); see the [`v0.21.0` changelog entry](CHANGELOG.md#v0210---2026-10-27).
+
+Machine-readable compatibility metadata is published at [`.release/mycel-compatibility.json`](.release/mycel-compatibility.json). Deployment tooling must fail closed for missing or unknown metadata/schema versions, unknown daemon lines, or contradictory compatibility declarations.
+
+### Migrating semantic trigger events to v0.21
+
+Mycel API v0.21 replaced free-form trigger strings with `SemanticTriggerEventType`. Prost stores repeated enum fields as `Vec<i32>`, so callers must cast generated enum variants rather than placing strings into field 1:
+
+```rust
+use mycel_sdk::proto::admin::v1::{
+    SemanticTriggerEventType,
+    SemanticTriggerPolicy,
+};
+
+let trigger = SemanticTriggerPolicy {
+    events: vec![
+        SemanticTriggerEventType::NodeCreated as i32,
+        SemanticTriggerEventType::NodeUpdated as i32,
+        SemanticTriggerEventType::EdgeCreated as i32,
+        SemanticTriggerEventType::EdgeDeleted as i32,
+    ],
+    labels: vec!["Note".to_string()],
+    debounce: "30s".to_string(),
+};
+```
+
+Supported explicit variants are:
+
+- `SemanticTriggerEventType::Changed`
+- `SemanticTriggerEventType::NodeCreated`
+- `SemanticTriggerEventType::NodeUpdated`
+- `SemanticTriggerEventType::NodeDeleted`
+- `SemanticTriggerEventType::EdgeChanged`
+- `SemanticTriggerEventType::EdgeCreated`
+- `SemanticTriggerEventType::EdgeUpdated`
+- `SemanticTriggerEventType::EdgeDeleted`
+
+`SemanticTriggerEventType::Unspecified` and unknown numeric values are invalid. An empty event vector asks the daemon to apply its documented `Changed` default.
+
+### Read-only daemon compatibility check
+
+The focused daemon test validates an in-memory typed v0.21 rule against an existing authorized space/domain and verifies that the wire-equivalent legacy value `110` is rejected. It performs no semantic-rule mutation:
+
+```sh
+MYCEL_V021_COMPAT_SPACE_ID=<space-uuid> \
+MYCEL_V021_COMPAT_DOMAIN_ID=<domain-uuid> \
+MYCELD_GRPC_ADDR=127.0.0.1:9091 \
+MYCEL_ACCESS_TOKEN=<operator-token> \
+cargo test -p mycel-sdk v021_semantic_trigger_compatibility_against_daemon -- --nocapture
+```
+
+The space/domain must already exist in a disposable or approved test environment, and the supplied operator must have semantic-management authority for that scope. Do not run this check against shared staging unless separately approved.
+
 ## Distribution
 
 Releases are distributed as Git tags and GitHub source archives. Neither
