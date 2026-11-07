@@ -4,6 +4,7 @@ use mycel_sdk::proto::client::v1::{
 };
 
 #[test]
+#[allow(clippy::needless_update)] // Keep generated request literals forward-compatible.
 fn hybrid_search_request_constructs() {
     let request = SearchRequest {
         space_id: "space".to_string(),

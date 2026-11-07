@@ -6,6 +6,16 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Added the shared v0.20/v0.21 SDK/API/daemon compatibility matrix and v0.21 semantic-trigger enum migration guide.
+- Added versioned machine-readable compatibility metadata for deployment gates and Console certification.
+- Added typed and legacy semantic-trigger wire fixtures plus an opt-in, read-only daemon compatibility test.
+
+### Compatibility
+
+- `mycel-rust-sdk v0.21.1` is the approved immutable v0.21 Rust/Console target. SDK v0.20.x remains unsupported for v0.21 semantic Admin trigger RPCs, and legacy trigger strings will not be restored.
+
 ## [v0.21.1] - 2026-10-30
 
 ### Added

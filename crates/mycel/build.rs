@@ -22,9 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .or_else(|| existing_dir(repo_root.join("../mycel-api")));
     let proto_root = api_root
         .ok_or_else(|| {
-            format!(
-                "mycel-api checkout not found (set MYCEL_API_ROOT, initialize third_party/mycel-api submodule, or place mycel-api beside this repo)"
-            )
+            "mycel-api checkout not found (set MYCEL_API_ROOT, initialize third_party/mycel-api submodule, or place mycel-api beside this repo)".to_string()
         })?
         .join("api/proto");
 
