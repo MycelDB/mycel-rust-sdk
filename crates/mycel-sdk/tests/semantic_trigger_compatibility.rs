@@ -69,10 +69,10 @@ fn compatibility_manifest_v1() {
 
     assert_eq!(manifest["schema_version"], 1);
     assert_eq!(manifest["component"], "mycel-rust-sdk");
-    assert_eq!(manifest["component_release"], "v0.21.1");
+    assert_eq!(manifest["component_release"], "v0.21.2");
     assert_eq!(
         manifest["source_revision"],
-        "f8c9b1d95d976f8b12b0acba22cba4a1f81d44a7"
+        "9ad5057498f2e55ac2836dd0417de5c9583377e6"
     );
     assert_eq!(manifest["mycel_api_line"], "0.21");
     assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.21"]));
@@ -86,7 +86,7 @@ fn compatibility_manifest_v1() {
             ]
         }])
     );
-    assert_eq!(manifest["published_at"], "2026-10-30T21:42:47Z");
+    assert_eq!(manifest["published_at"], "2026-11-07T20:05:24Z");
 }
 
 #[tokio::test]

@@ -31,7 +31,7 @@ The SDK major/minor line must match the Mycel API/daemon major/minor line for ge
 | `v0.20.x` | `v0.20` | `v0.20.x` | Do not use for Mycel v0.21 semantic Admin RPCs. Its string-valued semantic trigger field is wire-incompatible with the v0.21 enum field. |
 | `v0.21.x` | `v0.21` | `v0.21.x` | Required for channel-owned Search queries and enum-only semantic trigger events. Older daemon lines are not certified. |
 
-The approved immutable v0.21 consumer target is [`v0.21.1`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.21.1). The breaking generated-contract migration began at the immutable [`v0.21.0` source tag](https://github.com/MycelDB/mycel-rust-sdk/tree/v0.21.0); see the [`v0.21.0` changelog entry](CHANGELOG.md#v0210---2026-10-27).
+The approved immutable v0.21 consumer target is [`v0.21.2`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.21.2). The breaking generated-contract migration began at the immutable [`v0.21.0` source tag](https://github.com/MycelDB/mycel-rust-sdk/tree/v0.21.0); see the [`v0.21.0` changelog entry](CHANGELOG.md#v0210---2026-10-27).
 
 Machine-readable compatibility metadata is published at [`.release/mycel-compatibility.json`](.release/mycel-compatibility.json). Deployment tooling must fail closed for missing or unknown metadata/schema versions, unknown daemon lines, or contradictory compatibility declarations.
 
@@ -93,7 +93,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.1" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.21.2" }
 ```
 
 ## Crates
