@@ -594,6 +594,95 @@ pub struct DisableGraphAutomationBindingResponse {
     #[prost(string, tag = "1")]
     pub binding_json: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StartGraphAutomationReconciliationRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub idempotency_key: ::prost::alloc::string::String,
+    /// batch_size defaults to the daemon limit and must be bounded by it.
+    #[prost(int32, tag = "5")]
+    pub batch_size: i32,
+    /// max_concurrency is an optional operation-local ceiling. The daemon may apply a lower
+    /// global or binding limit; zero uses the daemon default.
+    #[prost(int32, tag = "6")]
+    pub max_concurrency: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StartGraphAutomationReconciliationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub operation: ::core::option::Option<GraphAutomationReconciliation>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetGraphAutomationReconciliationRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub operation_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetGraphAutomationReconciliationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub operation: ::core::option::Option<GraphAutomationReconciliation>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CancelGraphAutomationReconciliationRequest {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub operation_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CancelGraphAutomationReconciliationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub operation: ::core::option::Option<GraphAutomationReconciliation>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GraphAutomationReconciliation {
+    #[prost(string, tag = "1")]
+    pub operation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub domain_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub binding_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub binding_version: i32,
+    #[prost(string, tag = "6")]
+    pub procedure_id: ::prost::alloc::string::String,
+    #[prost(int32, tag = "7")]
+    pub procedure_version: i32,
+    /// queued | running | completed | completed_with_failures | canceled | failed
+    #[prost(string, tag = "8")]
+    pub status: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub cursor: ::prost::alloc::string::String,
+    #[prost(int64, tag = "10")]
+    pub scanned_count: i64,
+    #[prost(int64, tag = "11")]
+    pub fresh_skipped_count: i64,
+    #[prost(int64, tag = "12")]
+    pub scheduled_count: i64,
+    #[prost(int64, tag = "13")]
+    pub completed_count: i64,
+    #[prost(int64, tag = "14")]
+    pub retrying_count: i64,
+    #[prost(int64, tag = "15")]
+    pub failed_count: i64,
+    #[prost(string, tag = "16")]
+    pub failure_code: ::prost::alloc::string::String,
+    #[prost(string, tag = "17")]
+    pub created_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub updated_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "19")]
+    pub completed_at: ::prost::alloc::string::String,
+}
 /// Generated client implementations.
 pub mod automation_service_client {
     #![allow(
@@ -1586,6 +1675,103 @@ pub mod automation_service_client {
                     GrpcMethod::new(
                         "mycel.client.v1.AutomationService",
                         "DisableGraphAutomationBinding",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// StartGraphAutomationReconciliation is idempotent by (space, domain, binding, idempotency_key).
+        /// It returns after durable operation creation; target discovery and scheduling are asynchronous.
+        pub async fn start_graph_automation_reconciliation(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::StartGraphAutomationReconciliationRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::StartGraphAutomationReconciliationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.AutomationService/StartGraphAutomationReconciliation",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.AutomationService",
+                        "StartGraphAutomationReconciliation",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_graph_automation_reconciliation(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::GetGraphAutomationReconciliationRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::GetGraphAutomationReconciliationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.AutomationService/GetGraphAutomationReconciliation",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.AutomationService",
+                        "GetGraphAutomationReconciliation",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// CancelGraphAutomationReconciliation fences new discovery and scheduling. Already-running
+        /// executions retain the normal automation control semantics.
+        pub async fn cancel_graph_automation_reconciliation(
+            &mut self,
+            request: impl tonic::IntoRequest<
+                super::CancelGraphAutomationReconciliationRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::CancelGraphAutomationReconciliationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.client.v1.AutomationService/CancelGraphAutomationReconciliation",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.client.v1.AutomationService",
+                        "CancelGraphAutomationReconciliation",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -3605,6 +3791,11 @@ pub struct ReadMetadata {
     pub observed_revision: i64,
     #[prost(bool, tag = "7")]
     pub stale: bool,
+    /// Opaque read-set witness that can be supplied to a later atomic graph
+    /// commit. It contains no graph payload or credentials and must be treated as
+    /// an uninterpreted value by clients.
+    #[prost(bytes = "vec", tag = "9")]
+    pub revision_witness: ::prost::alloc::vec::Vec<u8>,
     #[prost(string, tag = "8")]
     pub stale_reason: ::prost::alloc::string::String,
 }
@@ -7530,6 +7721,12 @@ pub struct CommitTransactionRequest {
     pub space_id: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     pub domain_id: ::prost::alloc::string::String,
+    /// Opaque read-set witnesses returned by graph/query reads. At commit, the
+    /// daemon atomically verifies that every declared dependency is unchanged.
+    /// A conflict returns ABORTED and applies no mutation. Callers must re-read
+    /// and regenerate derived output; stale witnesses must not be retried.
+    #[prost(bytes = "vec", repeated, tag = "5")]
+    pub revision_witnesses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CommitTransactionResponse {

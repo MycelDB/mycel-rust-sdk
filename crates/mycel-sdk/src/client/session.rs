@@ -435,6 +435,7 @@ fn commit_transaction_request(
         idempotency_key: options.idempotency_key,
         space_id: options.space_id,
         domain_id: options.domain_id,
+        revision_witnesses: Vec::new(),
     }
 }
 
