@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "component": "mycel-rust-sdk",
-  "component_release": "v0.21.1",
-  "source_revision": "f8c9b1d95d976f8b12b0acba22cba4a1f81d44a7",
-  "mycel_api_line": "0.21",
+  "component_release": "v0.22.0",
+  "source_revision": "d8cfc6cba014aafa5bbe5d7d814422913d0358fb",
+  "mycel_api_line": "0.22",
   "supported_daemon_api_lines": [
-    "0.21"
+    "0.22"
   ],
   "incompatible_daemon_api_lines": [
     {
@@ -16,5 +16,5 @@
       ]
     }
   ],
-  "published_at": "2026-10-30T21:42:47Z"
+  "published_at": "2026-11-09T22:48:39Z"
 }

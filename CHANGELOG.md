@@ -6,15 +6,18 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.22.0] - 2026-11-09
+
 ### Added
 
-- Added the shared v0.20/v0.21 SDK/API/daemon compatibility matrix and v0.21 semantic-trigger enum migration guide.
+- Regenerated Rust protobuf/gRPC bindings from `mycel-api v0.22.0`, including graph automation reconciliation and revision-fence contracts.
+- Added the shared SDK/API/daemon compatibility matrix and semantic-trigger enum migration guidance.
 - Added versioned machine-readable compatibility metadata for deployment gates and Console certification.
 - Added typed and legacy semantic-trigger wire fixtures plus an opt-in, read-only daemon compatibility test.
 
 ### Compatibility
 
-- `mycel-rust-sdk v0.21.1` is the approved immutable v0.21 Rust/Console target. SDK v0.20.x remains unsupported for v0.21 semantic Admin trigger RPCs, and legacy trigger strings will not be restored.
+- `mycel-rust-sdk v0.22.0` is the approved immutable v0.22 Rust/Console target. SDK v0.21.x remains available for the v0.21 API/daemon line.
 
 ## [v0.21.1] - 2026-10-30
 
