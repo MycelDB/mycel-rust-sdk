@@ -6,6 +6,21 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.23.0] - 2026-11-17
+
+### Added
+
+- Regenerated Rust protobuf/gRPC bindings from `mycel-api v0.23.0`, including semantic projection consistency policies and per-channel search freshness diagnostics.
+
+### Changed
+
+- Aligned both Cargo package versions and the pinned API submodule with the coordinated MycelDB v0.23.0 release train.
+
+### Compatibility
+
+- Requires the coordinated Mycel API and daemon v0.23.0 contract for semantic consistency behavior. v0.23 clients and daemons must be updated together; no legacy semantic-search compatibility bridge is provided.
+- Distribution remains Git tag/GitHub source release only; neither package is published to crates.io.
+
 ## [v0.22.0] - 2026-11-09
 
 ### Added

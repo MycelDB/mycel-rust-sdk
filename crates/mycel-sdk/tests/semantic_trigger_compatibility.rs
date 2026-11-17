@@ -69,24 +69,32 @@ fn compatibility_manifest_v1() {
 
     assert_eq!(manifest["schema_version"], 1);
     assert_eq!(manifest["component"], "mycel-rust-sdk");
-    assert_eq!(manifest["component_release"], "v0.22.0");
+    assert_eq!(manifest["component_release"], "v0.23.0");
     assert_eq!(
         manifest["source_revision"],
-        "d8cfc6cba014aafa5bbe5d7d814422913d0358fb"
+        "08bc4c7b60e92562b7d80f49f36492d782cddc3f"
     );
-    assert_eq!(manifest["mycel_api_line"], "0.22");
-    assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.22"]));
+    assert_eq!(manifest["mycel_api_line"], "0.23");
+    assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.23"]));
     assert_eq!(
         manifest["incompatible_daemon_api_lines"],
-        json!([{
-            "line": "0.20",
-            "contracts": [
-                "search-channel-owned-query-v1",
-                "semantic-trigger-events-enum-v1"
-            ]
-        }])
+        json!([
+            {
+                "line": "0.20",
+                "contracts": [
+                    "search-channel-owned-query-v1",
+                    "semantic-trigger-events-enum-v1"
+                ]
+            },
+            {
+                "line": "0.22",
+                "contracts": [
+                    "semantic-projection-consistency-v1"
+                ]
+            }
+        ])
     );
-    assert_eq!(manifest["published_at"], "2026-11-09T22:48:39Z");
+    assert_eq!(manifest["published_at"], "2026-11-17T17:59:33Z");
 }
 
 #[tokio::test]
