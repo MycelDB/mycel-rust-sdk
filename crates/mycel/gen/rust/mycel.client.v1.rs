@@ -2305,6 +2305,11 @@ pub struct SearchRequest {
     /// Lexical candidate retrieval options used by lexical and hybrid modes.
     #[prost(message, optional, tag = "13")]
     pub lexical: ::core::option::Option<LexicalSearchOptions>,
+    /// Request-level consistency policy for semantic projections in hybrid mode.
+    /// When omitted or unspecified, semantic retrieval remains strict and fails
+    /// when its current projection cannot be certified ready.
+    #[prost(message, optional, tag = "14")]
+    pub semantic_consistency: ::core::option::Option<ProjectionConsistencyPolicy>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchResponse {
@@ -2321,6 +2326,10 @@ pub struct SearchResponse {
     pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(message, optional, tag = "5")]
     pub diagnostics: ::core::option::Option<SearchDiagnostics>,
+    /// Per-channel usage and freshness diagnostics. These fields describe index
+    /// freshness only; authorization and graph visibility remain authoritative.
+    #[prost(message, optional, tag = "6")]
+    pub channel_diagnostics: ::core::option::Option<SearchChannelDiagnostics>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchResult {
@@ -2475,6 +2484,55 @@ pub struct SearchDiagnostics {
     #[prost(string, tag = "10")]
     pub rejected_reason: ::prost::alloc::string::String,
 }
+/// ProjectionConsistencyPolicy controls how a search request handles semantic
+/// projection freshness. It applies to retrieval/index freshness only; graph
+/// authorization, domain authority, and visibility checks remain strict.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ProjectionConsistencyPolicy {
+    #[prost(enumeration = "ProjectionConsistency", tag = "1")]
+    pub consistency: i32,
+    /// Minimum graph revision that the semantic projection must represent. A
+    /// value of 0 leaves this lower bound unset.
+    #[prost(int64, tag = "2")]
+    pub min_required_graph_revision: i64,
+    /// Maximum acceptable lag from the latest known graph revision. A value of 0
+    /// leaves this upper bound unset.
+    #[prost(int64, tag = "3")]
+    pub max_revision_lag: i64,
+    /// Optional wall-clock staleness bound for a last-good projection snapshot.
+    #[prost(message, optional, tag = "4")]
+    pub max_staleness: ::core::option::Option<::prost_types::Duration>,
+    /// Behavior when the current semantic projection is not ready. Callers using
+    /// bounded-stale or best-effort modes should set this explicitly.
+    #[prost(enumeration = "StaleProjectionBehavior", tag = "5")]
+    pub stale_behavior: i32,
+}
+/// SearchChannelDiagnostics reports whether each retrieval channel contributed
+/// to the response and the graph freshness of the snapshot it used.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchChannelDiagnostics {
+    #[prost(message, optional, tag = "1")]
+    pub lexical: ::core::option::Option<SearchChannelStatus>,
+    #[prost(message, optional, tag = "2")]
+    pub semantic: ::core::option::Option<SearchChannelStatus>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchChannelStatus {
+    #[prost(bool, tag = "1")]
+    pub used: bool,
+    #[prost(enumeration = "SearchFreshnessState", tag = "2")]
+    pub state: i32,
+    #[prost(int64, tag = "3")]
+    pub served_graph_revision: i64,
+    #[prost(int64, tag = "4")]
+    pub latest_known_graph_revision: i64,
+    #[prost(int64, tag = "5")]
+    pub revision_lag: i64,
+    #[prost(string, tag = "6")]
+    pub reason: ::prost::alloc::string::String,
+    #[prost(bool, tag = "7")]
+    pub retryable: bool,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SearchScoreComponent {
     #[prost(string, tag = "1")]
@@ -2526,6 +2584,73 @@ pub struct LexicalIndexStatus {
     pub last_rebuild_at: ::prost::alloc::string::String,
     #[prost(string, tag = "14")]
     pub last_error: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ProjectionConsistency {
+    Unspecified = 0,
+    Strict = 1,
+    ReadYourWrites = 2,
+    BoundedStale = 3,
+    BestEffort = 4,
+}
+impl ProjectionConsistency {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "PROJECTION_CONSISTENCY_UNSPECIFIED",
+            Self::Strict => "PROJECTION_CONSISTENCY_STRICT",
+            Self::ReadYourWrites => "PROJECTION_CONSISTENCY_READ_YOUR_WRITES",
+            Self::BoundedStale => "PROJECTION_CONSISTENCY_BOUNDED_STALE",
+            Self::BestEffort => "PROJECTION_CONSISTENCY_BEST_EFFORT",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "PROJECTION_CONSISTENCY_UNSPECIFIED" => Some(Self::Unspecified),
+            "PROJECTION_CONSISTENCY_STRICT" => Some(Self::Strict),
+            "PROJECTION_CONSISTENCY_READ_YOUR_WRITES" => Some(Self::ReadYourWrites),
+            "PROJECTION_CONSISTENCY_BOUNDED_STALE" => Some(Self::BoundedStale),
+            "PROJECTION_CONSISTENCY_BEST_EFFORT" => Some(Self::BestEffort),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum StaleProjectionBehavior {
+    Unspecified = 0,
+    Fail = 1,
+    ServeLastGood = 2,
+    SkipChannel = 3,
+}
+impl StaleProjectionBehavior {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "STALE_PROJECTION_BEHAVIOR_UNSPECIFIED",
+            Self::Fail => "STALE_PROJECTION_BEHAVIOR_FAIL",
+            Self::ServeLastGood => "STALE_PROJECTION_BEHAVIOR_SERVE_LAST_GOOD",
+            Self::SkipChannel => "STALE_PROJECTION_BEHAVIOR_SKIP_CHANNEL",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "STALE_PROJECTION_BEHAVIOR_UNSPECIFIED" => Some(Self::Unspecified),
+            "STALE_PROJECTION_BEHAVIOR_FAIL" => Some(Self::Fail),
+            "STALE_PROJECTION_BEHAVIOR_SERVE_LAST_GOOD" => Some(Self::ServeLastGood),
+            "STALE_PROJECTION_BEHAVIOR_SKIP_CHANNEL" => Some(Self::SkipChannel),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
