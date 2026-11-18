@@ -6,6 +6,10 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Added `is_auth_session_invalid` and `auth_session_invalid_reason` helpers for long-running services to identify stale delegated/auth sessions and evict cached clients.
+
 ## [v0.23.0] - 2026-11-17
 
 ### Added
