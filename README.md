@@ -33,7 +33,7 @@ The SDK major/minor line must match the Mycel API/daemon major/minor line for ge
 | `v0.22.x` | `v0.22` | `v0.22.x` | Required for graph automation reconciliation and revision-fenced graph-write bindings. |
 | `v0.23.x` | `v0.23` | `v0.23.x` | Required for semantic projection consistency policies and per-channel freshness diagnostics. |
 
-The approved immutable v0.23 consumer target is [`v0.23.0`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.23.0). The v0.22 line remains available for the v0.22 API/daemon contract; v0.23 clients and daemons must be updated together.
+The approved immutable v0.23 consumer target is [`v0.23.1`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.23.1). The v0.22 line remains available for the v0.22 API/daemon contract; v0.23 clients and daemons must be updated together.
 
 Machine-readable compatibility metadata is published at [`.release/mycel-compatibility.json`](.release/mycel-compatibility.json). Deployment tooling must fail closed for missing or unknown metadata/schema versions, unknown daemon lines, or contradictory compatibility declarations.
 
@@ -95,7 +95,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.23.0" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.23.1" }
 ```
 
 ## Crates
