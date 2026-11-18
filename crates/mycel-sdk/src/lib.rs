@@ -11,7 +11,10 @@ mod transport;
 pub use auth::TokenSource;
 pub use config::{Config, DEFAULT_ADDR};
 pub use error::{
-    classify_error, classify_status, ClassifiedError, Error, ErrorKind, ErrorSeverity, Result,
+    auth_session_invalid_reason, classify_error, classify_status, is_auth_session_invalid,
+    ClassifiedError, Error, ErrorKind, ErrorSeverity, Result, AUTH_ERROR_INFO_DOMAIN,
+    AUTH_REASON_AUTH_SESSION_EXPIRED, AUTH_REASON_AUTH_SESSION_INVALID,
+    AUTH_REASON_AUTH_SESSION_REVOKED, AUTH_REASON_REFRESH_SESSION_INVALID,
 };
 pub use mycel as proto;
 

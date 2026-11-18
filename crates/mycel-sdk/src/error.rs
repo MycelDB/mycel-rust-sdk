@@ -59,6 +59,19 @@ impl From<tonic::Status> for Error {
     }
 }
 
+/// `google.rpc.ErrorInfo` domain used by Mycel daemon authentication and
+/// durable auth-session errors.
+pub const AUTH_ERROR_INFO_DOMAIN: &str = "mycel.auth";
+
+/// The access token refers to no usable durable auth session.
+pub const AUTH_REASON_AUTH_SESSION_INVALID: &str = "auth_session_invalid";
+/// The durable auth session or refresh-token family was revoked.
+pub const AUTH_REASON_AUTH_SESSION_REVOKED: &str = "auth_session_revoked";
+/// The durable auth session exceeded idle or absolute expiry.
+pub const AUTH_REASON_AUTH_SESSION_EXPIRED: &str = "auth_session_expired";
+/// The presented refresh token/session is malformed, unknown, consumed, or otherwise unusable.
+pub const AUTH_REASON_REFRESH_SESSION_INVALID: &str = "refresh_session_invalid";
+
 /// Stable error category for SDK and downstream application errors.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
@@ -205,6 +218,36 @@ pub fn classify_error(err: &(dyn StdError + 'static)) -> ClassifiedError {
     )
 }
 
+/// Returns true when `err` is an `Unauthenticated` Mycel auth-session error
+/// that means a cached auth/delegated session should be discarded.
+///
+/// This intentionally does not classify authorization failures, missing graph
+/// resources, or ordinary access-token expiry unless the daemon reports one of
+/// the durable auth-session reasons recognized by [`auth_session_invalid_reason`].
+pub fn is_auth_session_invalid(err: &(dyn StdError + 'static)) -> bool {
+    auth_session_invalid_reason(err).is_some()
+}
+
+/// Returns the stable Mycel auth-session reason when `err` means a cached
+/// auth/delegated session should be discarded.
+///
+/// Recognized reasons are [`AUTH_REASON_AUTH_SESSION_INVALID`],
+/// [`AUTH_REASON_AUTH_SESSION_REVOKED`], [`AUTH_REASON_AUTH_SESSION_EXPIRED`],
+/// and [`AUTH_REASON_REFRESH_SESSION_INVALID`].
+pub fn auth_session_invalid_reason(err: &(dyn StdError + 'static)) -> Option<&'static str> {
+    if let Some(reason) = auth_session_invalid_reason_direct(err) {
+        return Some(reason);
+    }
+    let mut source = err.source();
+    while let Some(current) = source {
+        if let Some(reason) = auth_session_invalid_reason_direct(current) {
+            return Some(reason);
+        }
+        source = current.source();
+    }
+    None
+}
+
 fn classify_direct_error(err: &(dyn StdError + 'static)) -> Option<ClassifiedError> {
     if let Some(sdk) = err.downcast_ref::<Error>() {
         return Some(classify_sdk_error(sdk));
@@ -252,6 +295,66 @@ fn classify_sdk_error(err: &Error) -> ClassifiedError {
             None,
         ),
     }
+}
+
+fn auth_session_invalid_reason_direct(err: &(dyn StdError + 'static)) -> Option<&'static str> {
+    if let Some(sdk) = err.downcast_ref::<Error>() {
+        if let Error::Status(status) = sdk {
+            return auth_session_invalid_reason_for_status(status);
+        }
+    }
+    err.downcast_ref::<tonic::Status>()
+        .and_then(auth_session_invalid_reason_for_status)
+}
+
+fn auth_session_invalid_reason_for_status(status: &tonic::Status) -> Option<&'static str> {
+    if status.code() != tonic::Code::Unauthenticated {
+        return None;
+    }
+    for info in status_error_infos(status) {
+        if info.domain != AUTH_ERROR_INFO_DOMAIN {
+            continue;
+        }
+        if let Some(reason) = canonical_auth_session_invalid_reason(&info.reason) {
+            return Some(reason);
+        }
+    }
+    None
+}
+
+fn canonical_auth_session_invalid_reason(reason: &str) -> Option<&'static str> {
+    match reason.trim() {
+        AUTH_REASON_AUTH_SESSION_INVALID => Some(AUTH_REASON_AUTH_SESSION_INVALID),
+        AUTH_REASON_AUTH_SESSION_REVOKED => Some(AUTH_REASON_AUTH_SESSION_REVOKED),
+        AUTH_REASON_AUTH_SESSION_EXPIRED => Some(AUTH_REASON_AUTH_SESSION_EXPIRED),
+        AUTH_REASON_REFRESH_SESSION_INVALID => Some(AUTH_REASON_REFRESH_SESSION_INVALID),
+        _ => None,
+    }
+}
+
+fn status_error_infos(status: &tonic::Status) -> Vec<ErrorInfo> {
+    let Ok(rpc_status) = RpcStatus::decode(status.details()) else {
+        return Vec::new();
+    };
+    rpc_status
+        .details
+        .into_iter()
+        .filter_map(|detail| {
+            (detail.type_url == "type.googleapis.com/google.rpc.ErrorInfo")
+                .then(|| ErrorInfo::decode(detail.value.as_slice()).ok())
+                .flatten()
+        })
+        .collect()
+}
+
+fn status_error_info_metadata(
+    status: &tonic::Status,
+    reason: &str,
+) -> Option<HashMap<String, String>> {
+    status_error_infos(status)
+        .into_iter()
+        .find(|info| info.reason == reason)
+        .map(|info| info.metadata)
 }
 
 fn classify_io_error(err: &io::Error) -> ClassifiedError {
@@ -327,18 +430,7 @@ impl Error {
             Error::Status(status) => status,
             _ => return None,
         };
-        let rpc_status = RpcStatus::decode(status.details()).ok()?;
-        for detail in rpc_status.details {
-            if detail.type_url != "type.googleapis.com/google.rpc.ErrorInfo" {
-                continue;
-            }
-            if let Ok(info) = ErrorInfo::decode(detail.value.as_slice()) {
-                if info.reason == reason {
-                    return Some(info.metadata);
-                }
-            }
-        }
-        None
+        status_error_info_metadata(status, reason)
     }
 }
 
@@ -453,6 +545,77 @@ mod tests {
         let classified = classify_error(&err);
         assert_eq!(classified.kind, ErrorKind::Authorization);
         assert_eq!(classified.severity, ErrorSeverity::Warning);
+    }
+
+    #[test]
+    fn auth_session_invalid_reason_matches_stale_session_details() {
+        for reason in [
+            AUTH_REASON_AUTH_SESSION_INVALID,
+            AUTH_REASON_AUTH_SESSION_REVOKED,
+            AUTH_REASON_AUTH_SESSION_EXPIRED,
+            AUTH_REASON_REFRESH_SESSION_INVALID,
+        ] {
+            let status = status_with_error_info(
+                tonic::Code::Unauthenticated,
+                AUTH_ERROR_INFO_DOMAIN,
+                reason,
+            );
+            assert!(is_auth_session_invalid(&status), "{reason}");
+            assert_eq!(auth_session_invalid_reason(&status), Some(reason));
+
+            let err = Error::from(status);
+            assert!(
+                is_auth_session_invalid(&err),
+                "wrapped SDK error for {reason}"
+            );
+            assert_eq!(auth_session_invalid_reason(&err), Some(reason));
+        }
+    }
+
+    #[test]
+    fn auth_session_invalid_reason_ignores_non_matching_errors() {
+        let wrong_domain = status_with_error_info(
+            tonic::Code::Unauthenticated,
+            "other.domain",
+            AUTH_REASON_AUTH_SESSION_REVOKED,
+        );
+        assert!(!is_auth_session_invalid(&wrong_domain));
+        assert_eq!(auth_session_invalid_reason(&wrong_domain), None);
+
+        let access_expired = status_with_error_info(
+            tonic::Code::Unauthenticated,
+            AUTH_ERROR_INFO_DOMAIN,
+            "authorization_token_expired",
+        );
+        assert!(!is_auth_session_invalid(&access_expired));
+
+        let permission_denied = status_with_error_info(
+            tonic::Code::PermissionDenied,
+            AUTH_ERROR_INFO_DOMAIN,
+            AUTH_REASON_AUTH_SESSION_REVOKED,
+        );
+        assert!(!is_auth_session_invalid(&permission_denied));
+
+        let not_found = tonic::Status::not_found("workspace unavailable");
+        assert!(!is_auth_session_invalid(&not_found));
+    }
+
+    fn status_with_error_info(code: tonic::Code, domain: &str, reason: &str) -> tonic::Status {
+        let info = ErrorInfo {
+            reason: reason.to_string(),
+            domain: domain.to_string(),
+            metadata: HashMap::new(),
+        };
+        let detail = Any {
+            type_url: "type.googleapis.com/google.rpc.ErrorInfo".to_string(),
+            value: info.encode_to_vec(),
+        };
+        let rpc_status = RpcStatus {
+            code: code as i32,
+            message: "test status".to_string(),
+            details: vec![detail],
+        };
+        tonic::Status::with_details(code, "test status", rpc_status.encode_to_vec().into())
     }
 
     #[test]
