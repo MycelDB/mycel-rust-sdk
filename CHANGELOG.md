@@ -6,9 +6,21 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.23.1] - 2026-11-18
+
 ### Added
 
 - Added `is_auth_session_invalid` and `auth_session_invalid_reason` helpers for long-running services to identify stale delegated/auth sessions and evict cached clients.
+
+### Changed
+
+- Bumped both Cargo package versions to `0.23.1` for the source release tag.
+
+### Compatibility
+
+- SDK patch release. The public protobuf/API contract and generated v0.23 bindings are unchanged from `v0.23.0`.
+- The new helpers recognize stable `mycel.auth` `google.rpc.ErrorInfo` reasons emitted by `mycel v0.23.1` and later for stale delegated/auth sessions.
+- Distribution remains Git tag/GitHub source release only; neither package is published to crates.io.
 
 ## [v0.23.0] - 2026-11-17
 
