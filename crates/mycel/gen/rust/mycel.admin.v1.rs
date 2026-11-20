@@ -1911,6 +1911,18 @@ pub struct QuiesceParticipantStatus {
     pub since: ::prost::alloc::string::String,
     #[prost(string, tag = "8")]
     pub last_error: ::prost::alloc::string::String,
+    #[prost(int32, tag = "9")]
+    pub active_read_only: i32,
+    #[prost(int32, tag = "10")]
+    pub active_writes: i32,
+    #[prost(string, tag = "11")]
+    pub read_allowlist_profile: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub deadline: ::prost::alloc::string::String,
+    #[prost(bool, tag = "13")]
+    pub accepting_read_only: bool,
+    #[prost(bool, tag = "14")]
+    pub accepting_writes: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SecretReference {

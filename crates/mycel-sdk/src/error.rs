@@ -72,6 +72,14 @@ pub const AUTH_REASON_AUTH_SESSION_EXPIRED: &str = "auth_session_expired";
 /// The presented refresh token/session is malformed, unknown, consumed, or otherwise unusable.
 pub const AUTH_REASON_REFRESH_SESSION_INVALID: &str = "refresh_session_invalid";
 
+/// `google.rpc.ErrorInfo` domain used by Mycel daemon backup, restore, and quiesce errors.
+pub const BACKUP_ERROR_INFO_DOMAIN: &str = "mycel.backup";
+
+/// The daemon is intentionally rejecting work while backup quiescence is active.
+pub const BACKUP_REASON_CLUSTER_QUIESCED: &str = "cluster_quiesced";
+/// A transaction finalization was aborted because backup quiescence closed admission first.
+pub const BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE: &str = "transaction_aborted_by_quiesce";
+
 /// Stable error category for SDK and downstream application errors.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
@@ -297,6 +305,35 @@ fn classify_sdk_error(err: &Error) -> ClassifiedError {
     }
 }
 
+/// Returns true when `err` is an `Unavailable` Mycel backup/quiesce error with
+/// reason `cluster_quiesced`. This intentionally does not classify
+/// `PermissionDenied`, `NotFound`, or generic `Unavailable` statuses.
+pub fn is_cluster_quiesced(err: &(dyn StdError + 'static)) -> bool {
+    backup_quiesce_reason(err) == Some(BACKUP_REASON_CLUSTER_QUIESCED)
+}
+
+/// Returns true when `err` indicates a transaction finalization was aborted by
+/// backup quiescence.
+pub fn is_transaction_aborted_by_quiesce(err: &(dyn StdError + 'static)) -> bool {
+    backup_quiesce_reason(err) == Some(BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE)
+}
+
+/// Returns the stable Mycel backup/quiesce ErrorInfo reason from an
+/// `Unavailable` gRPC status when present.
+pub fn backup_quiesce_reason(err: &(dyn StdError + 'static)) -> Option<&'static str> {
+    if let Some(reason) = backup_quiesce_reason_direct(err) {
+        return Some(reason);
+    }
+    let mut source = err.source();
+    while let Some(current) = source {
+        if let Some(reason) = backup_quiesce_reason_direct(current) {
+            return Some(reason);
+        }
+        source = current.source();
+    }
+    None
+}
+
 fn auth_session_invalid_reason_direct(err: &(dyn StdError + 'static)) -> Option<&'static str> {
     if let Some(sdk) = err.downcast_ref::<Error>() {
         if let Error::Status(status) = sdk {
@@ -317,6 +354,35 @@ fn auth_session_invalid_reason_for_status(status: &tonic::Status) -> Option<&'st
         }
         if let Some(reason) = canonical_auth_session_invalid_reason(&info.reason) {
             return Some(reason);
+        }
+    }
+    None
+}
+
+fn backup_quiesce_reason_direct(err: &(dyn StdError + 'static)) -> Option<&'static str> {
+    if let Some(sdk) = err.downcast_ref::<Error>() {
+        if let Error::Status(status) = sdk {
+            return backup_quiesce_reason_for_status(status);
+        }
+    }
+    err.downcast_ref::<tonic::Status>()
+        .and_then(backup_quiesce_reason_for_status)
+}
+
+fn backup_quiesce_reason_for_status(status: &tonic::Status) -> Option<&'static str> {
+    if status.code() != tonic::Code::Unavailable {
+        return None;
+    }
+    for info in status_error_infos(status) {
+        if info.domain != BACKUP_ERROR_INFO_DOMAIN {
+            continue;
+        }
+        let reason = info.reason.trim();
+        if reason.eq_ignore_ascii_case(BACKUP_REASON_CLUSTER_QUIESCED) {
+            return Some(BACKUP_REASON_CLUSTER_QUIESCED);
+        }
+        if reason.eq_ignore_ascii_case(BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE) {
+            return Some(BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE);
         }
     }
     None
@@ -598,6 +664,50 @@ mod tests {
 
         let not_found = tonic::Status::not_found("workspace unavailable");
         assert!(!is_auth_session_invalid(&not_found));
+    }
+
+    #[test]
+    fn backup_quiesce_reason_matches_stable_details() {
+        let cluster = status_with_error_info(
+            tonic::Code::Unavailable,
+            BACKUP_ERROR_INFO_DOMAIN,
+            BACKUP_REASON_CLUSTER_QUIESCED,
+        );
+        assert!(is_cluster_quiesced(&cluster));
+        assert_eq!(
+            backup_quiesce_reason(&cluster),
+            Some(BACKUP_REASON_CLUSTER_QUIESCED)
+        );
+        assert!(!is_transaction_aborted_by_quiesce(&cluster));
+
+        let aborted = status_with_error_info(
+            tonic::Code::Unavailable,
+            BACKUP_ERROR_INFO_DOMAIN,
+            BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE,
+        );
+        assert!(is_transaction_aborted_by_quiesce(&aborted));
+        let wrapped = Error::from(aborted);
+        assert_eq!(
+            backup_quiesce_reason(&wrapped),
+            Some(BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE)
+        );
+    }
+
+    #[test]
+    fn backup_quiesce_reason_ignores_non_matching_errors() {
+        let generic = tonic::Status::unavailable("temporarily unavailable");
+        assert!(!is_cluster_quiesced(&generic));
+        assert_eq!(backup_quiesce_reason(&generic), None);
+
+        let denied = status_with_error_info(
+            tonic::Code::PermissionDenied,
+            BACKUP_ERROR_INFO_DOMAIN,
+            BACKUP_REASON_CLUSTER_QUIESCED,
+        );
+        assert!(!is_cluster_quiesced(&denied));
+
+        let not_found = tonic::Status::not_found("backup set missing");
+        assert!(!is_cluster_quiesced(&not_found));
     }
 
     fn status_with_error_info(code: tonic::Code, domain: &str, reason: &str) -> tonic::Status {
