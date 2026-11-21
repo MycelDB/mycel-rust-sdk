@@ -11,10 +11,13 @@ mod transport;
 pub use auth::TokenSource;
 pub use config::{Config, DEFAULT_ADDR};
 pub use error::{
-    auth_session_invalid_reason, classify_error, classify_status, is_auth_session_invalid,
+    auth_session_invalid_reason, backup_quiesce_reason, classify_error, classify_status,
+    is_auth_session_invalid, is_cluster_quiesced, is_transaction_aborted_by_quiesce,
     ClassifiedError, Error, ErrorKind, ErrorSeverity, Result, AUTH_ERROR_INFO_DOMAIN,
     AUTH_REASON_AUTH_SESSION_EXPIRED, AUTH_REASON_AUTH_SESSION_INVALID,
     AUTH_REASON_AUTH_SESSION_REVOKED, AUTH_REASON_REFRESH_SESSION_INVALID,
+    BACKUP_ERROR_INFO_DOMAIN, BACKUP_REASON_CLUSTER_QUIESCED,
+    BACKUP_REASON_TRANSACTION_ABORTED_BY_QUIESCE,
 };
 pub use mycel as proto;
 

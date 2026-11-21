@@ -6,6 +6,14 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- Regenerated Rust protobuf/gRPC bindings for the Phase 7 restore execution contract additions, including target node mappings, staging location, clean-target/source-fencing preconditions, and restore progress messages.
+- Regenerated Rust protobuf/gRPC bindings for the repository-backed backup/restore contract foundation, including backup repository CRUD/validation, backup-set catalog, and restore planning/operation messages.
+- Regenerated backup-set validation, compatibility, capacity, and manifest summary fields for daemon Phase 4 restore-readiness validators.
+- Added AdminClient helper methods and compile coverage for the new backup repository, backup-set catalog, and restore operation contract types.
+- Added `is_cluster_quiesced`, `is_transaction_aborted_by_quiesce`, and `backup_quiesce_reason` helpers for stable `mycel.backup` quiesce ErrorInfo handling.
+
 ## [v0.23.1] - 2026-11-18
 
 ### Added
