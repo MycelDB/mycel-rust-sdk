@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use mycel_sdk::proto::admin::v1::{
     BackupRepository, BackupRepositoryProvider, BackupSetManifestSummary, ClusterBackupSetSummary,
-    ClusterRestoreAuthSessionPolicy, ClusterRestoreIdentityMode, ClusterRestoreTargetMode,
+    ClusterRestoreAuthSessionPolicy, ClusterRestoreIdentityMode, ClusterRestoreNodeMapping,
+    ClusterRestoreStagingLocation, ClusterRestoreTarget, ClusterRestoreTargetMode,
     CompatibilitySummary, CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy,
     PlanClusterRestoreRequest, S3CompatibleRepositoryConfig, SecretReference,
     SecretReferenceScheme, StartClusterRestoreRequest, ValidationOptions, ValidationSummary,
@@ -65,6 +66,21 @@ fn restore_contract_types_compile() {
             include_external_dependency_checks: false,
             include_capacity_estimates: true,
             require_complete_marker: true,
+        }),
+        target: Some(ClusterRestoreTarget {
+            target_cluster_name: "restored-prod".to_string(),
+            expected_node_count: 3,
+            nodes: vec![ClusterRestoreNodeMapping {
+                ordinal: 0,
+                target_pvc_name: "data-myceld-0".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }),
+        staging: Some(ClusterRestoreStagingLocation {
+            staging_uri: "file:///restore-staging".to_string(),
+            clean_before_use: true,
+            ..Default::default()
         }),
     };
 
@@ -150,6 +166,8 @@ async fn admin_backup_helper_methods_compile(
             identity_mode: ClusterRestoreIdentityMode::PreserveBackupId as i32,
             auth_session_policy: ClusterRestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
             validation_options: None,
+            target: None,
+            staging: None,
         })
         .await?;
     let _ = client
@@ -162,6 +180,10 @@ async fn admin_backup_helper_methods_compile(
             auth_session_policy: ClusterRestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
             idempotency_key: "idem-1".to_string(),
             destructive_confirmation: String::new(),
+            target: None,
+            staging: None,
+            preconditions: None,
+            plan_freshness_token: String::new(),
         })
         .await?;
     let _ = client.get_cluster_restore_status("restore-op-1").await?;

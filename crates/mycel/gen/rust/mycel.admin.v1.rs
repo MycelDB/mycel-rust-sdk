@@ -2159,6 +2159,157 @@ pub struct CleanupTask {
     #[prost(string, tag = "5")]
     pub last_error: ::prost::alloc::string::String,
 }
+/// ClusterRestoreTarget describes the restore destination. For NEW_CLUSTER_BOOTSTRAP,
+/// callers must identify the target bootstrap cluster shape before execution; for
+/// EXISTING_CLUSTER_REPLACE, the same fields describe the fenced replacement target.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreTarget {
+    #[prost(string, tag = "1")]
+    pub target_cluster_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub target_cluster_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub namespace: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub stateful_set: ::prost::alloc::string::String,
+    #[prost(int32, tag = "5")]
+    pub expected_node_count: i32,
+    #[prost(message, repeated, tag = "6")]
+    pub nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeMapping>,
+    #[prost(map = "string, string", tag = "7")]
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    #[prost(map = "string, string", tag = "8")]
+    pub annotations: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+}
+/// ClusterRestoreNodeMapping binds one backed-up ordinal/artifact to one target data
+/// location. Restore execution must fail closed when mappings are incomplete or ambiguous.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreNodeMapping {
+    #[prost(int32, tag = "1")]
+    pub ordinal: i32,
+    #[prost(string, tag = "2")]
+    pub source_pod_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub source_node_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub source_archive_uri: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub target_pod_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub target_node_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub target_pvc_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub target_data_dir: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub staging_path: ::prost::alloc::string::String,
+}
+/// ClusterRestoreStagingLocation describes where repository artifacts may be downloaded
+/// and verified before being applied to target data dirs/PVCs.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreStagingLocation {
+    #[prost(string, tag = "1")]
+    pub staging_uri: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub storage_class: ::prost::alloc::string::String,
+    #[prost(int64, tag = "3")]
+    pub required_bytes: i64,
+    #[prost(int64, tag = "4")]
+    pub available_bytes: i64,
+    #[prost(bool, tag = "5")]
+    pub clean_before_use: bool,
+    #[prost(message, repeated, tag = "6")]
+    pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
+}
+/// ClusterRestoreCleanTargetProof records evidence that a NEW_CLUSTER_BOOTSTRAP target
+/// is empty/safe to receive physical backup artifacts.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreCleanTargetProof {
+    #[prost(string, tag = "1")]
+    pub proof_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub checked_at: ::prost::alloc::string::String,
+    #[prost(bool, tag = "3")]
+    pub target_empty: bool,
+    #[prost(message, repeated, tag = "4")]
+    pub checked_nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeMapping>,
+    #[prost(message, repeated, tag = "5")]
+    pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
+    #[prost(string, tag = "6")]
+    pub operator_attestation: ::prost::alloc::string::String,
+}
+/// ClusterRestoreSourceFencingEvidence records proof that preserved-identity restores
+/// cannot race with the original source cluster.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreSourceFencingEvidence {
+    #[prost(bool, tag = "1")]
+    pub source_cluster_fenced: bool,
+    #[prost(string, tag = "2")]
+    pub fenced_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub fence_token_ref: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "4")]
+    pub fenced_endpoints: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "5")]
+    pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
+}
+/// ClusterRestorePreconditionEvidence groups execution safety proofs supplied with a
+/// restore start request or reported back on an operation.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestorePreconditionEvidence {
+    #[prost(message, optional, tag = "1")]
+    pub clean_target: ::core::option::Option<ClusterRestoreCleanTargetProof>,
+    #[prost(message, optional, tag = "2")]
+    pub source_fencing: ::core::option::Option<ClusterRestoreSourceFencingEvidence>,
+    #[prost(message, repeated, tag = "3")]
+    pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreNodeProgress {
+    #[prost(int32, tag = "1")]
+    pub ordinal: i32,
+    #[prost(string, tag = "2")]
+    pub state: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub source_archive_uri: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub staging_uri: ::prost::alloc::string::String,
+    #[prost(int64, tag = "5")]
+    pub bytes_total: i64,
+    #[prost(int64, tag = "6")]
+    pub bytes_completed: i64,
+    #[prost(string, tag = "7")]
+    pub checksum_sha256: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub last_error: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterRestoreProgress {
+    #[prost(int32, tag = "1")]
+    pub total_nodes: i32,
+    #[prost(int32, tag = "2")]
+    pub staged_nodes: i32,
+    #[prost(int32, tag = "3")]
+    pub applied_nodes: i32,
+    #[prost(int32, tag = "4")]
+    pub verified_nodes: i32,
+    #[prost(int64, tag = "5")]
+    pub bytes_total: i64,
+    #[prost(int64, tag = "6")]
+    pub bytes_completed: i64,
+    #[prost(string, tag = "7")]
+    pub current_phase: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub current_node: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "9")]
+    pub nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeProgress>,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RestorePlanSummary {
     #[prost(string, tag = "1")]
@@ -2187,6 +2338,14 @@ pub struct RestorePlanSummary {
     pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
     #[prost(string, tag = "13")]
     pub planned_at: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "14")]
+    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    #[prost(message, optional, tag = "15")]
+    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    #[prost(message, optional, tag = "16")]
+    pub required_preconditions: ::core::option::Option<
+        ClusterRestorePreconditionEvidence,
+    >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterRestoreOperation {
@@ -2216,6 +2375,16 @@ pub struct ClusterRestoreOperation {
     pub cleanup_tasks: ::prost::alloc::vec::Vec<CleanupTask>,
     #[prost(string, tag = "13")]
     pub error: ::prost::alloc::string::String,
+    #[prost(enumeration = "ClusterRestoreAuthSessionPolicy", tag = "14")]
+    pub auth_session_policy: i32,
+    #[prost(message, optional, tag = "15")]
+    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    #[prost(message, optional, tag = "16")]
+    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    #[prost(message, optional, tag = "17")]
+    pub preconditions: ::core::option::Option<ClusterRestorePreconditionEvidence>,
+    #[prost(message, optional, tag = "18")]
+    pub progress: ::core::option::Option<ClusterRestoreProgress>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct GetBackupPolicyRequest {}
@@ -2640,6 +2809,10 @@ pub struct PlanClusterRestoreRequest {
     pub auth_session_policy: i32,
     #[prost(message, optional, tag = "6")]
     pub validation_options: ::core::option::Option<ValidationOptions>,
+    #[prost(message, optional, tag = "7")]
+    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    #[prost(message, optional, tag = "8")]
+    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PlanClusterRestoreResponse {
@@ -2664,6 +2837,14 @@ pub struct StartClusterRestoreRequest {
     pub idempotency_key: ::prost::alloc::string::String,
     #[prost(string, tag = "8")]
     pub destructive_confirmation: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "9")]
+    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    #[prost(message, optional, tag = "10")]
+    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    #[prost(message, optional, tag = "11")]
+    pub preconditions: ::core::option::Option<ClusterRestorePreconditionEvidence>,
+    #[prost(string, tag = "12")]
+    pub plan_freshness_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct StartClusterRestoreResponse {
