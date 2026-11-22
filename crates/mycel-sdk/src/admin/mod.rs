@@ -26,18 +26,18 @@ use mycel::admin::v1::{
     CancelClusterRestoreResponse, CreateBackupRepositoryRequest, CreatePrincipalRequest,
     CreateSpaceRequest, DeleteBackupRepositoryRequest, DeleteBackupRepositoryResponse,
     DeleteBackupRequest, DeleteBackupResponse, DeleteClusterBackupSetRequest,
-    DeleteClusterBackupSetResponse, FindPrincipalRequest, GetBackupPolicyRequest,
-    GetBackupRepositoryRequest, GetBackupStatusRequest, GetBackupStatusResponse,
-    GetClusterBackupSetRequest, GetClusterBackupSetResponse, GetClusterBackupStatusRequest,
-    GetClusterBackupStatusResponse, GetClusterRestoreStatusRequest,
-    GetClusterRestoreStatusResponse, ListBackupRepositoriesRequest, ListBackupRepositoriesResponse,
-    ListBackupsRequest, ListBackupsResponse, ListClusterBackupOperationsRequest,
-    ListClusterBackupOperationsResponse, ListClusterBackupSetsRequest,
-    ListClusterBackupSetsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
-    ListClusterRestoresRequest, ListClusterRestoresResponse, PlanClusterRestoreRequest,
-    PlanClusterRestoreResponse, PlanRepositoryRetentionRequest, PlanRepositoryRetentionResponse,
-    Principal, PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
-    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
+    DeleteClusterBackupSetResponse, FindPrincipalRequest, GetBackupObservabilityRequest,
+    GetBackupObservabilityResponse, GetBackupPolicyRequest, GetBackupRepositoryRequest,
+    GetBackupStatusRequest, GetBackupStatusResponse, GetClusterBackupSetRequest,
+    GetClusterBackupSetResponse, GetClusterBackupStatusRequest, GetClusterBackupStatusResponse,
+    GetClusterRestoreStatusRequest, GetClusterRestoreStatusResponse, ListBackupRepositoriesRequest,
+    ListBackupRepositoriesResponse, ListBackupsRequest, ListBackupsResponse,
+    ListClusterBackupOperationsRequest, ListClusterBackupOperationsResponse,
+    ListClusterBackupSetsRequest, ListClusterBackupSetsResponse, ListClusterBackupsRequest,
+    ListClusterBackupsResponse, ListClusterRestoresRequest, ListClusterRestoresResponse,
+    PlanClusterRestoreRequest, PlanClusterRestoreResponse, PlanRepositoryRetentionRequest,
+    PlanRepositoryRetentionResponse, Principal, PrincipalCapabilityGrant, PrincipalRoleGrant,
+    PrincipalState, SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
     StartClusterBackupRequest, StartClusterBackupResponse, StartClusterRestoreRequest,
     StartClusterRestoreResponse, TriggerBackupRequest, TriggerBackupResponse,
     UpdateBackupPolicyRequest, UpdateBackupRepositoryRequest, ValidateBackupRepositoryRequest,
@@ -1203,6 +1203,29 @@ impl AdminClient {
         )?
         .into_inner();
         Ok(res)
+    }
+
+    pub async fn get_backup_observability(
+        &mut self,
+        request: GetBackupObservabilityRequest,
+    ) -> Result<GetBackupObservabilityResponse> {
+        self.refresh_if_needed().await?;
+        let generation = self.tokens.generation();
+        let first_attempt = self
+            .backup
+            .get_backup_observability(self.auth_request(request.clone()))
+            .await;
+        let response = match first_attempt {
+            Ok(response) => response,
+            Err(status) if is_expired_unauthenticated(&status) && self.tokens.can_refresh() => {
+                self.refresh_after_expired(generation).await?;
+                self.backup
+                    .get_backup_observability(self.auth_request(request))
+                    .await?
+            }
+            Err(status) => return Err(Error::from(status)),
+        };
+        Ok(response.into_inner())
     }
 
     pub async fn plan_cluster_restore(

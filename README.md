@@ -20,7 +20,7 @@ This SDK mirrors the Go SDK shape:
 - structured query builders and explain helpers for common indexed/text/semantic/path/aggregate shapes
 - graph-change watch helpers
 - Admin backup policy/status/list/trigger/delete helpers
-- Admin cluster backup trigger/status/list/validate helpers
+- Admin cluster backup trigger/status/list/validate/observability helpers
 
 ## Compatibility
 
@@ -316,7 +316,14 @@ let cluster = admin.start_cluster_backup(
     "",
     0,
 ).await?;
-let _ = (policy, status, trigger, cluster);
+let observability = admin.get_backup_observability(
+    mycel::admin::v1::GetBackupObservabilityRequest {
+        repository_id: "repo-prod".into(),
+        include_retention_probe: true,
+        ..Default::default()
+    },
+).await?;
+let _ = (policy, status, trigger, cluster, observability);
 ```
 
 ## Environment config

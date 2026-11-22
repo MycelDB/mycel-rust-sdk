@@ -1,13 +1,15 @@
 use std::collections::HashMap;
 
 use mycel_sdk::proto::admin::v1::{
-    ApplyRepositoryRetentionRequest, BackupRepository, BackupRepositoryProvider,
+    ApplyRepositoryRetentionRequest, BackupAlertCondition, BackupMetric,
+    BackupObservabilitySnapshot, BackupRepository, BackupRepositoryProvider,
     BackupSetManifestSummary, ClusterBackupSetSummary, ClusterRestoreAuthSessionPolicy,
     ClusterRestoreIdentityMode, ClusterRestoreNodeMapping, ClusterRestoreStagingLocation,
     ClusterRestoreTarget, ClusterRestoreTargetMode, CompatibilitySummary,
-    CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy, PlanClusterRestoreRequest,
-    PlanRepositoryRetentionRequest, RetentionPolicy, S3CompatibleRepositoryConfig, SecretReference,
-    SecretReferenceScheme, StartClusterRestoreRequest, ValidationOptions, ValidationSummary,
+    CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy, GetBackupObservabilityRequest,
+    PlanClusterRestoreRequest, PlanRepositoryRetentionRequest, RetentionPolicy,
+    S3CompatibleRepositoryConfig, SecretReference, SecretReferenceScheme,
+    StartClusterRestoreRequest, ValidationOptions, ValidationSummary,
 };
 use mycel_sdk::AdminClient;
 
@@ -89,6 +91,42 @@ fn restore_contract_types_compile() {
         request.target_mode,
         ClusterRestoreTargetMode::NewClusterBootstrap as i32
     );
+}
+
+#[test]
+fn backup_observability_contract_types_compile() {
+    let mut labels = HashMap::new();
+    labels.insert("repository_id".to_string(), "repo-prod".to_string());
+    let request = GetBackupObservabilityRequest {
+        repository_id: "repo-prod".to_string(),
+        include_retention_probe: true,
+        stale_operation_after_seconds: 3_600,
+        backup_freshness_after_seconds: 86_400,
+        incomplete_backup_after_seconds: 7_200,
+    };
+    let snapshot = BackupObservabilitySnapshot {
+        observed_at: "2026-11-22T12:00:00Z".to_string(),
+        repository_id: request.repository_id.clone(),
+        summary_state: "warning".to_string(),
+        metrics: vec![BackupMetric {
+            name: "mycel_backup_cluster_latest_success_age_seconds".to_string(),
+            unit: "seconds".to_string(),
+            value: 42.0,
+            labels,
+            ..Default::default()
+        }],
+        alerts: vec![BackupAlertCondition {
+            name: "MycelBackupFreshnessStale".to_string(),
+            severity: "warning".to_string(),
+            firing: true,
+            reason: "latest_success_stale".to_string(),
+            expression: "mycel_backup_cluster_latest_success_age_seconds > 86400".to_string(),
+            ..Default::default()
+        }],
+    };
+    assert!(request.include_retention_probe);
+    assert_eq!(snapshot.metrics[0].value, 42.0);
+    assert!(snapshot.alerts[0].firing);
 }
 
 #[test]
@@ -176,6 +214,15 @@ async fn admin_backup_helper_methods_compile(
             retention_policy: None,
             reason: "test".to_string(),
             now: String::new(),
+        })
+        .await?;
+    let _ = client
+        .get_backup_observability(GetBackupObservabilityRequest {
+            repository_id: repository.repository_id.clone(),
+            include_retention_probe: true,
+            stale_operation_after_seconds: 3_600,
+            backup_freshness_after_seconds: 86_400,
+            incomplete_backup_after_seconds: 7_200,
         })
         .await?;
     let _ = client
