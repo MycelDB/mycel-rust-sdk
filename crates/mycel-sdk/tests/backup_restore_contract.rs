@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use mycel_sdk::proto::admin::v1::{
-    BackupRepository, BackupRepositoryProvider, BackupSetManifestSummary, ClusterBackupSetSummary,
-    ClusterRestoreAuthSessionPolicy, ClusterRestoreIdentityMode, ClusterRestoreNodeMapping,
-    ClusterRestoreStagingLocation, ClusterRestoreTarget, ClusterRestoreTargetMode,
-    CompatibilitySummary, CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy,
-    PlanClusterRestoreRequest, S3CompatibleRepositoryConfig, SecretReference,
+    ApplyRepositoryRetentionRequest, BackupRepository, BackupRepositoryProvider,
+    BackupSetManifestSummary, ClusterBackupSetSummary, ClusterRestoreAuthSessionPolicy,
+    ClusterRestoreIdentityMode, ClusterRestoreNodeMapping, ClusterRestoreStagingLocation,
+    ClusterRestoreTarget, ClusterRestoreTargetMode, CompatibilitySummary,
+    CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy, PlanClusterRestoreRequest,
+    PlanRepositoryRetentionRequest, RetentionPolicy, S3CompatibleRepositoryConfig, SecretReference,
     SecretReferenceScheme, StartClusterRestoreRequest, ValidationOptions, ValidationSummary,
 };
 use mycel_sdk::AdminClient;
@@ -157,6 +158,25 @@ async fn admin_backup_helper_methods_compile(
         .await?;
     let _ = client
         .delete_cluster_backup_set(repository.repository_id.clone(), "backup-set-1", "test")
+        .await?;
+    let _ = client
+        .plan_repository_retention(PlanRepositoryRetentionRequest {
+            repository_id: repository.repository_id.clone(),
+            retention_policy: Some(RetentionPolicy {
+                keep_last_successful: 3,
+                keep_for_seconds: 86_400,
+                delete_incomplete_after_seconds: 3_600,
+            }),
+            now: "2026-11-22T12:00:00Z".to_string(),
+        })
+        .await?;
+    let _ = client
+        .apply_repository_retention(ApplyRepositoryRetentionRequest {
+            repository_id: repository.repository_id.clone(),
+            retention_policy: None,
+            reason: "test".to_string(),
+            now: String::new(),
+        })
         .await?;
     let _ = client
         .plan_cluster_restore(PlanClusterRestoreRequest {

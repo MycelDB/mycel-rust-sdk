@@ -20,7 +20,8 @@ use mycel::admin::v1::{
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
     admin_space_service_client::AdminSpaceServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, BackupArchiveFormat, BackupPolicy, BackupRepository,
+    AdminSpaceServiceListSpacesRequest, ApplyRepositoryRetentionRequest,
+    ApplyRepositoryRetentionResponse, BackupArchiveFormat, BackupPolicy, BackupRepository,
     CancelClusterBackupRequest, CancelClusterBackupResponse, CancelClusterRestoreRequest,
     CancelClusterRestoreResponse, CreateBackupRepositoryRequest, CreatePrincipalRequest,
     CreateSpaceRequest, DeleteBackupRepositoryRequest, DeleteBackupRepositoryResponse,
@@ -34,8 +35,9 @@ use mycel::admin::v1::{
     ListClusterBackupOperationsResponse, ListClusterBackupSetsRequest,
     ListClusterBackupSetsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
     ListClusterRestoresRequest, ListClusterRestoresResponse, PlanClusterRestoreRequest,
-    PlanClusterRestoreResponse, Principal, PrincipalCapabilityGrant, PrincipalRoleGrant,
-    PrincipalState, SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
+    PlanClusterRestoreResponse, PlanRepositoryRetentionRequest, PlanRepositoryRetentionResponse,
+    Principal, PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
+    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
     StartClusterBackupRequest, StartClusterBackupResponse, StartClusterRestoreRequest,
     StartClusterRestoreResponse, TriggerBackupRequest, TriggerBackupResponse,
     UpdateBackupPolicyRequest, UpdateBackupRepositoryRequest, ValidateBackupRepositoryRequest,
@@ -1168,6 +1170,36 @@ impl AdminClient {
                     reason,
                 }
             ))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn plan_repository_retention(
+        &mut self,
+        request: PlanRepositoryRetentionRequest,
+    ) -> Result<PlanRepositoryRetentionResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .plan_repository_retention(self.auth_request(request.clone())),
+            self.backup
+                .plan_repository_retention(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn apply_repository_retention(
+        &mut self,
+        request: ApplyRepositoryRetentionRequest,
+    ) -> Result<ApplyRepositoryRetentionResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.backup
+                .apply_repository_retention(self.auth_request(request.clone())),
+            self.backup
+                .apply_repository_retention(self.auth_request(request))
         )?
         .into_inner();
         Ok(res)
