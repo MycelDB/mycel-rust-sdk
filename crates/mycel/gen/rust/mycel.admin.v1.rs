@@ -2288,6 +2288,11 @@ pub struct ClusterRestoreNodeProgress {
     pub checksum_sha256: ::prost::alloc::string::String,
     #[prost(string, tag = "8")]
     pub last_error: ::prost::alloc::string::String,
+    #[prost(map = "string, string", tag = "9")]
+    pub evidence: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterRestoreProgress {
