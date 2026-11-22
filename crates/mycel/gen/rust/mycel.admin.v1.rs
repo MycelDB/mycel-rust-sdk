@@ -5191,6 +5191,51 @@ pub struct ClusterReadiness {
     /// leaders. In clustered mode this is stronger than partition_groups_started.
     #[prost(bool, tag = "13")]
     pub write_ready: bool,
+    /// derived_ready reports whether restored derived subsystems such as lexical
+    /// indexes, graph checkpoints/query indexes, and semantic vector-search views
+    /// are ready or explicitly require rebuild. It is independent from read/write
+    /// routing readiness so operators can distinguish durable-state availability
+    /// from derived-artifact catch-up.
+    #[prost(bool, tag = "14")]
+    pub derived_ready: bool,
+    /// restored_cluster_ready is true when no post-restore derived subsystem
+    /// requires rebuild or operator follow-up. Non-restored clusters report true.
+    #[prost(bool, tag = "15")]
+    pub restored_cluster_ready: bool,
+    #[prost(message, repeated, tag = "16")]
+    pub derived_subsystems: ::prost::alloc::vec::Vec<ClusterDerivedSubsystemReadiness>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusterDerivedSubsystemReadiness {
+    #[prost(string, tag = "1")]
+    pub subsystem: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub state: ::prost::alloc::string::String,
+    #[prost(bool, tag = "3")]
+    pub ready: bool,
+    #[prost(bool, tag = "4")]
+    pub rebuild_required: bool,
+    #[prost(string, tag = "5")]
+    pub reason: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub artifact_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub policy_mode: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub restore_policy: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub validation_state: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub source_frontier_kind: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub source_frontier_value: ::prost::alloc::string::String,
+    #[prost(map = "string, string", tag = "12")]
+    pub evidence: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    #[prost(string, tag = "13")]
+    pub updated_at: ::prost::alloc::string::String,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct ListClusterMembersRequest {}
