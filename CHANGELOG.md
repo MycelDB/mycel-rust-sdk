@@ -8,6 +8,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Regenerated Rust protobuf/gRPC bindings for per-node restore progress evidence used by Kubernetes restore controller/helper status.
 - Regenerated Rust protobuf/gRPC bindings for the Phase 7 restore execution contract additions, including target node mappings, staging location, clean-target/source-fencing preconditions, and restore progress messages.
 - Regenerated Rust protobuf/gRPC bindings for the repository-backed backup/restore contract foundation, including backup repository CRUD/validation, backup-set catalog, and restore planning/operation messages.
 - Regenerated backup-set validation, compatibility, capacity, and manifest summary fields for daemon Phase 4 restore-readiness validators.
