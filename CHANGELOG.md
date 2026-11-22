@@ -8,6 +8,7 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added AdminClient helper methods and regenerated Rust protobuf/gRPC bindings for repository retention planning/apply RPCs and plan/action evidence messages.
 - Regenerated Rust protobuf/gRPC bindings for per-node restore progress evidence used by Kubernetes restore controller/helper status.
 - Regenerated Rust protobuf/gRPC bindings for the Phase 7 restore execution contract additions, including target node mappings, staging location, clean-target/source-fencing preconditions, and restore progress messages.
 - Regenerated Rust protobuf/gRPC bindings for the repository-backed backup/restore contract foundation, including backup repository CRUD/validation, backup-set catalog, and restore planning/operation messages.

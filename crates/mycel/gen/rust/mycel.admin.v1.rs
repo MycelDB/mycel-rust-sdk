@@ -2676,6 +2676,85 @@ pub struct DeleteClusterBackupSetResponse {
     pub state: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PlanRepositoryRetentionRequest {
+    #[prost(string, tag = "1")]
+    pub repository_id: ::prost::alloc::string::String,
+    /// Optional override. When omitted, the daemon's effective backup policy retention is used.
+    #[prost(message, optional, tag = "2")]
+    pub retention_policy: ::core::option::Option<RetentionPolicy>,
+    /// Optional RFC3339/RFC3339Nano planning time for deterministic previews and tests.
+    #[prost(string, tag = "3")]
+    pub now: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PlanRepositoryRetentionResponse {
+    #[prost(message, optional, tag = "1")]
+    pub plan: ::core::option::Option<RepositoryRetentionPlan>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ApplyRepositoryRetentionRequest {
+    #[prost(string, tag = "1")]
+    pub repository_id: ::prost::alloc::string::String,
+    /// Optional override. When omitted, the daemon's effective backup policy retention is used.
+    #[prost(message, optional, tag = "2")]
+    pub retention_policy: ::core::option::Option<RetentionPolicy>,
+    #[prost(string, tag = "3")]
+    pub reason: ::prost::alloc::string::String,
+    /// Optional RFC3339/RFC3339Nano planning time for deterministic previews and tests.
+    #[prost(string, tag = "4")]
+    pub now: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ApplyRepositoryRetentionResponse {
+    #[prost(message, optional, tag = "1")]
+    pub plan: ::core::option::Option<RepositoryRetentionPlan>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RepositoryRetentionPlan {
+    #[prost(string, tag = "1")]
+    pub repository_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub planned_at: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub retention_policy: ::core::option::Option<RetentionPolicy>,
+    #[prost(bool, tag = "4")]
+    pub dry_run: bool,
+    #[prost(message, repeated, tag = "5")]
+    pub actions: ::prost::alloc::vec::Vec<RepositoryRetentionAction>,
+    #[prost(string, repeated, tag = "6")]
+    pub warnings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(int32, tag = "7")]
+    pub deleted_objects: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RepositoryRetentionAction {
+    #[prost(string, tag = "1")]
+    pub backup_set_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub prefix: ::prost::alloc::string::String,
+    /// One of: keep, delete, blocked, delete_incomplete, warn.
+    #[prost(string, tag = "3")]
+    pub action: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub reason: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub created_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub completed_at: ::prost::alloc::string::String,
+    #[prost(int32, tag = "7")]
+    pub object_count: i32,
+    #[prost(int32, tag = "8")]
+    pub deleted_objects: i32,
+    #[prost(bool, tag = "9")]
+    pub retryable: bool,
+    #[prost(bool, tag = "10")]
+    pub blocked: bool,
+    #[prost(string, tag = "11")]
+    pub error: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub retention_cutoff: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterBackupStatus {
     #[prost(string, tag = "1")]
     pub backup_set_id: ::prost::alloc::string::String,
@@ -3689,6 +3768,32 @@ pub mod admin_backup_service_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
+        async fn retention_unary<Req, Resp>(
+            &mut self,
+            request: impl tonic::IntoRequest<Req>,
+            path: &'static str,
+            method: &'static str,
+        ) -> std::result::Result<tonic::Response<Resp>, tonic::Status>
+        where
+            Req: prost::Message + Default + Send + 'static,
+            Resp: prost::Message + Default + Send + 'static,
+        {
+            if let Err(e) = self.inner.ready().await {
+                return Err(tonic::Status::unknown(
+                    format!("AdminBackupService transport not ready: {}", e.into()),
+                ));
+            }
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("mycel.admin.v1.AdminBackupService", method));
+            self.inner
+                .unary(
+                    req,
+                    http::uri::PathAndQuery::from_static(path),
+                    tonic::codec::ProstCodec::default(),
+                )
+                .await
+        }
         pub async fn get_backup_policy(
             &mut self,
             request: impl tonic::IntoRequest<super::GetBackupPolicyRequest>,
@@ -4292,6 +4397,34 @@ pub mod admin_backup_service_client {
                     ),
                 );
             self.inner.unary(req, path, codec).await
+        }
+        pub async fn plan_repository_retention(
+            &mut self,
+            request: impl tonic::IntoRequest<super::PlanRepositoryRetentionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::PlanRepositoryRetentionResponse>,
+            tonic::Status,
+        > {
+            self.retention_unary(
+                request,
+                "/mycel.admin.v1.AdminBackupService/PlanRepositoryRetention",
+                "PlanRepositoryRetention",
+            )
+            .await
+        }
+        pub async fn apply_repository_retention(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ApplyRepositoryRetentionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ApplyRepositoryRetentionResponse>,
+            tonic::Status,
+        > {
+            self.retention_unary(
+                request,
+                "/mycel.admin.v1.AdminBackupService/ApplyRepositoryRetention",
+                "ApplyRepositoryRetention",
+            )
+            .await
         }
         pub async fn plan_cluster_restore(
             &mut self,
