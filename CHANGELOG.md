@@ -6,6 +6,36 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [v0.24.0] - 2026-11-23
+
+### Added
+
+- Added AdminClient usage-accounting helper methods and regenerated Rust admin usage bindings for read-only space/domain usage snapshots, batch/list responses, accounting health, and hard usage limit CRUD through `AdminUsageAdmissionService`.
+- Added stable usage-admission error helpers for `mycel.usage` `google.rpc.ErrorInfo` reasons (`usage_limit_exceeded`, `usage_write_gate_blocked`).
+- Regenerated Rust common access bindings for usage-accounting capability enum values.
+- Added an AdminClient helper and regenerated Rust admin backup bindings for backup/restore observability snapshots, metric rows, and alert conditions.
+- Regenerated Rust admin cluster protobuf/gRPC bindings for restored-cluster derived subsystem readiness fields.
+- Added AdminClient helper methods and regenerated Rust protobuf/gRPC bindings for repository retention planning/apply RPCs and plan/action evidence messages.
+- Regenerated Rust protobuf/gRPC bindings for per-node restore progress evidence used by Kubernetes restore controller/helper status.
+- Regenerated Rust protobuf/gRPC bindings for the Phase 7 restore execution contract additions, including target node mappings, staging location, clean-target/source-fencing preconditions, and restore progress messages.
+- Regenerated Rust protobuf/gRPC bindings for the repository-backed backup/restore contract foundation, including backup repository CRUD/validation, backup-set catalog, and restore planning/operation messages.
+- Regenerated backup-set validation, compatibility, capacity, and manifest summary fields for daemon Phase 4 restore-readiness validators.
+- Added AdminClient helper methods and compile coverage for the new backup repository, backup-set catalog, and restore operation contract types.
+- Added `is_cluster_quiesced`, `is_transaction_aborted_by_quiesce`, and `backup_quiesce_reason` helpers for stable `mycel.backup` quiesce ErrorInfo handling.
+
+### Changed
+
+- Bumped both Cargo package versions to `0.24.0` and pinned the API submodule to `mycel-api v0.24.0` for the source release tag.
+
+### Compatibility
+
+- Requires the coordinated Mycel API and daemon v0.24.0 contract for production backup/restore, backup observability, restored-derived readiness, usage accounting, and hard usage admission helpers. v0.24 clients and daemons should be updated together.
+- Distribution remains Git tag/GitHub source release only; neither package is published to crates.io.
+
+### Validation
+
+- `cargo fmt --check`, `cargo test -p mycel-sdk`, `git diff --check`, and pull-request CI passed for the merged v0.24 SDK contract.
+
 ## [v0.23.1] - 2026-11-18
 
 ### Added
