@@ -14458,34 +14458,38 @@ pub mod admin_usage_accounting_service_client {
 }
 /// Generated client implementations.
 pub mod admin_usage_admission_service_client {
-    #![allow(
-        unused_variables,
-        dead_code,
-        missing_docs,
-        clippy::wildcard_imports,
-        clippy::let_unit_value,
-    )]
+    #![allow(dead_code, missing_docs, unused_variables)]
     use tonic::codegen::*;
-    use tonic::codegen::http::Uri;
+
     /// AdminUsageAdmissionService configures daemon-side hard write gates for
-    /// quota-safe metrics. Product policy, billing, warning thresholds, and plan
-    /// mapping remain outside Mycel; Mycel only enforces explicit hard limits that
-    /// operators configure here.
+    /// quota-safe metrics.
     #[derive(Debug, Clone)]
     pub struct AdminUsageAdmissionServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl AdminUsageAdmissionServiceClient<tonic::transport::Channel> {
-        /// Attempt to create a new client by connecting to a given endpoint.
-        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+
+    impl<T> AdminUsageAdmissionServiceClient<T> {
+        pub fn new(inner: T) -> Self {
+            Self { inner: tonic::client::Grpc::new(inner) }
+        }
+
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> AdminUsageAdmissionServiceClient<InterceptedService<T, F>>
         where
-            D: TryInto<tonic::transport::Endpoint>,
-            D::Error: Into<StdError>,
+            F: tonic::service::Interceptor,
+            T: tonic::client::GrpcService<tonic::body::BoxBody>,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
-            Ok(Self::new(conn))
+            AdminUsageAdmissionServiceClient::new(InterceptedService::new(inner, interceptor))
         }
     }
+
     impl<T> AdminUsageAdmissionServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
@@ -14493,181 +14497,50 @@ pub mod admin_usage_admission_service_client {
         T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
         <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
     {
-        pub fn new(inner: T) -> Self {
-            let inner = tonic::client::Grpc::new(inner);
-            Self { inner }
-        }
-        pub fn with_origin(inner: T, origin: Uri) -> Self {
-            let inner = tonic::client::Grpc::with_origin(inner, origin);
-            Self { inner }
-        }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> AdminUsageAdmissionServiceClient<InterceptedService<T, F>>
+        async fn unary<Req, Res>(
+            &mut self,
+            request: impl tonic::IntoRequest<Req>,
+            method: &'static str,
+            path: &'static str,
+        ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
         where
-            F: tonic::service::Interceptor,
-            T::ResponseBody: Default,
-            T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-                Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
-                >,
-            >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+            Req: prost::Message + Default + 'static,
+            Res: prost::Message + Default + 'static,
         {
-            AdminUsageAdmissionServiceClient::new(
-                InterceptedService::new(inner, interceptor),
-            )
+            self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage admission service was not ready: {}", e.into())))?;
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("mycel.admin.v1.AdminUsageAdmissionService", method));
+            self.inner
+                .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
+                .await
         }
-        /// Compress requests with the given encoding.
-        ///
-        /// This requires the server to support it otherwise it might respond with an
-        /// error.
-        #[must_use]
-        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.inner = self.inner.send_compressed(encoding);
-            self
-        }
-        /// Enable decompressing responses.
-        #[must_use]
-        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.inner = self.inner.accept_compressed(encoding);
-            self
-        }
-        /// Limits the maximum size of a decoded message.
-        ///
-        /// Default: `4MB`
-        #[must_use]
-        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
-            self.inner = self.inner.max_decoding_message_size(limit);
-            self
-        }
-        /// Limits the maximum size of an encoded message.
-        ///
-        /// Default: `usize::MAX`
-        #[must_use]
-        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
-            self.inner = self.inner.max_encoding_message_size(limit);
-            self
-        }
+
         pub async fn upsert_usage_limit(
             &mut self,
             request: impl tonic::IntoRequest<super::UpsertUsageLimitRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpsertUsageLimitResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAdmissionService/UpsertUsageLimit",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAdmissionService",
-                        "UpsertUsageLimit",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::UpsertUsageLimitResponse>, tonic::Status> {
+            self.unary(request, "UpsertUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/UpsertUsageLimit").await
         }
+
         pub async fn delete_usage_limit(
             &mut self,
             request: impl tonic::IntoRequest<super::DeleteUsageLimitRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteUsageLimitResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAdmissionService/DeleteUsageLimit",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAdmissionService",
-                        "DeleteUsageLimit",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::DeleteUsageLimitResponse>, tonic::Status> {
+            self.unary(request, "DeleteUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/DeleteUsageLimit").await
         }
+
         pub async fn get_usage_limit(
             &mut self,
             request: impl tonic::IntoRequest<super::GetUsageLimitRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetUsageLimitResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAdmissionService/GetUsageLimit",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAdmissionService",
-                        "GetUsageLimit",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::GetUsageLimitResponse>, tonic::Status> {
+            self.unary(request, "GetUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/GetUsageLimit").await
         }
+
         pub async fn list_usage_limits(
             &mut self,
             request: impl tonic::IntoRequest<super::ListUsageLimitsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListUsageLimitsResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAdmissionService/ListUsageLimits",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAdmissionService",
-                        "ListUsageLimits",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::ListUsageLimitsResponse>, tonic::Status> {
+            self.unary(request, "ListUsageLimits", "/mycel.admin.v1.AdminUsageAdmissionService/ListUsageLimits").await
         }
     }
 }
