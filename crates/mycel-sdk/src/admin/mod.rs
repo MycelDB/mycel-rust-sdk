@@ -19,30 +19,37 @@ use mycel::admin::v1::{
     admin_semantic_maintenance_service_client::AdminSemanticMaintenanceServiceClient,
     admin_semantic_migration_service_client::AdminSemanticMigrationServiceClient,
     admin_semantic_service_client::AdminSemanticServiceClient,
-    admin_space_service_client::AdminSpaceServiceClient, AdminDomainServiceGetDomainRequest,
-    AdminSpaceServiceListSpacesRequest, ApplyRepositoryRetentionRequest,
-    ApplyRepositoryRetentionResponse, BackupArchiveFormat, BackupPolicy, BackupRepository,
+    admin_space_service_client::AdminSpaceServiceClient,
+    admin_usage_accounting_service_client::AdminUsageAccountingServiceClient,
+    admin_usage_admission_service_client::AdminUsageAdmissionServiceClient,
+    AdminDomainServiceGetDomainRequest, AdminSpaceServiceListSpacesRequest,
+    ApplyRepositoryRetentionRequest, ApplyRepositoryRetentionResponse, BackupArchiveFormat,
+    BackupPolicy, BackupRepository, BatchGetUsageRequest, BatchGetUsageResponse,
     CancelClusterBackupRequest, CancelClusterBackupResponse, CancelClusterRestoreRequest,
     CancelClusterRestoreResponse, CreateBackupRepositoryRequest, CreatePrincipalRequest,
     CreateSpaceRequest, DeleteBackupRepositoryRequest, DeleteBackupRepositoryResponse,
     DeleteBackupRequest, DeleteBackupResponse, DeleteClusterBackupSetRequest,
-    DeleteClusterBackupSetResponse, FindPrincipalRequest, GetBackupObservabilityRequest,
-    GetBackupObservabilityResponse, GetBackupPolicyRequest, GetBackupRepositoryRequest,
-    GetBackupStatusRequest, GetBackupStatusResponse, GetClusterBackupSetRequest,
-    GetClusterBackupSetResponse, GetClusterBackupStatusRequest, GetClusterBackupStatusResponse,
-    GetClusterRestoreStatusRequest, GetClusterRestoreStatusResponse, ListBackupRepositoriesRequest,
-    ListBackupRepositoriesResponse, ListBackupsRequest, ListBackupsResponse,
-    ListClusterBackupOperationsRequest, ListClusterBackupOperationsResponse,
-    ListClusterBackupSetsRequest, ListClusterBackupSetsResponse, ListClusterBackupsRequest,
-    ListClusterBackupsResponse, ListClusterRestoresRequest, ListClusterRestoresResponse,
-    PlanClusterRestoreRequest, PlanClusterRestoreResponse, PlanRepositoryRetentionRequest,
-    PlanRepositoryRetentionResponse, Principal, PrincipalCapabilityGrant, PrincipalRoleGrant,
-    PrincipalState, SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
+    DeleteClusterBackupSetResponse, DeleteUsageLimitRequest, DeleteUsageLimitResponse,
+    FindPrincipalRequest, GetBackupObservabilityRequest, GetBackupObservabilityResponse,
+    GetBackupPolicyRequest, GetBackupRepositoryRequest, GetBackupStatusRequest,
+    GetBackupStatusResponse, GetClusterBackupSetRequest, GetClusterBackupSetResponse,
+    GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, GetClusterRestoreStatusRequest,
+    GetClusterRestoreStatusResponse, GetUsageAccountingHealthRequest,
+    GetUsageAccountingHealthResponse, GetUsageLimitRequest, GetUsageLimitResponse, GetUsageRequest,
+    GetUsageResponse, ListBackupRepositoriesRequest, ListBackupRepositoriesResponse,
+    ListBackupsRequest, ListBackupsResponse, ListClusterBackupOperationsRequest,
+    ListClusterBackupOperationsResponse, ListClusterBackupSetsRequest,
+    ListClusterBackupSetsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
+    ListClusterRestoresRequest, ListClusterRestoresResponse, ListUsageLimitsRequest,
+    ListUsageLimitsResponse, ListUsageRequest, ListUsageResponse, PlanClusterRestoreRequest,
+    PlanClusterRestoreResponse, PlanRepositoryRetentionRequest, PlanRepositoryRetentionResponse,
+    Principal, PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
+    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
     StartClusterBackupRequest, StartClusterBackupResponse, StartClusterRestoreRequest,
     StartClusterRestoreResponse, TriggerBackupRequest, TriggerBackupResponse,
-    UpdateBackupPolicyRequest, UpdateBackupRepositoryRequest, ValidateBackupRepositoryRequest,
-    ValidateBackupRepositoryResponse, ValidateClusterBackupSetRequest,
-    ValidateClusterBackupSetResponse,
+    UpdateBackupPolicyRequest, UpdateBackupRepositoryRequest, UpsertUsageLimitRequest,
+    UpsertUsageLimitResponse, ValidateBackupRepositoryRequest, ValidateBackupRepositoryResponse,
+    ValidateClusterBackupSetRequest, ValidateClusterBackupSetResponse,
 };
 use mycel::common::v1::{
     auth_service_client::AuthServiceClient, AccessScope, AccessScopeType, Capability, ClientInfo,
@@ -148,6 +155,8 @@ pub struct AdminClient {
     pub inference_policies: AdminIntelligenceAccessPolicyServiceClient<AuthenticatedService>,
     pub inference_usage: AdminIntelligenceAccessUsageServiceClient<AuthenticatedService>,
     pub backup: AdminBackupServiceClient<AuthenticatedService>,
+    pub usage: AdminUsageAccountingServiceClient<AuthenticatedService>,
+    pub usage_admission: AdminUsageAdmissionServiceClient<AuthenticatedService>,
     pub schema: AdminSchemaServiceClient<AuthenticatedService>,
     pub automation: AdminAutomationServiceClient<AuthenticatedService>,
     pub cluster: AdminClusterServiceClient<AuthenticatedService>,
@@ -219,6 +228,14 @@ impl AdminClient {
                 interceptor.clone(),
             ),
             backup: AdminBackupServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            usage: AdminUsageAccountingServiceClient::with_interceptor(
+                channel.clone(),
+                interceptor.clone(),
+            ),
+            usage_admission: AdminUsageAdmissionServiceClient::with_interceptor(
                 channel.clone(),
                 interceptor.clone(),
             ),
@@ -1226,6 +1243,115 @@ impl AdminClient {
             Err(status) => return Err(Error::from(status)),
         };
         Ok(response.into_inner())
+    }
+
+    pub async fn get_usage(&mut self, request: GetUsageRequest) -> Result<GetUsageResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage.get_usage(self.auth_request(request.clone())),
+            self.usage.get_usage(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn batch_get_usage(
+        &mut self,
+        request: BatchGetUsageRequest,
+    ) -> Result<BatchGetUsageResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage
+                .batch_get_usage(self.auth_request(request.clone())),
+            self.usage.batch_get_usage(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn list_usage(&mut self, request: ListUsageRequest) -> Result<ListUsageResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage.list_usage(self.auth_request(request.clone())),
+            self.usage.list_usage(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn get_usage_accounting_health(
+        &mut self,
+        request: GetUsageAccountingHealthRequest,
+    ) -> Result<GetUsageAccountingHealthResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage
+                .get_usage_accounting_health(self.auth_request(request.clone())),
+            self.usage
+                .get_usage_accounting_health(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn upsert_usage_limit(
+        &mut self,
+        request: UpsertUsageLimitRequest,
+    ) -> Result<UpsertUsageLimitResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage_admission
+                .upsert_usage_limit(self.auth_request(request.clone())),
+            self.usage_admission
+                .upsert_usage_limit(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn delete_usage_limit(
+        &mut self,
+        request: DeleteUsageLimitRequest,
+    ) -> Result<DeleteUsageLimitResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage_admission
+                .delete_usage_limit(self.auth_request(request.clone())),
+            self.usage_admission
+                .delete_usage_limit(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn get_usage_limit(
+        &mut self,
+        request: GetUsageLimitRequest,
+    ) -> Result<GetUsageLimitResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage_admission
+                .get_usage_limit(self.auth_request(request.clone())),
+            self.usage_admission
+                .get_usage_limit(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
+    }
+
+    pub async fn list_usage_limits(
+        &mut self,
+        request: ListUsageLimitsRequest,
+    ) -> Result<ListUsageLimitsResponse> {
+        let res = admin_call_with_refresh!(
+            self,
+            self.usage_admission
+                .list_usage_limits(self.auth_request(request.clone())),
+            self.usage_admission
+                .list_usage_limits(self.auth_request(request))
+        )?
+        .into_inner();
+        Ok(res)
     }
 
     pub async fn plan_cluster_restore(

@@ -8,6 +8,9 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added AdminClient usage-accounting helper methods and regenerated Rust admin usage bindings for read-only space/domain usage snapshots, batch/list responses, accounting health, and hard usage limit CRUD through `AdminUsageAdmissionService`.
+- Added stable usage-admission error helpers for `mycel.usage` `google.rpc.ErrorInfo` reasons (`usage_limit_exceeded`, `usage_write_gate_blocked`).
+- Regenerated Rust common access bindings for usage-accounting capability enum values.
 - Added an AdminClient helper and regenerated Rust admin backup bindings for backup/restore observability snapshots, metric rows, and alert conditions.
 - Regenerated Rust admin cluster protobuf/gRPC bindings for restored-cluster derived subsystem readiness fields.
 - Added AdminClient helper methods and regenerated Rust protobuf/gRPC bindings for repository retention planning/apply RPCs and plan/action evidence messages.
