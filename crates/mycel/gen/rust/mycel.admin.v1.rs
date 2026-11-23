@@ -13822,16 +13822,16 @@ pub struct UpsertUsageLimitResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteUsageLimitRequest {
-    #[prost(string, tag = "1")]
-    pub limit_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub scope: ::core::option::Option<UsageScope>,
-    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
-    pub domain_inclusion: i32,
     #[prost(string, tag = "4")]
     pub metric_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "1")]
+    pub limit_id: ::prost::alloc::string::String,
     #[prost(uint32, tag = "5")]
     pub metric_version: u32,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteUsageLimitResponse {
@@ -13840,16 +13840,16 @@ pub struct DeleteUsageLimitResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetUsageLimitRequest {
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
     #[prost(string, tag = "1")]
     pub limit_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub scope: ::core::option::Option<UsageScope>,
-    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
-    pub domain_inclusion: i32,
     #[prost(string, tag = "4")]
     pub metric_name: ::prost::alloc::string::String,
-    #[prost(uint32, tag = "5")]
-    pub metric_version: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetUsageLimitResponse {
