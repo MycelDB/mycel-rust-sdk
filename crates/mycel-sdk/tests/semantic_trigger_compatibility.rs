@@ -69,13 +69,13 @@ fn compatibility_manifest_v1() {
 
     assert_eq!(manifest["schema_version"], 1);
     assert_eq!(manifest["component"], "mycel-rust-sdk");
-    assert_eq!(manifest["component_release"], "v0.23.1");
+    assert_eq!(manifest["component_release"], "v0.24.0");
     assert_eq!(
         manifest["source_revision"],
-        "08bc4c7b60e92562b7d80f49f36492d782cddc3f"
+        "dead03837170e1e0122116ca876cd6aa0559d4c6"
     );
-    assert_eq!(manifest["mycel_api_line"], "0.23");
-    assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.23"]));
+    assert_eq!(manifest["mycel_api_line"], "0.24");
+    assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.24"]));
     assert_eq!(
         manifest["incompatible_daemon_api_lines"],
         json!([
@@ -91,10 +91,17 @@ fn compatibility_manifest_v1() {
                 "contracts": [
                     "semantic-projection-consistency-v1"
                 ]
+            },
+            {
+                "line": "0.23",
+                "contracts": [
+                    "repository-backed-backup-restore-v1",
+                    "usage-accounting-admission-v1"
+                ]
             }
         ])
     );
-    assert_eq!(manifest["published_at"], "2026-11-18T18:27:03Z");
+    assert_eq!(manifest["published_at"], "2026-11-23T20:30:44Z");
 }
 
 #[tokio::test]
