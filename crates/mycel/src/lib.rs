@@ -24,7 +24,7 @@ pub mod mycel {
         pub mod v1 {
             include!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/gen/rust/mycel.admin.v1.rs"
+                "/gen/rust/mycel.admin.v1.inc"
             ));
         }
     }
