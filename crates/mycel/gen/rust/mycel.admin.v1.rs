@@ -2755,12 +2755,12 @@ pub struct RepositoryRetentionAction {
     #[prost(string, tag = "12")]
     pub retention_cutoff: ::prost::alloc::string::String,
 }
-#[derive(::prost::Message, Clone, PartialEq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetBackupObservabilityRequest {
     /// Optional repository to probe for retention/incomplete-backup conditions.
     /// When empty, the daemon's default repository is used when available.
     #[prost(string, tag = "1")]
-    pub repository_id: ::std::string::String,
+    pub repository_id: ::prost::alloc::string::String,
     /// Include a dry-run repository retention probe. This may perform object-store
     /// list/read operations but never mutates repository contents.
     #[prost(bool, tag = "2")]
@@ -2778,60 +2778,66 @@ pub struct GetBackupObservabilityRequest {
     #[prost(int64, tag = "5")]
     pub incomplete_backup_after_seconds: i64,
 }
-#[derive(::prost::Message, Clone, PartialEq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetBackupObservabilityResponse {
     #[prost(message, optional, tag = "1")]
     pub snapshot: ::core::option::Option<BackupObservabilitySnapshot>,
 }
-#[derive(::prost::Message, Clone, PartialEq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BackupObservabilitySnapshot {
     #[prost(string, tag = "1")]
-    pub observed_at: ::std::string::String,
+    pub observed_at: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub repository_id: ::std::string::String,
+    pub repository_id: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "3")]
-    pub metrics: ::std::vec::Vec<BackupMetric>,
+    pub metrics: ::prost::alloc::vec::Vec<BackupMetric>,
     #[prost(message, repeated, tag = "4")]
-    pub alerts: ::std::vec::Vec<BackupAlertCondition>,
+    pub alerts: ::prost::alloc::vec::Vec<BackupAlertCondition>,
     /// One of: healthy, warning, critical.
     #[prost(string, tag = "5")]
-    pub summary_state: ::std::string::String,
+    pub summary_state: ::prost::alloc::string::String,
 }
-#[derive(::prost::Message, Clone, PartialEq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BackupMetric {
     /// Stable metric name, e.g. mycel_backup_cluster_operation_count.
     #[prost(string, tag = "1")]
-    pub name: ::std::string::String,
+    pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub description: ::std::string::String,
+    pub description: ::prost::alloc::string::String,
     /// Unit values are conventional strings such as count, seconds, bytes, or ratio.
     #[prost(string, tag = "3")]
-    pub unit: ::std::string::String,
+    pub unit: ::prost::alloc::string::String,
     #[prost(double, tag = "4")]
     pub value: f64,
     /// Labels intentionally contain only non-secret identifiers and categories.
     #[prost(map = "string, string", tag = "5")]
-    pub labels: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
 }
-#[derive(::prost::Message, Clone, PartialEq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BackupAlertCondition {
     #[prost(string, tag = "1")]
-    pub name: ::std::string::String,
+    pub name: ::prost::alloc::string::String,
     /// One of: info, warning, critical.
     #[prost(string, tag = "2")]
-    pub severity: ::std::string::String,
+    pub severity: ::prost::alloc::string::String,
     #[prost(bool, tag = "3")]
     pub firing: bool,
     #[prost(string, tag = "4")]
-    pub reason: ::std::string::String,
+    pub reason: ::prost::alloc::string::String,
     /// Prometheus-style expression using metric names from this snapshot.
     #[prost(string, tag = "5")]
-    pub expression: ::std::string::String,
+    pub expression: ::prost::alloc::string::String,
     /// Labels intentionally contain only non-secret identifiers and categories.
     #[prost(map = "string, string", tag = "6")]
-    pub labels: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
     #[prost(string, repeated, tag = "7")]
-    pub evidence: ::std::vec::Vec<::std::string::String>,
+    pub evidence: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusterBackupStatus {
@@ -3847,33 +3853,6 @@ pub mod admin_backup_service_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        async fn retention_unary<Req, Resp>(
-            &mut self,
-            request: impl tonic::IntoRequest<Req>,
-            path: &'static str,
-            method: &'static str,
-        ) -> std::result::Result<tonic::Response<Resp>, tonic::Status>
-        where
-            Req: prost::Message + Default + Send + 'static,
-            Resp: prost::Message + Default + Send + 'static,
-        {
-            if let Err(e) = self.inner.ready().await {
-                return Err(tonic::Status::unknown(format!(
-                    "AdminBackupService transport not ready: {}",
-                    e.into()
-                )));
-            }
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("mycel.admin.v1.AdminBackupService", method));
-            self.inner
-                .unary(
-                    req,
-                    http::uri::PathAndQuery::from_static(path),
-                    tonic::codec::ProstCodec::default(),
-                )
-                .await
-        }
         pub async fn get_backup_policy(
             &mut self,
             request: impl tonic::IntoRequest<super::GetBackupPolicyRequest>,
@@ -4485,12 +4464,27 @@ pub mod admin_backup_service_client {
             tonic::Response<super::PlanRepositoryRetentionResponse>,
             tonic::Status,
         > {
-            self.retention_unary(
-                request,
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
                 "/mycel.admin.v1.AdminBackupService/PlanRepositoryRetention",
-                "PlanRepositoryRetention",
-            )
-            .await
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminBackupService",
+                        "PlanRepositoryRetention",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn apply_repository_retention(
             &mut self,
@@ -4499,12 +4493,27 @@ pub mod admin_backup_service_client {
             tonic::Response<super::ApplyRepositoryRetentionResponse>,
             tonic::Status,
         > {
-            self.retention_unary(
-                request,
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
                 "/mycel.admin.v1.AdminBackupService/ApplyRepositoryRetention",
-                "ApplyRepositoryRetention",
-            )
-            .await
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminBackupService",
+                        "ApplyRepositoryRetention",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
         }
         /// GetBackupObservability returns a non-secret operator snapshot of backup/restore
         /// metrics and alert conditions suitable for external monitoring systems.
@@ -4515,12 +4524,27 @@ pub mod admin_backup_service_client {
             tonic::Response<super::GetBackupObservabilityResponse>,
             tonic::Status,
         > {
-            self.retention_unary(
-                request,
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
                 "/mycel.admin.v1.AdminBackupService/GetBackupObservability",
-                "GetBackupObservability",
-            )
-            .await
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminBackupService",
+                        "GetBackupObservability",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn plan_cluster_restore(
             &mut self,
@@ -13612,3 +13636,689 @@ pub mod admin_space_service_client {
         }
     }
 }
+/// UsageScope identifies the Mycel scope whose usage is measured.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageScope {
+    #[prost(oneof = "usage_scope::Scope", tags = "1, 2")]
+    pub scope: ::core::option::Option<usage_scope::Scope>,
+}
+/// Nested message and enum types in `UsageScope`.
+pub mod usage_scope {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Scope {
+        #[prost(message, tag = "1")]
+        Space(super::SpaceUsageScope),
+        #[prost(message, tag = "2")]
+        Domain(super::DomainUsageScope),
+    }
+}
+/// SpaceUsageScope identifies one Mycel space.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SpaceUsageScope {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+}
+/// DomainUsageScope identifies one domain inside a Mycel space.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DomainUsageScope {
+    #[prost(string, tag = "1")]
+    pub space_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub domain_id: ::prost::alloc::string::String,
+}
+/// UsageRevision identifies the committed/materialized sources behind a snapshot.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageRevision {
+    #[prost(string, tag = "1")]
+    pub revision_token: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "2")]
+    pub source_revisions: ::prost::alloc::vec::Vec<UsageSourceRevision>,
+}
+/// UsageSourceRevision identifies one source high-water mark in a usage snapshot.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageSourceRevision {
+    #[prost(string, tag = "1")]
+    pub source: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub revision: ::prost::alloc::string::String,
+}
+/// GetUsageRequest requests a usage snapshot for one scope.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageRequest {
+    #[prost(message, optional, tag = "1")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(enumeration = "DomainInclusionMode", tag = "2")]
+    pub domain_inclusion: i32,
+    #[prost(bool, tag = "3")]
+    pub include_diagnostic_physical: bool,
+    #[prost(bool, tag = "4")]
+    pub require_quota_safe: bool,
+    #[prost(uint64, tag = "5")]
+    pub max_staleness_seconds: u64,
+    #[prost(message, optional, tag = "6")]
+    pub minimum_revision: ::core::option::Option<UsageRevision>,
+    #[prost(string, repeated, tag = "7")]
+    pub metric_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+/// GetUsageResponse returns one usage snapshot.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageResponse {
+    #[prost(message, optional, tag = "1")]
+    pub snapshot: ::core::option::Option<UsageSnapshot>,
+}
+/// BatchGetUsageRequest requests usage snapshots for multiple scopes.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchGetUsageRequest {
+    #[prost(message, repeated, tag = "1")]
+    pub requests: ::prost::alloc::vec::Vec<GetUsageRequest>,
+}
+/// BatchGetUsageResponse returns per-scope snapshots or statuses.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchGetUsageResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub results: ::prost::alloc::vec::Vec<BatchUsageResult>,
+}
+/// BatchUsageResult is one per-scope result from BatchGetUsage.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUsageResult {
+    #[prost(message, optional, tag = "1")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(oneof = "batch_usage_result::Result", tags = "2, 3")]
+    pub result: ::core::option::Option<batch_usage_result::Result>,
+}
+/// Nested message and enum types in `BatchUsageResult`.
+pub mod batch_usage_result {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "2")]
+        Snapshot(super::UsageSnapshot),
+        #[prost(message, tag = "3")]
+        Status(super::UsageStatus),
+    }
+}
+/// ListUsageRequest pages over materialized usage snapshots.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListUsageRequest {
+    #[prost(message, optional, tag = "1")]
+    pub parent: ::core::option::Option<UsageScope>,
+    #[prost(enumeration = "UsageListMode", tag = "2")]
+    pub mode: i32,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
+    #[prost(bool, tag = "4")]
+    pub include_diagnostic_physical: bool,
+    #[prost(bool, tag = "5")]
+    pub require_quota_safe: bool,
+    #[prost(uint64, tag = "6")]
+    pub max_staleness_seconds: u64,
+    #[prost(int32, tag = "7")]
+    pub page_size: i32,
+    #[prost(string, tag = "8")]
+    pub page_token: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "9")]
+    pub metric_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "10")]
+    pub minimum_revision: ::core::option::Option<UsageRevision>,
+}
+/// ListUsageResponse returns a page of usage snapshots.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListUsageResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub snapshots: ::prost::alloc::vec::Vec<UsageSnapshot>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+}
+/// GetUsageAccountingHealthRequest requests usage accounting health.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageAccountingHealthRequest {
+    #[prost(message, optional, tag = "1")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(bool, tag = "2")]
+    pub include_reconciliation: bool,
+    #[prost(bool, tag = "3")]
+    pub include_diagnostic_collectors: bool,
+}
+/// GetUsageAccountingHealthResponse returns usage accounting health.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageAccountingHealthResponse {
+    #[prost(message, optional, tag = "1")]
+    pub health: ::core::option::Option<UsageAccountingHealth>,
+}
+/// UsageLimit configures a daemon-side hard write gate for one quota-safe metric.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageLimit {
+    #[prost(string, tag = "1")]
+    pub limit_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
+    #[prost(string, tag = "4")]
+    pub metric_name: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
+    #[prost(uint64, tag = "6")]
+    pub hard_limit: u64,
+    #[prost(bool, tag = "7")]
+    pub enabled: bool,
+    #[prost(string, tag = "8")]
+    pub policy_ref: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "10")]
+    pub created_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "11")]
+    pub updated_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertUsageLimitRequest {
+    #[prost(message, optional, tag = "1")]
+    pub limit: ::core::option::Option<UsageLimit>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertUsageLimitResponse {
+    #[prost(message, optional, tag = "1")]
+    pub limit: ::core::option::Option<UsageLimit>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteUsageLimitRequest {
+    #[prost(message, optional, tag = "2")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(string, tag = "4")]
+    pub metric_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "1")]
+    pub limit_id: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteUsageLimitResponse {
+    #[prost(message, optional, tag = "1")]
+    pub limit: ::core::option::Option<UsageLimit>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageLimitRequest {
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
+    #[prost(string, tag = "1")]
+    pub limit_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(string, tag = "4")]
+    pub metric_name: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetUsageLimitResponse {
+    #[prost(message, optional, tag = "1")]
+    pub limit: ::core::option::Option<UsageLimit>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListUsageLimitsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub parent: ::core::option::Option<UsageScope>,
+    #[prost(int32, tag = "2")]
+    pub page_size: i32,
+    #[prost(string, tag = "3")]
+    pub page_token: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub metric_name: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ListUsageLimitsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub limits: ::prost::alloc::vec::Vec<UsageLimit>,
+    #[prost(string, tag = "2")]
+    pub next_page_token: ::prost::alloc::string::String,
+}
+/// UsageAccountingHealth summarizes usage accounting health for dashboards and gates.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageAccountingHealth {
+    #[prost(message, optional, tag = "1")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(message, optional, tag = "2")]
+    pub observed_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(enumeration = "UsageAccountingState", tag = "3")]
+    pub state: i32,
+    #[prost(message, optional, tag = "4")]
+    pub as_of_revision: ::core::option::Option<UsageRevision>,
+    #[prost(bool, tag = "5")]
+    pub quota_safe_ready: bool,
+    #[prost(message, repeated, tag = "6")]
+    pub blockers: ::prost::alloc::vec::Vec<UsageStatus>,
+    #[prost(message, repeated, tag = "7")]
+    pub warnings: ::prost::alloc::vec::Vec<UsageStatus>,
+    #[prost(uint64, tag = "8")]
+    pub rebuilding_scope_count: u64,
+    #[prost(uint64, tag = "9")]
+    pub stale_scope_count: u64,
+    #[prost(uint64, tag = "10")]
+    pub drift_scope_count: u64,
+    #[prost(uint64, tag = "11")]
+    pub diagnostic_collector_unavailable_count: u64,
+}
+/// UsageSnapshot is a materialized usage view for one scope.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageSnapshot {
+    #[prost(message, optional, tag = "1")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(enumeration = "DomainInclusionMode", tag = "2")]
+    pub domain_inclusion: i32,
+    #[prost(message, optional, tag = "3")]
+    pub observed_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "4")]
+    pub as_of_revision: ::core::option::Option<UsageRevision>,
+    #[prost(enumeration = "UsageAccountingState", tag = "5")]
+    pub accounting_state: i32,
+    #[prost(bool, tag = "6")]
+    pub quota_safe_complete: bool,
+    #[prost(message, repeated, tag = "7")]
+    pub metrics: ::prost::alloc::vec::Vec<UsageMetric>,
+    #[prost(message, repeated, tag = "8")]
+    pub blockers: ::prost::alloc::vec::Vec<UsageStatus>,
+    #[prost(message, repeated, tag = "9")]
+    pub warnings: ::prost::alloc::vec::Vec<UsageStatus>,
+}
+/// UsageMetric is one named usage value with explicit authority metadata.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageMetric {
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "2")]
+    pub metric_version: u32,
+    #[prost(uint64, tag = "3")]
+    pub value: u64,
+    #[prost(enumeration = "UsageUnit", tag = "4")]
+    pub unit: i32,
+    #[prost(enumeration = "UsageAuthority", tag = "5")]
+    pub authority: i32,
+    #[prost(bool, tag = "6")]
+    pub quota_safe: bool,
+    #[prost(bool, tag = "7")]
+    pub hard_limit_eligible: bool,
+    #[prost(message, optional, tag = "8")]
+    pub observed_at: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(message, optional, tag = "9")]
+    pub as_of_revision: ::core::option::Option<UsageRevision>,
+    #[prost(map = "string, string", tag = "10")]
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+}
+/// UsageStatus describes one usage warning or blocker with non-secret evidence.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UsageStatus {
+    #[prost(enumeration = "UsageStatusReason", tag = "1")]
+    pub reason: i32,
+    #[prost(enumeration = "UsageStatusSeverity", tag = "2")]
+    pub severity: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub scope: ::core::option::Option<UsageScope>,
+    #[prost(string, tag = "5")]
+    pub metric_name: ::prost::alloc::string::String,
+    #[prost(map = "string, string", tag = "6")]
+    pub evidence: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+}
+/// DomainInclusionMode controls which domains contribute to a space aggregate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum DomainInclusionMode {
+    Unspecified = 0,
+    RetainedNonSystem = 1,
+    RetainedAll = 2,
+    SystemOnly = 3,
+}
+impl DomainInclusionMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "DOMAIN_INCLUSION_MODE_UNSPECIFIED",
+            Self::RetainedNonSystem => "DOMAIN_INCLUSION_MODE_RETAINED_NON_SYSTEM",
+            Self::RetainedAll => "DOMAIN_INCLUSION_MODE_RETAINED_ALL",
+            Self::SystemOnly => "DOMAIN_INCLUSION_MODE_SYSTEM_ONLY",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "DOMAIN_INCLUSION_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "DOMAIN_INCLUSION_MODE_RETAINED_NON_SYSTEM" => Some(Self::RetainedNonSystem),
+            "DOMAIN_INCLUSION_MODE_RETAINED_ALL" => Some(Self::RetainedAll),
+            "DOMAIN_INCLUSION_MODE_SYSTEM_ONLY" => Some(Self::SystemOnly),
+            _ => None,
+        }
+    }
+}
+/// UsageUnit identifies the unit for a usage metric value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageUnit {
+    Unspecified = 0,
+    Bytes = 1,
+    Count = 2,
+}
+impl UsageUnit {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_UNIT_UNSPECIFIED",
+            Self::Bytes => "USAGE_UNIT_BYTES",
+            Self::Count => "USAGE_UNIT_COUNT",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_UNIT_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_UNIT_BYTES" => Some(Self::Bytes),
+            "USAGE_UNIT_COUNT" => Some(Self::Count),
+            _ => None,
+        }
+    }
+}
+/// UsageAuthority describes the source authority and safety of a metric.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageAuthority {
+    Unspecified = 0,
+    RaftCommittedExact = 1,
+    StateMachineExact = 2,
+    ObservedApproximate = 3,
+    RebuildableOperational = 4,
+}
+impl UsageAuthority {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_AUTHORITY_UNSPECIFIED",
+            Self::RaftCommittedExact => "USAGE_AUTHORITY_RAFT_COMMITTED_EXACT",
+            Self::StateMachineExact => "USAGE_AUTHORITY_STATE_MACHINE_EXACT",
+            Self::ObservedApproximate => "USAGE_AUTHORITY_OBSERVED_APPROXIMATE",
+            Self::RebuildableOperational => "USAGE_AUTHORITY_REBUILDABLE_OPERATIONAL",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_AUTHORITY_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_AUTHORITY_RAFT_COMMITTED_EXACT" => Some(Self::RaftCommittedExact),
+            "USAGE_AUTHORITY_STATE_MACHINE_EXACT" => Some(Self::StateMachineExact),
+            "USAGE_AUTHORITY_OBSERVED_APPROXIMATE" => Some(Self::ObservedApproximate),
+            "USAGE_AUTHORITY_REBUILDABLE_OPERATIONAL" => {
+                Some(Self::RebuildableOperational)
+            }
+            _ => None,
+        }
+    }
+}
+/// UsageAccountingState summarizes the serving state for usage accounting.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageAccountingState {
+    Unspecified = 0,
+    Ready = 1,
+    Rebuilding = 2,
+    Reconciling = 3,
+    Stale = 4,
+    DriftDetected = 5,
+    Unavailable = 6,
+}
+impl UsageAccountingState {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_ACCOUNTING_STATE_UNSPECIFIED",
+            Self::Ready => "USAGE_ACCOUNTING_STATE_READY",
+            Self::Rebuilding => "USAGE_ACCOUNTING_STATE_REBUILDING",
+            Self::Reconciling => "USAGE_ACCOUNTING_STATE_RECONCILING",
+            Self::Stale => "USAGE_ACCOUNTING_STATE_STALE",
+            Self::DriftDetected => "USAGE_ACCOUNTING_STATE_DRIFT_DETECTED",
+            Self::Unavailable => "USAGE_ACCOUNTING_STATE_UNAVAILABLE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_ACCOUNTING_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_ACCOUNTING_STATE_READY" => Some(Self::Ready),
+            "USAGE_ACCOUNTING_STATE_REBUILDING" => Some(Self::Rebuilding),
+            "USAGE_ACCOUNTING_STATE_RECONCILING" => Some(Self::Reconciling),
+            "USAGE_ACCOUNTING_STATE_STALE" => Some(Self::Stale),
+            "USAGE_ACCOUNTING_STATE_DRIFT_DETECTED" => Some(Self::DriftDetected),
+            "USAGE_ACCOUNTING_STATE_UNAVAILABLE" => Some(Self::Unavailable),
+            _ => None,
+        }
+    }
+}
+/// UsageListMode selects which usage snapshots ListUsage returns.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageListMode {
+    Unspecified = 0,
+    Spaces = 1,
+    DomainsInSpace = 2,
+    SpaceWithDomainBreakdown = 3,
+}
+impl UsageListMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_LIST_MODE_UNSPECIFIED",
+            Self::Spaces => "USAGE_LIST_MODE_SPACES",
+            Self::DomainsInSpace => "USAGE_LIST_MODE_DOMAINS_IN_SPACE",
+            Self::SpaceWithDomainBreakdown => {
+                "USAGE_LIST_MODE_SPACE_WITH_DOMAIN_BREAKDOWN"
+            }
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_LIST_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_LIST_MODE_SPACES" => Some(Self::Spaces),
+            "USAGE_LIST_MODE_DOMAINS_IN_SPACE" => Some(Self::DomainsInSpace),
+            "USAGE_LIST_MODE_SPACE_WITH_DOMAIN_BREAKDOWN" => {
+                Some(Self::SpaceWithDomainBreakdown)
+            }
+            _ => None,
+        }
+    }
+}
+/// UsageStatusSeverity classifies a usage status row.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageStatusSeverity {
+    Unspecified = 0,
+    Info = 1,
+    Warning = 2,
+    Blocker = 3,
+}
+impl UsageStatusSeverity {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_STATUS_SEVERITY_UNSPECIFIED",
+            Self::Info => "USAGE_STATUS_SEVERITY_INFO",
+            Self::Warning => "USAGE_STATUS_SEVERITY_WARNING",
+            Self::Blocker => "USAGE_STATUS_SEVERITY_BLOCKER",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_STATUS_SEVERITY_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_STATUS_SEVERITY_INFO" => Some(Self::Info),
+            "USAGE_STATUS_SEVERITY_WARNING" => Some(Self::Warning),
+            "USAGE_STATUS_SEVERITY_BLOCKER" => Some(Self::Blocker),
+            _ => None,
+        }
+    }
+}
+/// UsageStatusReason is a stable reason for a usage warning or blocker.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum UsageStatusReason {
+    Unspecified = 0,
+    CountersRebuilding = 1,
+    CounterStale = 2,
+    ReconciliationDrift = 3,
+    MetricUnavailable = 4,
+    MetricNotQuotaSafe = 5,
+    UnsupportedScope = 6,
+    UnsupportedRevision = 7,
+    DiagnosticCollectorUnavailable = 8,
+    Unauthorized = 9,
+}
+impl UsageStatusReason {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "USAGE_STATUS_REASON_UNSPECIFIED",
+            Self::CountersRebuilding => "USAGE_STATUS_REASON_COUNTERS_REBUILDING",
+            Self::CounterStale => "USAGE_STATUS_REASON_COUNTER_STALE",
+            Self::ReconciliationDrift => "USAGE_STATUS_REASON_RECONCILIATION_DRIFT",
+            Self::MetricUnavailable => "USAGE_STATUS_REASON_METRIC_UNAVAILABLE",
+            Self::MetricNotQuotaSafe => "USAGE_STATUS_REASON_METRIC_NOT_QUOTA_SAFE",
+            Self::UnsupportedScope => "USAGE_STATUS_REASON_UNSUPPORTED_SCOPE",
+            Self::UnsupportedRevision => "USAGE_STATUS_REASON_UNSUPPORTED_REVISION",
+            Self::DiagnosticCollectorUnavailable => {
+                "USAGE_STATUS_REASON_DIAGNOSTIC_COLLECTOR_UNAVAILABLE"
+            }
+            Self::Unauthorized => "USAGE_STATUS_REASON_UNAUTHORIZED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USAGE_STATUS_REASON_UNSPECIFIED" => Some(Self::Unspecified),
+            "USAGE_STATUS_REASON_COUNTERS_REBUILDING" => Some(Self::CountersRebuilding),
+            "USAGE_STATUS_REASON_COUNTER_STALE" => Some(Self::CounterStale),
+            "USAGE_STATUS_REASON_RECONCILIATION_DRIFT" => Some(Self::ReconciliationDrift),
+            "USAGE_STATUS_REASON_METRIC_UNAVAILABLE" => Some(Self::MetricUnavailable),
+            "USAGE_STATUS_REASON_METRIC_NOT_QUOTA_SAFE" => Some(Self::MetricNotQuotaSafe),
+            "USAGE_STATUS_REASON_UNSUPPORTED_SCOPE" => Some(Self::UnsupportedScope),
+            "USAGE_STATUS_REASON_UNSUPPORTED_REVISION" => Some(Self::UnsupportedRevision),
+            "USAGE_STATUS_REASON_DIAGNOSTIC_COLLECTOR_UNAVAILABLE" => {
+                Some(Self::DiagnosticCollectorUnavailable)
+            }
+            "USAGE_STATUS_REASON_UNAUTHORIZED" => Some(Self::Unauthorized),
+            _ => None,
+        }
+    }
+}
+macro_rules! define_admin_usage_client {
+    ($module:ident, $client:ident, $service:literal, { $(
+        $rpc:ident($request:ty => $response:ty, $method:literal)
+    ),+ $(,)? }) => {
+        pub mod $module {
+            #![allow(dead_code, missing_docs, unused_variables)]
+            use tonic::codegen::*;
+
+            #[derive(Debug, Clone)]
+            pub struct $client<T> {
+                inner: tonic::client::Grpc<T>,
+            }
+
+            impl<T> $client<T> {
+                pub fn new(inner: T) -> Self {
+                    Self { inner: tonic::client::Grpc::new(inner) }
+                }
+
+                pub fn with_interceptor<F>(inner: T, interceptor: F) -> $client<InterceptedService<T, F>>
+                where
+                    F: tonic::service::Interceptor,
+                    T: tonic::client::GrpcService<tonic::body::BoxBody>,
+                    T::ResponseBody: Default,
+                    T: tonic::codegen::Service<
+                        http::Request<tonic::body::BoxBody>,
+                        Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
+                    >,
+                    <T as tonic::codegen::Service<
+                        http::Request<tonic::body::BoxBody>,
+                    >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+                {
+                    $client::new(InterceptedService::new(inner, interceptor))
+                }
+            }
+
+            impl<T> $client<T>
+            where
+                T: tonic::client::GrpcService<tonic::body::BoxBody>,
+                T::Error: Into<StdError>,
+                T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+                <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+            {
+                async fn unary<Req, Res>(
+                    &mut self,
+                    request: impl tonic::IntoRequest<Req>,
+                    method: &'static str,
+                    path: &'static str,
+                ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
+                where
+                    Req: prost::Message + Default + 'static,
+                    Res: prost::Message + Default + 'static,
+                {
+                    self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage service was not ready: {}", e.into())))?;
+                    let mut req = request.into_request();
+                    req.extensions_mut().insert(GrpcMethod::new($service, method));
+                    self.inner
+                        .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
+                        .await
+                }
+
+                $(
+                    pub async fn $rpc(
+                        &mut self,
+                        request: impl tonic::IntoRequest<$request>,
+                    ) -> std::result::Result<tonic::Response<$response>, tonic::Status> {
+                        self.unary(request, $method, concat!("/", $service, "/", $method)).await
+                    }
+                )+
+            }
+        }
+    };
+}
+
+define_admin_usage_client!(admin_usage_accounting_service_client, AdminUsageAccountingServiceClient, "mycel.admin.v1.AdminUsageAccountingService", {
+    get_usage(super::GetUsageRequest => super::GetUsageResponse, "GetUsage"),
+    batch_get_usage(super::BatchGetUsageRequest => super::BatchGetUsageResponse, "BatchGetUsage"),
+    list_usage(super::ListUsageRequest => super::ListUsageResponse, "ListUsage"),
+    get_usage_accounting_health(super::GetUsageAccountingHealthRequest => super::GetUsageAccountingHealthResponse, "GetUsageAccountingHealth"),
+});
+
+define_admin_usage_client!(admin_usage_admission_service_client, AdminUsageAdmissionServiceClient, "mycel.admin.v1.AdminUsageAdmissionService", {
+    upsert_usage_limit(super::UpsertUsageLimitRequest => super::UpsertUsageLimitResponse, "UpsertUsageLimit"),
+    delete_usage_limit(super::DeleteUsageLimitRequest => super::DeleteUsageLimitResponse, "DeleteUsageLimit"),
+    get_usage_limit(super::GetUsageLimitRequest => super::GetUsageLimitResponse, "GetUsageLimit"),
+    list_usage_limits(super::ListUsageLimitsRequest => super::ListUsageLimitsResponse, "ListUsageLimits"),
+});
