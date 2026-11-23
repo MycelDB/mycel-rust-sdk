@@ -14236,178 +14236,89 @@ impl UsageStatusReason {
         }
     }
 }
-/// Generated client implementations.
-pub mod admin_usage_accounting_service_client {
-    #![allow(dead_code, missing_docs, unused_variables)]
-    use tonic::codegen::*;
+macro_rules! define_admin_usage_client {
+    ($module:ident, $client:ident, $service:literal, { $(
+        $rpc:ident($request:ty => $response:ty, $method:literal)
+    ),+ $(,)? }) => {
+        pub mod $module {
+            #![allow(dead_code, missing_docs, unused_variables)]
+            use tonic::codegen::*;
 
-    /// AdminUsageAccountingService exposes read-only logical usage snapshots.
-    #[derive(Debug, Clone)]
-    pub struct AdminUsageAccountingServiceClient<T> {
-        inner: tonic::client::Grpc<T>,
-    }
+            #[derive(Debug, Clone)]
+            pub struct $client<T> {
+                inner: tonic::client::Grpc<T>,
+            }
 
-    impl<T> AdminUsageAccountingServiceClient<T> {
-        pub fn new(inner: T) -> Self {
-            Self { inner: tonic::client::Grpc::new(inner) }
+            impl<T> $client<T> {
+                pub fn new(inner: T) -> Self {
+                    Self { inner: tonic::client::Grpc::new(inner) }
+                }
+
+                pub fn with_interceptor<F>(inner: T, interceptor: F) -> $client<InterceptedService<T, F>>
+                where
+                    F: tonic::service::Interceptor,
+                    T: tonic::client::GrpcService<tonic::body::BoxBody>,
+                    T::ResponseBody: Default,
+                    T: tonic::codegen::Service<
+                        http::Request<tonic::body::BoxBody>,
+                        Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
+                    >,
+                    <T as tonic::codegen::Service<
+                        http::Request<tonic::body::BoxBody>,
+                    >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+                {
+                    $client::new(InterceptedService::new(inner, interceptor))
+                }
+            }
+
+            impl<T> $client<T>
+            where
+                T: tonic::client::GrpcService<tonic::body::BoxBody>,
+                T::Error: Into<StdError>,
+                T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+                <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+            {
+                async fn unary<Req, Res>(
+                    &mut self,
+                    request: impl tonic::IntoRequest<Req>,
+                    method: &'static str,
+                    path: &'static str,
+                ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
+                where
+                    Req: prost::Message + Default + 'static,
+                    Res: prost::Message + Default + 'static,
+                {
+                    self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage service was not ready: {}", e.into())))?;
+                    let mut req = request.into_request();
+                    req.extensions_mut().insert(GrpcMethod::new($service, method));
+                    self.inner
+                        .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
+                        .await
+                }
+
+                $(
+                    pub async fn $rpc(
+                        &mut self,
+                        request: impl tonic::IntoRequest<$request>,
+                    ) -> std::result::Result<tonic::Response<$response>, tonic::Status> {
+                        self.unary(request, $method, concat!("/", $service, "/", $method)).await
+                    }
+                )+
+            }
         }
-
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> AdminUsageAccountingServiceClient<InterceptedService<T, F>>
-        where
-            F: tonic::service::Interceptor,
-            T: tonic::client::GrpcService<tonic::body::BoxBody>,
-            T::ResponseBody: Default,
-            T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-                Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
-            >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
-        {
-            AdminUsageAccountingServiceClient::new(InterceptedService::new(inner, interceptor))
-        }
-    }
-
-    impl<T> AdminUsageAccountingServiceClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::Error: Into<StdError>,
-        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
-        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
-    {
-        async fn unary<Req, Res>(
-            &mut self,
-            request: impl tonic::IntoRequest<Req>,
-            method: &'static str,
-            path: &'static str,
-        ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
-        where
-            Req: prost::Message + Default + 'static,
-            Res: prost::Message + Default + 'static,
-        {
-            self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage accounting service was not ready: {}", e.into())))?;
-            let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("mycel.admin.v1.AdminUsageAccountingService", method));
-            self.inner
-                .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
-                .await
-        }
-
-        pub async fn get_usage(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GetUsageRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetUsageResponse>, tonic::Status> {
-            self.unary(request, "GetUsage", "/mycel.admin.v1.AdminUsageAccountingService/GetUsage").await
-        }
-
-        pub async fn batch_get_usage(
-            &mut self,
-            request: impl tonic::IntoRequest<super::BatchGetUsageRequest>,
-        ) -> std::result::Result<tonic::Response<super::BatchGetUsageResponse>, tonic::Status> {
-            self.unary(request, "BatchGetUsage", "/mycel.admin.v1.AdminUsageAccountingService/BatchGetUsage").await
-        }
-
-        pub async fn list_usage(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ListUsageRequest>,
-        ) -> std::result::Result<tonic::Response<super::ListUsageResponse>, tonic::Status> {
-            self.unary(request, "ListUsage", "/mycel.admin.v1.AdminUsageAccountingService/ListUsage").await
-        }
-
-        pub async fn get_usage_accounting_health(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GetUsageAccountingHealthRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetUsageAccountingHealthResponse>, tonic::Status> {
-            self.unary(request, "GetUsageAccountingHealth", "/mycel.admin.v1.AdminUsageAccountingService/GetUsageAccountingHealth").await
-        }
-    }
+    };
 }
-/// Generated client implementations.
-pub mod admin_usage_admission_service_client {
-    #![allow(dead_code, missing_docs, unused_variables)]
-    use tonic::codegen::*;
 
-    /// AdminUsageAdmissionService configures daemon-side hard write gates for
-    /// quota-safe metrics.
-    #[derive(Debug, Clone)]
-    pub struct AdminUsageAdmissionServiceClient<T> {
-        inner: tonic::client::Grpc<T>,
-    }
+define_admin_usage_client!(admin_usage_accounting_service_client, AdminUsageAccountingServiceClient, "mycel.admin.v1.AdminUsageAccountingService", {
+    get_usage(super::GetUsageRequest => super::GetUsageResponse, "GetUsage"),
+    batch_get_usage(super::BatchGetUsageRequest => super::BatchGetUsageResponse, "BatchGetUsage"),
+    list_usage(super::ListUsageRequest => super::ListUsageResponse, "ListUsage"),
+    get_usage_accounting_health(super::GetUsageAccountingHealthRequest => super::GetUsageAccountingHealthResponse, "GetUsageAccountingHealth"),
+});
 
-    impl<T> AdminUsageAdmissionServiceClient<T> {
-        pub fn new(inner: T) -> Self {
-            Self { inner: tonic::client::Grpc::new(inner) }
-        }
-
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> AdminUsageAdmissionServiceClient<InterceptedService<T, F>>
-        where
-            F: tonic::service::Interceptor,
-            T: tonic::client::GrpcService<tonic::body::BoxBody>,
-            T::ResponseBody: Default,
-            T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-                Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
-            >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
-        {
-            AdminUsageAdmissionServiceClient::new(InterceptedService::new(inner, interceptor))
-        }
-    }
-
-    impl<T> AdminUsageAdmissionServiceClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::Error: Into<StdError>,
-        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
-        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
-    {
-        async fn unary<Req, Res>(
-            &mut self,
-            request: impl tonic::IntoRequest<Req>,
-            method: &'static str,
-            path: &'static str,
-        ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
-        where
-            Req: prost::Message + Default + 'static,
-            Res: prost::Message + Default + 'static,
-        {
-            self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage admission service was not ready: {}", e.into())))?;
-            let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("mycel.admin.v1.AdminUsageAdmissionService", method));
-            self.inner
-                .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
-                .await
-        }
-
-        pub async fn upsert_usage_limit(
-            &mut self,
-            request: impl tonic::IntoRequest<super::UpsertUsageLimitRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpsertUsageLimitResponse>, tonic::Status> {
-            self.unary(request, "UpsertUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/UpsertUsageLimit").await
-        }
-
-        pub async fn delete_usage_limit(
-            &mut self,
-            request: impl tonic::IntoRequest<super::DeleteUsageLimitRequest>,
-        ) -> std::result::Result<tonic::Response<super::DeleteUsageLimitResponse>, tonic::Status> {
-            self.unary(request, "DeleteUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/DeleteUsageLimit").await
-        }
-
-        pub async fn get_usage_limit(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GetUsageLimitRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetUsageLimitResponse>, tonic::Status> {
-            self.unary(request, "GetUsageLimit", "/mycel.admin.v1.AdminUsageAdmissionService/GetUsageLimit").await
-        }
-
-        pub async fn list_usage_limits(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ListUsageLimitsRequest>,
-        ) -> std::result::Result<tonic::Response<super::ListUsageLimitsResponse>, tonic::Status> {
-            self.unary(request, "ListUsageLimits", "/mycel.admin.v1.AdminUsageAdmissionService/ListUsageLimits").await
-        }
-    }
-}
+define_admin_usage_client!(admin_usage_admission_service_client, AdminUsageAdmissionServiceClient, "mycel.admin.v1.AdminUsageAdmissionService", {
+    upsert_usage_limit(super::UpsertUsageLimitRequest => super::UpsertUsageLimitResponse, "UpsertUsageLimit"),
+    delete_usage_limit(super::DeleteUsageLimitRequest => super::DeleteUsageLimitResponse, "DeleteUsageLimit"),
+    get_usage_limit(super::GetUsageLimitRequest => super::GetUsageLimitResponse, "GetUsageLimit"),
+    list_usage_limits(super::ListUsageLimitsRequest => super::ListUsageLimitsResponse, "ListUsageLimits"),
+});
