@@ -87,6 +87,22 @@ macro_rules! admin_call_with_refresh {
     }};
 }
 
+macro_rules! admin_usage_admission_call {
+    ($client:ident, $request:ident, $method:ident) => {{
+        let res = admin_call_with_refresh!(
+            $client,
+            $client
+                .usage_admission
+                .$method($client.auth_request($request.clone())),
+            $client
+                .usage_admission
+                .$method($client.auth_request($request))
+        )?
+        .into_inner();
+        Ok(res)
+    }};
+}
+
 #[derive(Debug, Clone)]
 pub struct PrincipalAdminInfo {
     pub principal_id: String,
@@ -1298,60 +1314,28 @@ impl AdminClient {
         &mut self,
         request: UpsertUsageLimitRequest,
     ) -> Result<UpsertUsageLimitResponse> {
-        let res = admin_call_with_refresh!(
-            self,
-            self.usage_admission
-                .upsert_usage_limit(self.auth_request(request.clone())),
-            self.usage_admission
-                .upsert_usage_limit(self.auth_request(request))
-        )?
-        .into_inner();
-        Ok(res)
+        admin_usage_admission_call!(self, request, upsert_usage_limit)
     }
 
     pub async fn delete_usage_limit(
         &mut self,
         request: DeleteUsageLimitRequest,
     ) -> Result<DeleteUsageLimitResponse> {
-        let res = admin_call_with_refresh!(
-            self,
-            self.usage_admission
-                .delete_usage_limit(self.auth_request(request.clone())),
-            self.usage_admission
-                .delete_usage_limit(self.auth_request(request))
-        )?
-        .into_inner();
-        Ok(res)
+        admin_usage_admission_call!(self, request, delete_usage_limit)
     }
 
     pub async fn get_usage_limit(
         &mut self,
         request: GetUsageLimitRequest,
     ) -> Result<GetUsageLimitResponse> {
-        let res = admin_call_with_refresh!(
-            self,
-            self.usage_admission
-                .get_usage_limit(self.auth_request(request.clone())),
-            self.usage_admission
-                .get_usage_limit(self.auth_request(request))
-        )?
-        .into_inner();
-        Ok(res)
+        admin_usage_admission_call!(self, request, get_usage_limit)
     }
 
     pub async fn list_usage_limits(
         &mut self,
         request: ListUsageLimitsRequest,
     ) -> Result<ListUsageLimitsResponse> {
-        let res = admin_call_with_refresh!(
-            self,
-            self.usage_admission
-                .list_usage_limits(self.auth_request(request.clone())),
-            self.usage_admission
-                .list_usage_limits(self.auth_request(request))
-        )?
-        .into_inner();
-        Ok(res)
+        admin_usage_admission_call!(self, request, list_usage_limits)
     }
 
     pub async fn plan_cluster_restore(
