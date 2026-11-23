@@ -14238,32 +14238,37 @@ impl UsageStatusReason {
 }
 /// Generated client implementations.
 pub mod admin_usage_accounting_service_client {
-    #![allow(
-        unused_variables,
-        dead_code,
-        missing_docs,
-        clippy::wildcard_imports,
-        clippy::let_unit_value,
-    )]
+    #![allow(dead_code, missing_docs, unused_variables)]
     use tonic::codegen::*;
-    use tonic::codegen::http::Uri;
-    /// AdminUsageAccountingService exposes read-only logical usage snapshots for
-    /// billing, quota, reconciliation, and operator diagnostics.
+
+    /// AdminUsageAccountingService exposes read-only logical usage snapshots.
     #[derive(Debug, Clone)]
     pub struct AdminUsageAccountingServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl AdminUsageAccountingServiceClient<tonic::transport::Channel> {
-        /// Attempt to create a new client by connecting to a given endpoint.
-        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+
+    impl<T> AdminUsageAccountingServiceClient<T> {
+        pub fn new(inner: T) -> Self {
+            Self { inner: tonic::client::Grpc::new(inner) }
+        }
+
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> AdminUsageAccountingServiceClient<InterceptedService<T, F>>
         where
-            D: TryInto<tonic::transport::Endpoint>,
-            D::Error: Into<StdError>,
+            F: tonic::service::Interceptor,
+            T: tonic::client::GrpcService<tonic::body::BoxBody>,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
-            Ok(Self::new(conn))
+            AdminUsageAccountingServiceClient::new(InterceptedService::new(inner, interceptor))
         }
     }
+
     impl<T> AdminUsageAccountingServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
@@ -14271,188 +14276,50 @@ pub mod admin_usage_accounting_service_client {
         T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
         <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
     {
-        pub fn new(inner: T) -> Self {
-            let inner = tonic::client::Grpc::new(inner);
-            Self { inner }
-        }
-        pub fn with_origin(inner: T, origin: Uri) -> Self {
-            let inner = tonic::client::Grpc::with_origin(inner, origin);
-            Self { inner }
-        }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> AdminUsageAccountingServiceClient<InterceptedService<T, F>>
+        async fn unary<Req, Res>(
+            &mut self,
+            request: impl tonic::IntoRequest<Req>,
+            method: &'static str,
+            path: &'static str,
+        ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
         where
-            F: tonic::service::Interceptor,
-            T::ResponseBody: Default,
-            T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-                Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
-                >,
-            >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+            Req: prost::Message + Default + 'static,
+            Res: prost::Message + Default + 'static,
         {
-            AdminUsageAccountingServiceClient::new(
-                InterceptedService::new(inner, interceptor),
-            )
+            self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage accounting service was not ready: {}", e.into())))?;
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("mycel.admin.v1.AdminUsageAccountingService", method));
+            self.inner
+                .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
+                .await
         }
-        /// Compress requests with the given encoding.
-        ///
-        /// This requires the server to support it otherwise it might respond with an
-        /// error.
-        #[must_use]
-        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.inner = self.inner.send_compressed(encoding);
-            self
-        }
-        /// Enable decompressing responses.
-        #[must_use]
-        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.inner = self.inner.accept_compressed(encoding);
-            self
-        }
-        /// Limits the maximum size of a decoded message.
-        ///
-        /// Default: `4MB`
-        #[must_use]
-        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
-            self.inner = self.inner.max_decoding_message_size(limit);
-            self
-        }
-        /// Limits the maximum size of an encoded message.
-        ///
-        /// Default: `usize::MAX`
-        #[must_use]
-        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
-            self.inner = self.inner.max_encoding_message_size(limit);
-            self
-        }
-        /// GetUsage returns the current materialized usage snapshot for one scope.
+
         pub async fn get_usage(
             &mut self,
             request: impl tonic::IntoRequest<super::GetUsageRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetUsageResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAccountingService/GetUsage",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAccountingService",
-                        "GetUsage",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::GetUsageResponse>, tonic::Status> {
+            self.unary(request, "GetUsage", "/mycel.admin.v1.AdminUsageAccountingService/GetUsage").await
         }
-        /// BatchGetUsage returns independent usage snapshots or statuses for multiple
-        /// scopes without failing the whole response when one scope is unavailable.
+
         pub async fn batch_get_usage(
             &mut self,
             request: impl tonic::IntoRequest<super::BatchGetUsageRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchGetUsageResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAccountingService/BatchGetUsage",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAccountingService",
-                        "BatchGetUsage",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::BatchGetUsageResponse>, tonic::Status> {
+            self.unary(request, "BatchGetUsage", "/mycel.admin.v1.AdminUsageAccountingService/BatchGetUsage").await
         }
-        /// ListUsage pages over materialized space or domain usage snapshots.
+
         pub async fn list_usage(
             &mut self,
             request: impl tonic::IntoRequest<super::ListUsageRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListUsageResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAccountingService/ListUsage",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAccountingService",
-                        "ListUsage",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::ListUsageResponse>, tonic::Status> {
+            self.unary(request, "ListUsage", "/mycel.admin.v1.AdminUsageAccountingService/ListUsage").await
         }
-        /// GetUsageAccountingHealth reports whether usage accounting is safe for quota
-        /// decisions and surfaces rebuild, staleness, reconciliation, and diagnostic
-        /// collector health.
+
         pub async fn get_usage_accounting_health(
             &mut self,
             request: impl tonic::IntoRequest<super::GetUsageAccountingHealthRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetUsageAccountingHealthResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminUsageAccountingService/GetUsageAccountingHealth",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminUsageAccountingService",
-                        "GetUsageAccountingHealth",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
+        ) -> std::result::Result<tonic::Response<super::GetUsageAccountingHealthResponse>, tonic::Status> {
+            self.unary(request, "GetUsageAccountingHealth", "/mycel.admin.v1.AdminUsageAccountingService/GetUsageAccountingHealth").await
         }
     }
 }
