@@ -72,7 +72,7 @@ fn compatibility_manifest_v1() {
     assert_eq!(manifest["component_release"], "v0.25.0");
     assert_eq!(
         manifest["source_revision"],
-        "401883cd5a8f3c1957cccc8c22a3bd640fe063db"
+        "e48cca5009e3e1a64fff22c4c8820865a176413d"
     );
     assert_eq!(manifest["mycel_api_line"], "0.25");
     assert_eq!(manifest["supported_daemon_api_lines"], json!(["0.25"]));
@@ -108,7 +108,7 @@ fn compatibility_manifest_v1() {
             }
         ])
     );
-    assert_eq!(manifest["published_at"], "2026-11-24T16:47:11Z");
+    assert_eq!(manifest["published_at"], "2026-11-24T17:00:13Z");
 }
 
 #[tokio::test]

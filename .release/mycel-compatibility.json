@@ -2,7 +2,7 @@
   "schema_version": 1,
   "component": "mycel-rust-sdk",
   "component_release": "v0.25.0",
-  "source_revision": "401883cd5a8f3c1957cccc8c22a3bd640fe063db",
+  "source_revision": "e48cca5009e3e1a64fff22c4c8820865a176413d",
   "mycel_api_line": "0.25",
   "supported_daemon_api_lines": [
     "0.25"
@@ -36,5 +36,5 @@
       ]
     }
   ],
-  "published_at": "2026-11-24T16:47:11Z"
+  "published_at": "2026-11-24T17:00:13Z"
 }
