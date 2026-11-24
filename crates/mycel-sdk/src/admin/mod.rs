@@ -23,33 +23,28 @@ use mycel::admin::v1::{
     admin_usage_accounting_service_client::AdminUsageAccountingServiceClient,
     admin_usage_admission_service_client::AdminUsageAdmissionServiceClient,
     AdminDomainServiceGetDomainRequest, AdminSpaceServiceListSpacesRequest,
-    ApplyRepositoryRetentionRequest, ApplyRepositoryRetentionResponse, BackupArchiveFormat,
-    BackupPolicy, BackupRepository, BatchGetUsageRequest, BatchGetUsageResponse,
-    CancelClusterBackupRequest, CancelClusterBackupResponse, CancelClusterRestoreRequest,
-    CancelClusterRestoreResponse, CreateBackupRepositoryRequest, CreatePrincipalRequest,
-    CreateSpaceRequest, DeleteBackupRepositoryRequest, DeleteBackupRepositoryResponse,
-    DeleteBackupRequest, DeleteBackupResponse, DeleteClusterBackupSetRequest,
-    DeleteClusterBackupSetResponse, DeleteUsageLimitRequest, DeleteUsageLimitResponse,
+    ApplyRepositoryRetentionRequest, ApplyRepositoryRetentionResponse, BackupPolicy,
+    BackupRepository, BatchGetUsageRequest, BatchGetUsageResponse, CancelBackupOperationRequest,
+    CancelBackupOperationResponse, CancelRestoreOperationRequest, CancelRestoreOperationResponse,
+    CreateBackupRepositoryRequest, CreatePrincipalRequest, CreateSpaceRequest,
+    DeleteBackupRepositoryRequest, DeleteBackupRepositoryResponse, DeleteBackupSetRequest,
+    DeleteBackupSetResponse, DeleteUsageLimitRequest, DeleteUsageLimitResponse,
     FindPrincipalRequest, GetBackupObservabilityRequest, GetBackupObservabilityResponse,
-    GetBackupPolicyRequest, GetBackupRepositoryRequest, GetBackupStatusRequest,
-    GetBackupStatusResponse, GetClusterBackupSetRequest, GetClusterBackupSetResponse,
-    GetClusterBackupStatusRequest, GetClusterBackupStatusResponse, GetClusterRestoreStatusRequest,
-    GetClusterRestoreStatusResponse, GetUsageAccountingHealthRequest,
+    GetBackupOperationRequest, GetBackupOperationResponse, GetBackupPolicyRequest,
+    GetBackupRepositoryRequest, GetBackupSetRequest, GetBackupSetResponse,
+    GetRestoreOperationRequest, GetRestoreOperationResponse, GetUsageAccountingHealthRequest,
     GetUsageAccountingHealthResponse, GetUsageLimitRequest, GetUsageLimitResponse, GetUsageRequest,
-    GetUsageResponse, ListBackupRepositoriesRequest, ListBackupRepositoriesResponse,
-    ListBackupsRequest, ListBackupsResponse, ListClusterBackupOperationsRequest,
-    ListClusterBackupOperationsResponse, ListClusterBackupSetsRequest,
-    ListClusterBackupSetsResponse, ListClusterBackupsRequest, ListClusterBackupsResponse,
-    ListClusterRestoresRequest, ListClusterRestoresResponse, ListUsageLimitsRequest,
-    ListUsageLimitsResponse, ListUsageRequest, ListUsageResponse, PlanClusterRestoreRequest,
-    PlanClusterRestoreResponse, PlanRepositoryRetentionRequest, PlanRepositoryRetentionResponse,
-    Principal, PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
-    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest,
-    StartClusterBackupRequest, StartClusterBackupResponse, StartClusterRestoreRequest,
-    StartClusterRestoreResponse, TriggerBackupRequest, TriggerBackupResponse,
-    UpdateBackupPolicyRequest, UpdateBackupRepositoryRequest, UpsertUsageLimitRequest,
-    UpsertUsageLimitResponse, ValidateBackupRepositoryRequest, ValidateBackupRepositoryResponse,
-    ValidateClusterBackupSetRequest, ValidateClusterBackupSetResponse,
+    GetUsageResponse, ListBackupOperationsRequest, ListBackupOperationsResponse,
+    ListBackupRepositoriesRequest, ListBackupRepositoriesResponse, ListBackupSetsRequest,
+    ListBackupSetsResponse, ListRestoreOperationsRequest, ListRestoreOperationsResponse,
+    ListUsageLimitsRequest, ListUsageLimitsResponse, ListUsageRequest, ListUsageResponse,
+    PlanRepositoryRetentionRequest, PlanRepositoryRetentionResponse, PlanRestoreRequest,
+    PlanRestoreResponse, Principal, PrincipalCapabilityGrant, PrincipalRoleGrant, PrincipalState,
+    SetPrincipalCapabilitiesForScopeRequest, SetPrincipalRolesForScopeRequest, StartBackupRequest,
+    StartBackupResponse, StartRestoreRequest, StartRestoreResponse, UpdateBackupPolicyRequest,
+    UpdateBackupRepositoryRequest, UpsertUsageLimitRequest, UpsertUsageLimitResponse,
+    ValidateBackupRepositoryRequest, ValidateBackupRepositoryResponse, ValidateBackupSetRequest,
+    ValidateBackupSetResponse,
 };
 use mycel::common::v1::{
     auth_service_client::AuthServiceClient, AccessScope, AccessScopeType, Capability, ClientInfo,
@@ -856,136 +851,36 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn trigger_backup(
+    pub async fn start_backup(
         &mut self,
-        reason: impl Into<String>,
-    ) -> Result<TriggerBackupResponse> {
-        let reason = reason.into();
+        request: StartBackupRequest,
+    ) -> Result<StartBackupResponse> {
         let res = admin_call_with_refresh!(
             self,
-            self.backup
-                .trigger_backup(self.auth_request(TriggerBackupRequest {
-                    reason: reason.clone(),
-                })),
-            self.backup
-                .trigger_backup(self.auth_request(TriggerBackupRequest { reason }))
+            self.backup.start_backup(self.auth_request(request.clone())),
+            self.backup.start_backup(self.auth_request(request))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn get_backup_status(&mut self) -> Result<GetBackupStatusResponse> {
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup
-                .get_backup_status(self.auth_request(GetBackupStatusRequest {})),
-            self.backup
-                .get_backup_status(self.auth_request(GetBackupStatusRequest {}))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn list_backups(
-        &mut self,
-        page_size: i32,
-        page_token: impl Into<String>,
-    ) -> Result<ListBackupsResponse> {
-        let page_token = page_token.into();
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup
-                .list_backups(self.auth_request(ListBackupsRequest {
-                    page_size,
-                    page_token: page_token.clone(),
-                })),
-            self.backup
-                .list_backups(self.auth_request(ListBackupsRequest {
-                    page_size,
-                    page_token,
-                }))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn delete_backup(
-        &mut self,
-        backup_id: impl Into<String>,
-    ) -> Result<DeleteBackupResponse> {
-        let backup_id = backup_id.into();
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup
-                .delete_backup(self.auth_request(DeleteBackupRequest {
-                    backup_id: backup_id.clone(),
-                })),
-            self.backup
-                .delete_backup(self.auth_request(DeleteBackupRequest { backup_id }))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn start_cluster_backup(
-        &mut self,
-        reason: impl Into<String>,
-        output_dir: impl Into<String>,
-        archive_format: BackupArchiveFormat,
-        idempotency_key: impl Into<String>,
-        convergence_timeout_seconds: i64,
-    ) -> Result<StartClusterBackupResponse> {
-        let reason = reason.into();
-        let output_dir = output_dir.into();
-        let idempotency_key = idempotency_key.into();
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup
-                .start_cluster_backup(self.auth_request(StartClusterBackupRequest {
-                    reason: reason.clone(),
-                    output_dir: output_dir.clone(),
-                    archive_format: archive_format as i32,
-                    idempotency_key: idempotency_key.clone(),
-                    convergence_timeout_seconds,
-                    repository_id: String::new(),
-                    capture_provider: 0,
-                    validation_options: None,
-                    quiesce_read_profile: 0,
-                })),
-            self.backup
-                .start_cluster_backup(self.auth_request(StartClusterBackupRequest {
-                    reason,
-                    output_dir,
-                    archive_format: archive_format as i32,
-                    idempotency_key,
-                    convergence_timeout_seconds,
-                    repository_id: String::new(),
-                    capture_provider: 0,
-                    validation_options: None,
-                    quiesce_read_profile: 0,
-                }))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn cancel_cluster_backup(
+    pub async fn cancel_backup_operation(
         &mut self,
         backup_set_id: impl Into<String>,
         reason: impl Into<String>,
-    ) -> Result<CancelClusterBackupResponse> {
+    ) -> Result<CancelBackupOperationResponse> {
         let backup_set_id = backup_set_id.into();
         let reason = reason.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .cancel_cluster_backup(self.auth_request(CancelClusterBackupRequest {
+                .cancel_backup_operation(self.auth_request(CancelBackupOperationRequest {
                     backup_set_id: backup_set_id.clone(),
                     reason: reason.clone(),
                     backup_operation_id: String::new(),
                 })),
             self.backup
-                .cancel_cluster_backup(self.auth_request(CancelClusterBackupRequest {
+                .cancel_backup_operation(self.auth_request(CancelBackupOperationRequest {
                     backup_set_id,
                     reason,
                     backup_operation_id: String::new(),
@@ -995,45 +890,43 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn get_cluster_backup_status(
+    pub async fn get_backup_operation(
         &mut self,
         backup_set_id: impl Into<String>,
-    ) -> Result<GetClusterBackupStatusResponse> {
+    ) -> Result<GetBackupOperationResponse> {
         let backup_set_id = backup_set_id.into();
         let res = admin_call_with_refresh!(
             self,
-            self.backup.get_cluster_backup_status(self.auth_request(
-                GetClusterBackupStatusRequest {
+            self.backup
+                .get_backup_operation(self.auth_request(GetBackupOperationRequest {
                     backup_set_id: backup_set_id.clone(),
                     backup_operation_id: String::new(),
-                }
-            )),
-            self.backup.get_cluster_backup_status(self.auth_request(
-                GetClusterBackupStatusRequest {
+                })),
+            self.backup
+                .get_backup_operation(self.auth_request(GetBackupOperationRequest {
                     backup_set_id,
                     backup_operation_id: String::new(),
-                }
-            ))
+                }))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn list_cluster_backups(
+    pub async fn list_backup_operations(
         &mut self,
         page_size: i32,
         page_token: impl Into<String>,
-    ) -> Result<ListClusterBackupsResponse> {
+    ) -> Result<ListBackupOperationsResponse> {
         let page_token = page_token.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .list_cluster_backups(self.auth_request(ListClusterBackupsRequest {
+                .list_backup_operations(self.auth_request(ListBackupOperationsRequest {
                     page_size,
                     page_token: page_token.clone(),
                 })),
             self.backup
-                .list_cluster_backups(self.auth_request(ListClusterBackupsRequest {
+                .list_backup_operations(self.auth_request(ListBackupOperationsRequest {
                     page_size,
                     page_token,
                 }))
@@ -1042,51 +935,24 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn list_cluster_backup_operations(
-        &mut self,
-        page_size: i32,
-        page_token: impl Into<String>,
-    ) -> Result<ListClusterBackupOperationsResponse> {
-        let page_token = page_token.into();
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup
-                .list_cluster_backup_operations(self.auth_request(
-                    ListClusterBackupOperationsRequest {
-                        page_size,
-                        page_token: page_token.clone(),
-                    }
-                )),
-            self.backup
-                .list_cluster_backup_operations(self.auth_request(
-                    ListClusterBackupOperationsRequest {
-                        page_size,
-                        page_token,
-                    }
-                ))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn list_cluster_backup_sets(
+    pub async fn list_backup_sets(
         &mut self,
         repository_id: impl Into<String>,
         page_size: i32,
         page_token: impl Into<String>,
-    ) -> Result<ListClusterBackupSetsResponse> {
+    ) -> Result<ListBackupSetsResponse> {
         let repository_id = repository_id.into();
         let page_token = page_token.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .list_cluster_backup_sets(self.auth_request(ListClusterBackupSetsRequest {
+                .list_backup_sets(self.auth_request(ListBackupSetsRequest {
                     repository_id: repository_id.clone(),
                     page_size,
                     page_token: page_token.clone(),
                 })),
             self.backup
-                .list_cluster_backup_sets(self.auth_request(ListClusterBackupSetsRequest {
+                .list_backup_sets(self.auth_request(ListBackupSetsRequest {
                     repository_id,
                     page_size,
                     page_token,
@@ -1096,22 +962,22 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn get_cluster_backup_set(
+    pub async fn get_backup_set(
         &mut self,
         repository_id: impl Into<String>,
         backup_set_id: impl Into<String>,
-    ) -> Result<GetClusterBackupSetResponse> {
+    ) -> Result<GetBackupSetResponse> {
         let repository_id = repository_id.into();
         let backup_set_id = backup_set_id.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .get_cluster_backup_set(self.auth_request(GetClusterBackupSetRequest {
+                .get_backup_set(self.auth_request(GetBackupSetRequest {
                     repository_id: repository_id.clone(),
                     backup_set_id: backup_set_id.clone(),
                 })),
             self.backup
-                .get_cluster_backup_set(self.auth_request(GetClusterBackupSetRequest {
+                .get_backup_set(self.auth_request(GetBackupSetRequest {
                     repository_id,
                     backup_set_id,
                 }))
@@ -1120,89 +986,65 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn validate_cluster_backup_set(
-        &mut self,
-        backup_set_path: impl Into<String>,
-    ) -> Result<ValidateClusterBackupSetResponse> {
-        let backup_set_path = backup_set_path.into();
-        let res = admin_call_with_refresh!(
-            self,
-            self.backup.validate_cluster_backup_set(self.auth_request(
-                ValidateClusterBackupSetRequest {
-                    backup_set_path: backup_set_path.clone(),
-                    repository_id: String::new(),
-                    backup_set_id: String::new(),
-                    validation_options: None,
-                }
-            )),
-            self.backup.validate_cluster_backup_set(self.auth_request(
-                ValidateClusterBackupSetRequest {
-                    backup_set_path,
-                    repository_id: String::new(),
-                    backup_set_id: String::new(),
-                    validation_options: None,
-                }
-            ))
-        )?
-        .into_inner();
-        Ok(res)
-    }
-
-    pub async fn validate_repository_cluster_backup_set(
+    pub async fn validate_backup_set(
         &mut self,
         repository_id: impl Into<String>,
         backup_set_id: impl Into<String>,
-    ) -> Result<ValidateClusterBackupSetResponse> {
+    ) -> Result<ValidateBackupSetResponse> {
+        self.validate_backup_set_with_options(repository_id, backup_set_id, None)
+            .await
+    }
+
+    pub async fn validate_backup_set_with_options(
+        &mut self,
+        repository_id: impl Into<String>,
+        backup_set_id: impl Into<String>,
+        validation_options: Option<mycel::admin::v1::ValidationOptions>,
+    ) -> Result<ValidateBackupSetResponse> {
         let repository_id = repository_id.into();
         let backup_set_id = backup_set_id.into();
         let res = admin_call_with_refresh!(
             self,
-            self.backup.validate_cluster_backup_set(self.auth_request(
-                ValidateClusterBackupSetRequest {
-                    backup_set_path: String::new(),
+            self.backup
+                .validate_backup_set(self.auth_request(ValidateBackupSetRequest {
                     repository_id: repository_id.clone(),
                     backup_set_id: backup_set_id.clone(),
-                    validation_options: None,
-                }
-            )),
-            self.backup.validate_cluster_backup_set(self.auth_request(
-                ValidateClusterBackupSetRequest {
-                    backup_set_path: String::new(),
+                    validation_options: validation_options.clone(),
+                })),
+            self.backup
+                .validate_backup_set(self.auth_request(ValidateBackupSetRequest {
                     repository_id,
                     backup_set_id,
-                    validation_options: None,
-                }
-            ))
+                    validation_options,
+                }))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn delete_cluster_backup_set(
+    pub async fn delete_backup_set(
         &mut self,
         repository_id: impl Into<String>,
         backup_set_id: impl Into<String>,
         reason: impl Into<String>,
-    ) -> Result<DeleteClusterBackupSetResponse> {
+    ) -> Result<DeleteBackupSetResponse> {
         let repository_id = repository_id.into();
         let backup_set_id = backup_set_id.into();
         let reason = reason.into();
         let res = admin_call_with_refresh!(
             self,
-            self.backup.delete_cluster_backup_set(self.auth_request(
-                DeleteClusterBackupSetRequest {
+            self.backup
+                .delete_backup_set(self.auth_request(DeleteBackupSetRequest {
                     repository_id: repository_id.clone(),
                     backup_set_id: backup_set_id.clone(),
                     reason: reason.clone(),
-                }
-            )),
-            self.backup.delete_cluster_backup_set(self.auth_request(
-                DeleteClusterBackupSetRequest {
+                })),
+            self.backup
+                .delete_backup_set(self.auth_request(DeleteBackupSetRequest {
                     repository_id,
                     backup_set_id,
                     reason,
-                }
-            ))
+                }))
         )?
         .into_inner();
         Ok(res)
@@ -1338,72 +1180,68 @@ impl AdminClient {
         admin_usage_admission_call!(self, request, list_usage_limits)
     }
 
-    pub async fn plan_cluster_restore(
+    pub async fn plan_restore(
         &mut self,
-        request: PlanClusterRestoreRequest,
-    ) -> Result<PlanClusterRestoreResponse> {
+        request: PlanRestoreRequest,
+    ) -> Result<PlanRestoreResponse> {
         let res = admin_call_with_refresh!(
             self,
-            self.backup
-                .plan_cluster_restore(self.auth_request(request.clone())),
-            self.backup.plan_cluster_restore(self.auth_request(request))
+            self.backup.plan_restore(self.auth_request(request.clone())),
+            self.backup.plan_restore(self.auth_request(request))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn start_cluster_restore(
+    pub async fn start_restore(
         &mut self,
-        request: StartClusterRestoreRequest,
-    ) -> Result<StartClusterRestoreResponse> {
+        request: StartRestoreRequest,
+    ) -> Result<StartRestoreResponse> {
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .start_cluster_restore(self.auth_request(request.clone())),
-            self.backup
-                .start_cluster_restore(self.auth_request(request))
+                .start_restore(self.auth_request(request.clone())),
+            self.backup.start_restore(self.auth_request(request))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn get_cluster_restore_status(
+    pub async fn get_restore_operation(
         &mut self,
         restore_operation_id: impl Into<String>,
-    ) -> Result<GetClusterRestoreStatusResponse> {
+    ) -> Result<GetRestoreOperationResponse> {
         let restore_operation_id = restore_operation_id.into();
         let res = admin_call_with_refresh!(
             self,
-            self.backup.get_cluster_restore_status(self.auth_request(
-                GetClusterRestoreStatusRequest {
+            self.backup
+                .get_restore_operation(self.auth_request(GetRestoreOperationRequest {
                     restore_operation_id: restore_operation_id.clone(),
-                }
-            )),
-            self.backup.get_cluster_restore_status(self.auth_request(
-                GetClusterRestoreStatusRequest {
+                })),
+            self.backup
+                .get_restore_operation(self.auth_request(GetRestoreOperationRequest {
                     restore_operation_id,
-                }
-            ))
+                }))
         )?
         .into_inner();
         Ok(res)
     }
 
-    pub async fn list_cluster_restores(
+    pub async fn list_restore_operations(
         &mut self,
         page_size: i32,
         page_token: impl Into<String>,
-    ) -> Result<ListClusterRestoresResponse> {
+    ) -> Result<ListRestoreOperationsResponse> {
         let page_token = page_token.into();
         let res = admin_call_with_refresh!(
             self,
             self.backup
-                .list_cluster_restores(self.auth_request(ListClusterRestoresRequest {
+                .list_restore_operations(self.auth_request(ListRestoreOperationsRequest {
                     page_size,
                     page_token: page_token.clone(),
                 })),
             self.backup
-                .list_cluster_restores(self.auth_request(ListClusterRestoresRequest {
+                .list_restore_operations(self.auth_request(ListRestoreOperationsRequest {
                     page_size,
                     page_token,
                 }))
@@ -1412,25 +1250,27 @@ impl AdminClient {
         Ok(res)
     }
 
-    pub async fn cancel_cluster_restore(
+    pub async fn cancel_restore_operation(
         &mut self,
         restore_operation_id: impl Into<String>,
         reason: impl Into<String>,
-    ) -> Result<CancelClusterRestoreResponse> {
+    ) -> Result<CancelRestoreOperationResponse> {
         let restore_operation_id = restore_operation_id.into();
         let reason = reason.into();
         let res = admin_call_with_refresh!(
             self,
-            self.backup
-                .cancel_cluster_restore(self.auth_request(CancelClusterRestoreRequest {
+            self.backup.cancel_restore_operation(self.auth_request(
+                CancelRestoreOperationRequest {
                     restore_operation_id: restore_operation_id.clone(),
                     reason: reason.clone(),
-                })),
-            self.backup
-                .cancel_cluster_restore(self.auth_request(CancelClusterRestoreRequest {
+                }
+            )),
+            self.backup.cancel_restore_operation(self.auth_request(
+                CancelRestoreOperationRequest {
                     restore_operation_id,
                     reason,
-                }))
+                }
+            ))
         )?
         .into_inner();
         Ok(res)
