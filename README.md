@@ -19,8 +19,7 @@ This SDK mirrors the Go SDK shape:
 - thin graph/query convenience methods
 - structured query builders and explain helpers for common indexed/text/semantic/path/aggregate shapes
 - graph-change watch helpers
-- Admin backup policy/status/list/trigger/delete helpers
-- Admin cluster backup trigger/status/list/validate/observability helpers
+- Admin repository-backed deployment backup helpers for repository catalog, backup operations, backup-set validation/deletion, retention, observability, and restore planning/operations
 - Admin usage-accounting helpers for read-only space/domain usage snapshots, accounting health, hard usage limit CRUD, and stable usage-admission error reasons
 
 ## Compatibility
@@ -29,13 +28,14 @@ The SDK major/minor line must match the Mycel API/daemon major/minor line for ge
 
 | Rust SDK line | Generated API line | Supported daemon line | Notes |
 | --- | --- | --- | --- |
-| `v0.24.x` | `v0.24` | `v0.24.x` | Required for production backup/restore operations, backup observability, restored-derived readiness, usage accounting, and usage admission helpers. |
 | `v0.20.x` | `v0.20` | `v0.20.x` | Do not use for Mycel v0.21 semantic Admin RPCs. Its string-valued semantic trigger field is wire-incompatible with the v0.21 enum field. |
 | `v0.21.x` | `v0.21` | `v0.21.x` | Required for channel-owned Search queries and enum-only semantic trigger events. Older daemon lines are not certified. |
 | `v0.22.x` | `v0.22` | `v0.22.x` | Required for graph automation reconciliation and revision-fenced graph-write bindings. |
 | `v0.23.x` | `v0.23` | `v0.23.x` | Required for semantic projection consistency policies and per-channel freshness diagnostics. |
+| `v0.24.x` | `v0.24` | `v0.24.x` | Required for production backup/restore operations, backup observability, restored-derived readiness, usage accounting, and usage admission helpers. |
+| `v0.25.x` | `v0.25` | `v0.25.x` | Repository-backed backup sets are the only public backup model; local backup helpers and cluster-specific backup helper names were removed. |
 
-The approved immutable v0.24 consumer target is [`v0.24.0`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.24.0). The v0.23 line remains available for the v0.23 API/daemon contract; v0.24 clients and daemons should be updated together.
+The current development line targets `mycel-api v0.25.0`. The approved immutable v0.24 consumer target is [`v0.24.0`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.24.0). The v0.23 line remains available for the v0.23 API/daemon contract; clients and daemons should be updated together within a matching minor line.
 
 Machine-readable compatibility metadata is published at [`.release/mycel-compatibility.json`](.release/mycel-compatibility.json). Deployment tooling must fail closed for missing or unknown metadata/schema versions, unknown daemon lines, or contradictory compatibility declarations.
 
@@ -97,7 +97,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.24.0" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.25.0" }
 ```
 
 ## Crates
@@ -109,7 +109,7 @@ mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.2
 
 Generated Rust protobuf/gRPC bindings are committed under `crates/mycel/gen/rust/` so tagged crate releases are self-contained. Normal `cargo build` and `cargo test` use the committed generated files and do not require a `mycel-api` checkout.
 
-The current release line is aligned with `mycel-api` `v0.24.0`.
+The current development line is aligned with `mycel-api` `v0.25.0`.
 
 To regenerate bindings, use a matching `mycel-api` checkout and run:
 
@@ -305,19 +305,21 @@ while let Some(msg) = stream.message().await? {
 
 Watch helpers refresh/retry only while opening the stream. They do not automatically reconnect or resume if a long-lived stream ends later. Track the last received `event.revision`, reconnect with `after_revision`, and handle `gap` by invalidating or rebuilding local derived state. Dropping the returned stream stops reading; cancel/drop the parent task when stopping early. Global `call_timeout` / `MYCEL_CALL_TIMEOUT` applies to watch streams, so long-lived watchers should usually avoid a short global call timeout.
 
-Admin backup helpers wrap `mycel.admin.v1.AdminBackupService`:
+Admin backup helpers wrap the repository-backed `mycel.admin.v1.AdminBackupService`:
 
 ```rust
 let policy = admin.get_backup_policy().await?;
-let status = admin.get_backup_status().await?;
-let trigger = admin.trigger_backup("before upgrade").await?;
-let cluster = admin.start_cluster_backup(
-    "before upgrade",
-    "/mnt/mycel-backups",
-    mycel::admin::v1::BackupArchiveFormat::TarZst,
-    "",
-    0,
-).await?;
+let backup = admin.start_backup(mycel::admin::v1::StartBackupRequest {
+    repository_id: "repo-prod".into(),
+    reason: "before upgrade".into(),
+    archive_format: mycel::admin::v1::BackupArchiveFormat::TarZst as i32,
+    capture_provider: mycel::admin::v1::BackupCaptureProvider::FilesystemImmutableCopy as i32,
+    quiesce_read_profile: mycel::admin::v1::BackupQuiesceReadProfile::ControlOnly as i32,
+    ..Default::default()
+}).await?;
+let operation = admin.get_backup_operation(backup.operation.unwrap().backup_set_id).await?;
+let sets = admin.list_backup_sets("repo-prod", 100, "").await?;
+let validation = admin.validate_backup_set("repo-prod", "backup-set-...",).await?;
 let observability = admin.get_backup_observability(
     mycel::admin::v1::GetBackupObservabilityRequest {
         repository_id: "repo-prod".into(),
@@ -325,8 +327,12 @@ let observability = admin.get_backup_observability(
         ..Default::default()
     },
 ).await?;
-let _ = (policy, status, trigger, cluster, observability);
+let _ = (policy, operation, sets, validation, observability);
 ```
+
+### Migrating backup helpers to v0.25
+
+`v0.25` removes daemon-local backup helpers and cluster-specific backup helper names. Replace `trigger_backup`, `get_backup_status`, `list_backups`, and `delete_backup` with repository-backed `start_backup`, `get_backup_operation`, `list_backup_sets`, `validate_backup_set`, and `delete_backup_set`. Replace `start_cluster_backup`, `get_cluster_backup_status`, `list_cluster_backup_operations`, `list_cluster_backup_sets`, `validate_cluster_backup_set`, `plan_cluster_restore`, and related restore helpers with their deployment-wide `start_backup`, `get_backup_operation`, `list_backup_operations`, `list_backup_sets`, `validate_backup_set`, `plan_restore`, and restore-operation equivalents.
 
 ## Environment config
 

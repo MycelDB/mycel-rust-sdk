@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
 use mycel_sdk::proto::admin::v1::{
-    ApplyRepositoryRetentionRequest, BackupAlertCondition, BackupMetric,
-    BackupObservabilitySnapshot, BackupRepository, BackupRepositoryProvider,
-    BackupSetManifestSummary, ClusterBackupSetSummary, ClusterRestoreAuthSessionPolicy,
-    ClusterRestoreIdentityMode, ClusterRestoreNodeMapping, ClusterRestoreStagingLocation,
-    ClusterRestoreTarget, ClusterRestoreTargetMode, CompatibilitySummary,
-    CreateBackupRepositoryRequest, EncryptionMode, EncryptionPolicy, GetBackupObservabilityRequest,
-    PlanClusterRestoreRequest, PlanRepositoryRetentionRequest, RetentionPolicy,
-    S3CompatibleRepositoryConfig, SecretReference, SecretReferenceScheme,
-    StartClusterRestoreRequest, ValidationOptions, ValidationSummary,
+    ApplyRepositoryRetentionRequest, BackupAlertCondition, BackupArchiveFormat,
+    BackupCaptureProvider, BackupDeploymentMode, BackupMetric, BackupObservabilitySnapshot,
+    BackupQuiesceReadProfile, BackupRepository, BackupRepositoryProvider, BackupSetManifestSummary,
+    BackupSetSummary, CompatibilitySummary, CreateBackupRepositoryRequest, EncryptionMode,
+    EncryptionPolicy, GetBackupObservabilityRequest, PlanRepositoryRetentionRequest,
+    PlanRestoreRequest, RestoreAuthSessionPolicy, RestoreIdentityMode, RestoreNodeMapping,
+    RestoreStagingLocation, RestoreTarget, RestoreTargetMode, RetentionPolicy,
+    S3CompatibleRepositoryConfig, SecretReference, SecretReferenceScheme, StartBackupRequest,
+    StartRestoreRequest, ValidationOptions, ValidationSummary,
 };
 use mycel_sdk::AdminClient;
 
@@ -57,30 +57,51 @@ fn backup_repository_contract_types_compile() {
 }
 
 #[test]
+fn deployment_backup_contract_types_compile() {
+    let request = StartBackupRequest {
+        repository_id: "repo-prod".to_string(),
+        reason: "before upgrade".to_string(),
+        archive_format: BackupArchiveFormat::TarZst as i32,
+        idempotency_key: "backup-idem-1".to_string(),
+        convergence_timeout_seconds: 300,
+        capture_provider: BackupCaptureProvider::FilesystemImmutableCopy as i32,
+        validation_options: Some(ValidationOptions {
+            require_complete_marker: true,
+            ..Default::default()
+        }),
+        quiesce_read_profile: BackupQuiesceReadProfile::ControlOnly as i32,
+    };
+
+    assert_eq!(request.repository_id, "repo-prod");
+    assert_eq!(request.archive_format, BackupArchiveFormat::TarZst as i32);
+}
+
+#[test]
 fn restore_contract_types_compile() {
-    let request = PlanClusterRestoreRequest {
+    let request = PlanRestoreRequest {
         repository_id: "repo-prod".to_string(),
         backup_set_id: "backup-set-1".to_string(),
-        target_mode: ClusterRestoreTargetMode::NewClusterBootstrap as i32,
-        identity_mode: ClusterRestoreIdentityMode::PreserveBackupId as i32,
-        auth_session_policy: ClusterRestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
+        target_mode: RestoreTargetMode::NewDeploymentBootstrap as i32,
+        identity_mode: RestoreIdentityMode::PreserveBackupId as i32,
+        auth_session_policy: RestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
         validation_options: Some(ValidationOptions {
             include_artifact_checks: true,
             include_external_dependency_checks: false,
             include_capacity_estimates: true,
             require_complete_marker: true,
         }),
-        target: Some(ClusterRestoreTarget {
-            target_cluster_name: "restored-prod".to_string(),
+        target: Some(RestoreTarget {
+            target_deployment_name: "restored-prod".to_string(),
+            deployment_mode: BackupDeploymentMode::Clustered as i32,
             expected_node_count: 3,
-            nodes: vec![ClusterRestoreNodeMapping {
+            nodes: vec![RestoreNodeMapping {
                 ordinal: 0,
                 target_pvc_name: "data-myceld-0".to_string(),
                 ..Default::default()
             }],
             ..Default::default()
         }),
-        staging: Some(ClusterRestoreStagingLocation {
+        staging: Some(RestoreStagingLocation {
             staging_uri: "file:///restore-staging".to_string(),
             clean_before_use: true,
             ..Default::default()
@@ -89,7 +110,7 @@ fn restore_contract_types_compile() {
 
     assert_eq!(
         request.target_mode,
-        ClusterRestoreTargetMode::NewClusterBootstrap as i32
+        RestoreTargetMode::NewDeploymentBootstrap as i32
     );
 }
 
@@ -133,8 +154,9 @@ fn backup_observability_contract_types_compile() {
 fn backup_set_validation_summary_fields_compile() {
     let mut storage_versions = HashMap::new();
     storage_versions.insert("system_raft".to_string(), "1".to_string());
-    let summary = ClusterBackupSetSummary {
+    let summary = BackupSetSummary {
         backup_set_id: "backup-set-1".to_string(),
+        deployment_mode: BackupDeploymentMode::Clustered as i32,
         validation: Some(ValidationSummary {
             validator_version: "v1".to_string(),
             expected_node_count: 3,
@@ -148,8 +170,8 @@ fn backup_set_validation_summary_fields_compile() {
         compatibility: Some(CompatibilitySummary {
             required_features: vec!["checkpoint_barrier_set.v1".to_string()],
             storage_format_versions: storage_versions,
-            min_restore_mycel_version: "v0.24.0".to_string(),
-            supported_restore_target_modes: vec!["NEW_CLUSTER_BOOTSTRAP".to_string()],
+            min_restore_mycel_version: "v0.25.0".to_string(),
+            supported_restore_target_modes: vec!["NEW_DEPLOYMENT_BOOTSTRAP".to_string()],
             supported_identity_modes: vec!["PRESERVE_BACKUP_ID".to_string()],
             requires_same_topology: true,
             requires_source_fencing_for_preserved_identity: true,
@@ -184,18 +206,33 @@ async fn admin_backup_helper_methods_compile(
     let _ = client
         .validate_backup_repository(repository.repository_id.clone())
         .await?;
-    let _ = client.list_cluster_backup_operations(100, "").await?;
     let _ = client
-        .list_cluster_backup_sets(repository.repository_id.clone(), 100, "")
+        .start_backup(StartBackupRequest {
+            repository_id: repository.repository_id.clone(),
+            reason: "test".to_string(),
+            archive_format: BackupArchiveFormat::TarZst as i32,
+            idempotency_key: "idem-1".to_string(),
+            convergence_timeout_seconds: 300,
+            capture_provider: BackupCaptureProvider::FilesystemImmutableCopy as i32,
+            validation_options: None,
+            quiesce_read_profile: BackupQuiesceReadProfile::ControlOnly as i32,
+        })
+        .await?;
+    let _ = client.list_backup_operations(100, "").await?;
+    let _ = client
+        .list_backup_sets(repository.repository_id.clone(), 100, "")
         .await?;
     let _ = client
-        .get_cluster_backup_set(repository.repository_id.clone(), "backup-set-1")
+        .get_backup_set(repository.repository_id.clone(), "backup-set-1")
         .await?;
     let _ = client
-        .validate_repository_cluster_backup_set(repository.repository_id.clone(), "backup-set-1")
+        .validate_backup_set(repository.repository_id.clone(), "backup-set-1")
         .await?;
     let _ = client
-        .delete_cluster_backup_set(repository.repository_id.clone(), "backup-set-1", "test")
+        .delete_backup_set(repository.repository_id.clone(), "backup-set-1", "test")
+        .await?;
+    let _ = client
+        .cancel_backup_operation("backup-set-1", "test")
         .await?;
     let _ = client
         .plan_repository_retention(PlanRepositoryRetentionRequest {
@@ -226,25 +263,25 @@ async fn admin_backup_helper_methods_compile(
         })
         .await?;
     let _ = client
-        .plan_cluster_restore(PlanClusterRestoreRequest {
+        .plan_restore(PlanRestoreRequest {
             repository_id: repository.repository_id.clone(),
             backup_set_id: "backup-set-1".to_string(),
-            target_mode: ClusterRestoreTargetMode::NewClusterBootstrap as i32,
-            identity_mode: ClusterRestoreIdentityMode::PreserveBackupId as i32,
-            auth_session_policy: ClusterRestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
+            target_mode: RestoreTargetMode::NewDeploymentBootstrap as i32,
+            identity_mode: RestoreIdentityMode::PreserveBackupId as i32,
+            auth_session_policy: RestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
             validation_options: None,
             target: None,
             staging: None,
         })
         .await?;
     let _ = client
-        .start_cluster_restore(StartClusterRestoreRequest {
+        .start_restore(StartRestoreRequest {
             restore_plan_id: "restore-plan-1".to_string(),
             repository_id: repository.repository_id.clone(),
             backup_set_id: "backup-set-1".to_string(),
-            target_mode: ClusterRestoreTargetMode::NewClusterBootstrap as i32,
-            identity_mode: ClusterRestoreIdentityMode::PreserveBackupId as i32,
-            auth_session_policy: ClusterRestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
+            target_mode: RestoreTargetMode::NewDeploymentBootstrap as i32,
+            identity_mode: RestoreIdentityMode::PreserveBackupId as i32,
+            auth_session_policy: RestoreAuthSessionPolicy::PreserveRestoredSessions as i32,
             idempotency_key: "idem-1".to_string(),
             destructive_confirmation: String::new(),
             target: None,
@@ -253,10 +290,10 @@ async fn admin_backup_helper_methods_compile(
             plan_freshness_token: String::new(),
         })
         .await?;
-    let _ = client.get_cluster_restore_status("restore-op-1").await?;
-    let _ = client.list_cluster_restores(100, "").await?;
+    let _ = client.get_restore_operation("restore-op-1").await?;
+    let _ = client.list_restore_operations(100, "").await?;
     let _ = client
-        .cancel_cluster_restore("restore-op-1", "test")
+        .cancel_restore_operation("restore-op-1", "test")
         .await?;
     let _ = client
         .delete_backup_repository(repository.repository_id)
