@@ -20,6 +20,17 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Regenerated backup-set validation, compatibility, capacity, and manifest summary fields for daemon Phase 4 restore-readiness validators.
 - Added AdminClient helper methods and compile coverage for the new backup repository, backup-set catalog, and restore operation contract types.
 - Added `is_cluster_quiesced`, `is_transaction_aborted_by_quiesce`, and `backup_quiesce_reason` helpers for stable `mycel.backup` quiesce ErrorInfo handling.
+- Regenerated Rust protobuf/gRPC bindings from `mycel-api v0.25.0`, including the repository-only deployment backup contract.
+- Added deployment-wide backup helper methods (`start_backup`, `get_backup_operation`, `list_backup_operations`, `list_backup_sets`, `get_backup_set`, `validate_backup_set`, `delete_backup_set`, `plan_restore`, `start_restore`, `get_restore_operation`, `list_restore_operations`, and `cancel_restore_operation`).
+
+### Removed
+
+- Removed daemon-local backup helpers (`trigger_backup`, `get_backup_status`, `list_backups`, and `delete_backup`). Repository-backed backup sets are now the only public durable backup model.
+- Removed cluster-specific backup/restore helper names (`start_cluster_backup`, `get_cluster_backup_status`, `list_cluster_backup_operations`, `list_cluster_backup_sets`, `validate_cluster_backup_set`, `plan_cluster_restore`, and related restore helpers) in favor of deployment-wide v0.25 names.
+
+### Compatibility
+
+- Requires the coordinated Mycel API and daemon v0.25.0 backup contract. v0.25 clients and daemons should be updated together; v0.24 local backup helpers and cluster-specific helper names are source-incompatible with this line.
 
 ## [v0.23.1] - 2026-11-18
 

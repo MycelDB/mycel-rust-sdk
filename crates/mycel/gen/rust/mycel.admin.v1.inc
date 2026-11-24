@@ -1785,145 +1785,24 @@ pub mod admin_automation_service_client {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BackupPolicy {
-    #[prost(bool, tag = "1")]
-    pub enabled: bool,
-    #[prost(string, tag = "2")]
-    pub backup_dir: ::prost::alloc::string::String,
-    /// Interval schedule period in whole hours. Used when schedule_kind is empty or "interval".
-    #[prost(int32, tag = "3")]
-    pub interval_hours: i32,
-    #[prost(int32, tag = "4")]
-    pub retention_count: i32,
-    #[prost(bool, tag = "5")]
-    pub include_logs: bool,
-    /// Deprecated legacy archive/compression format string, for example "zip".
-    #[deprecated]
-    #[prost(string, tag = "6")]
-    pub compression: ::prost::alloc::string::String,
-    #[prost(int64, tag = "7")]
-    pub quiesce_drain_timeout_seconds: i64,
-    #[prost(int64, tag = "8")]
-    pub backup_timeout_seconds: i64,
-    #[prost(int64, tag = "9")]
-    pub retry_after_seconds: i64,
-    #[prost(int32, tag = "10")]
-    pub status_history_limit: i32,
-    #[prost(bool, tag = "11")]
-    pub allow_reads_during_backup: bool,
-    /// Schedule kind: "interval", "daily", or "weekly". Empty means "interval" for compatibility.
-    #[prost(string, tag = "12")]
-    pub schedule_kind: ::prost::alloc::string::String,
-    /// Wall-clock time for daily/weekly schedules in HH:MM 24-hour format.
-    #[prost(string, tag = "13")]
-    pub time_of_day: ::prost::alloc::string::String,
-    /// IANA timezone for wall-clock schedules, for example "UTC" or "America/Toronto".
-    #[prost(string, tag = "14")]
-    pub timezone: ::prost::alloc::string::String,
-    /// Weekdays for weekly schedules, where 0=Sunday through 6=Saturday.
-    #[prost(int32, repeated, tag = "15")]
-    pub weekdays: ::prost::alloc::vec::Vec<i32>,
-    /// Whether the daemon should run a missed calendar schedule after restart.
-    #[prost(bool, tag = "16")]
-    pub run_missed: bool,
-    /// Archive format. UNSPECIFIED means ZIP for compatibility.
-    #[prost(enumeration = "BackupArchiveFormat", tag = "17")]
-    pub archive_format: i32,
-    #[prost(string, tag = "18")]
+    /// Default repository for repository-backed deployment backup operations when an
+    /// explicit request repository is omitted by server-side policy.
+    #[prost(string, tag = "1")]
     pub default_repository_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "BackupCaptureProvider", tag = "19")]
+    /// Default capture primitive for repository-backed backup artifacts.
+    #[prost(enumeration = "BackupCaptureProvider", tag = "2")]
     pub capture_provider: i32,
-    #[prost(enumeration = "BackupQuiesceReadProfile", tag = "20")]
+    /// Default read profile enforced while repository-backed backups hold quiesce.
+    #[prost(enumeration = "BackupQuiesceReadProfile", tag = "3")]
     pub quiesce_read_profile: i32,
-    #[prost(bool, tag = "21")]
+    #[prost(bool, tag = "4")]
     pub allow_read_only_during_quiesce: bool,
-    #[prost(message, repeated, tag = "22")]
+    #[prost(message, repeated, tag = "5")]
     pub derived_subsystems: ::prost::alloc::vec::Vec<DerivedSubsystemPolicy>,
-    #[prost(message, optional, tag = "23")]
+    #[prost(message, optional, tag = "6")]
     pub retention_policy: ::core::option::Option<RetentionPolicy>,
-    #[prost(message, optional, tag = "24")]
+    #[prost(message, optional, tag = "7")]
     pub validation_options: ::core::option::Option<ValidationOptions>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BackupStatus {
-    #[prost(string, tag = "1")]
-    pub backup_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub state: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub started_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub completed_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "5")]
-    pub archive_path: ::prost::alloc::string::String,
-    #[prost(string, tag = "6")]
-    pub manifest_path: ::prost::alloc::string::String,
-    #[prost(string, tag = "7")]
-    pub error: ::prost::alloc::string::String,
-    #[prost(message, repeated, tag = "8")]
-    pub participants: ::prost::alloc::vec::Vec<QuiesceParticipantStatus>,
-    #[prost(string, tag = "9")]
-    pub last_success_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "10")]
-    pub next_run_at: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BackupSummary {
-    #[prost(string, tag = "1")]
-    pub backup_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub archive_name: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub created_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub completed_at: ::prost::alloc::string::String,
-    #[prost(int64, tag = "5")]
-    pub size_bytes: i64,
-    #[prost(string, tag = "6")]
-    pub checksum_sha256: ::prost::alloc::string::String,
-    /// Deprecated legacy archive/compression format string, for example "zip".
-    #[deprecated]
-    #[prost(string, tag = "7")]
-    pub compression: ::prost::alloc::string::String,
-    #[prost(bool, tag = "8")]
-    pub include_logs: bool,
-    #[prost(enumeration = "BackupArchiveFormat", tag = "9")]
-    pub archive_format: i32,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct QuiesceStatus {
-    #[prost(message, repeated, tag = "1")]
-    pub participants: ::prost::alloc::vec::Vec<QuiesceParticipantStatus>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct QuiesceParticipantStatus {
-    #[prost(string, tag = "1")]
-    pub name: ::prost::alloc::string::String,
-    #[prost(bool, tag = "2")]
-    pub quiesced: bool,
-    #[prost(int32, tag = "3")]
-    pub active: i32,
-    #[prost(string, tag = "4")]
-    pub reason: ::prost::alloc::string::String,
-    #[prost(string, tag = "5")]
-    pub mode: ::prost::alloc::string::String,
-    #[prost(string, tag = "6")]
-    pub source: ::prost::alloc::string::String,
-    #[prost(string, tag = "7")]
-    pub since: ::prost::alloc::string::String,
-    #[prost(string, tag = "8")]
-    pub last_error: ::prost::alloc::string::String,
-    #[prost(int32, tag = "9")]
-    pub active_read_only: i32,
-    #[prost(int32, tag = "10")]
-    pub active_writes: i32,
-    #[prost(string, tag = "11")]
-    pub read_allowlist_profile: ::prost::alloc::string::String,
-    #[prost(string, tag = "12")]
-    pub deadline: ::prost::alloc::string::String,
-    #[prost(bool, tag = "13")]
-    pub accepting_read_only: bool,
-    #[prost(bool, tag = "14")]
-    pub accepting_writes: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SecretReference {
@@ -2160,38 +2039,40 @@ pub struct CleanupTask {
     #[prost(string, tag = "5")]
     pub last_error: ::prost::alloc::string::String,
 }
-/// ClusterRestoreTarget describes the restore destination. For NEW_CLUSTER_BOOTSTRAP,
-/// callers must identify the target bootstrap cluster shape before execution; for
-/// EXISTING_CLUSTER_REPLACE, the same fields describe the fenced replacement target.
+/// RestoreTarget describes the restore destination. For NEW_DEPLOYMENT_BOOTSTRAP,
+/// callers must identify the standalone or clustered target shape before execution; for
+/// EXISTING_DEPLOYMENT_REPLACE, the same fields describe the fenced replacement target.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreTarget {
+pub struct RestoreTarget {
     #[prost(string, tag = "1")]
-    pub target_cluster_id: ::prost::alloc::string::String,
+    pub target_deployment_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub target_cluster_name: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub namespace: ::prost::alloc::string::String,
+    pub target_deployment_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "BackupDeploymentMode", tag = "3")]
+    pub deployment_mode: i32,
     #[prost(string, tag = "4")]
+    pub namespace: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
     pub stateful_set: ::prost::alloc::string::String,
-    #[prost(int32, tag = "5")]
+    #[prost(int32, tag = "6")]
     pub expected_node_count: i32,
-    #[prost(message, repeated, tag = "6")]
-    pub nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeMapping>,
-    #[prost(map = "string, string", tag = "7")]
+    #[prost(message, repeated, tag = "7")]
+    pub nodes: ::prost::alloc::vec::Vec<RestoreNodeMapping>,
+    #[prost(map = "string, string", tag = "8")]
     pub labels: ::std::collections::HashMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
-    #[prost(map = "string, string", tag = "8")]
+    #[prost(map = "string, string", tag = "9")]
     pub annotations: ::std::collections::HashMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
 }
-/// ClusterRestoreNodeMapping binds one backed-up ordinal/artifact to one target data
+/// RestoreNodeMapping binds one backed-up ordinal/artifact to one target data
 /// location. Restore execution must fail closed when mappings are incomplete or ambiguous.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreNodeMapping {
+pub struct RestoreNodeMapping {
     #[prost(int32, tag = "1")]
     pub ordinal: i32,
     #[prost(string, tag = "2")]
@@ -2211,10 +2092,10 @@ pub struct ClusterRestoreNodeMapping {
     #[prost(string, tag = "9")]
     pub staging_path: ::prost::alloc::string::String,
 }
-/// ClusterRestoreStagingLocation describes where repository artifacts may be downloaded
+/// RestoreStagingLocation describes where repository artifacts may be downloaded
 /// and verified before being applied to target data dirs/PVCs.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreStagingLocation {
+pub struct RestoreStagingLocation {
     #[prost(string, tag = "1")]
     pub staging_uri: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2228,10 +2109,10 @@ pub struct ClusterRestoreStagingLocation {
     #[prost(message, repeated, tag = "6")]
     pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
 }
-/// ClusterRestoreCleanTargetProof records evidence that a NEW_CLUSTER_BOOTSTRAP target
+/// RestoreCleanTargetProof records evidence that a NEW_DEPLOYMENT_BOOTSTRAP target
 /// is empty/safe to receive physical backup artifacts.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreCleanTargetProof {
+pub struct RestoreCleanTargetProof {
     #[prost(string, tag = "1")]
     pub proof_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2239,18 +2120,18 @@ pub struct ClusterRestoreCleanTargetProof {
     #[prost(bool, tag = "3")]
     pub target_empty: bool,
     #[prost(message, repeated, tag = "4")]
-    pub checked_nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeMapping>,
+    pub checked_nodes: ::prost::alloc::vec::Vec<RestoreNodeMapping>,
     #[prost(message, repeated, tag = "5")]
     pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
     #[prost(string, tag = "6")]
     pub operator_attestation: ::prost::alloc::string::String,
 }
-/// ClusterRestoreSourceFencingEvidence records proof that preserved-identity restores
-/// cannot race with the original source cluster.
+/// RestoreSourceFencingEvidence records proof that preserved-identity restores
+/// cannot race with the original source deployment.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreSourceFencingEvidence {
+pub struct RestoreSourceFencingEvidence {
     #[prost(bool, tag = "1")]
-    pub source_cluster_fenced: bool,
+    pub source_deployment_fenced: bool,
     #[prost(string, tag = "2")]
     pub fenced_at: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
@@ -2260,19 +2141,19 @@ pub struct ClusterRestoreSourceFencingEvidence {
     #[prost(message, repeated, tag = "5")]
     pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
 }
-/// ClusterRestorePreconditionEvidence groups execution safety proofs supplied with a
+/// RestorePreconditionEvidence groups execution safety proofs supplied with a
 /// restore start request or reported back on an operation.
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestorePreconditionEvidence {
+pub struct RestorePreconditionEvidence {
     #[prost(message, optional, tag = "1")]
-    pub clean_target: ::core::option::Option<ClusterRestoreCleanTargetProof>,
+    pub clean_target: ::core::option::Option<RestoreCleanTargetProof>,
     #[prost(message, optional, tag = "2")]
-    pub source_fencing: ::core::option::Option<ClusterRestoreSourceFencingEvidence>,
+    pub source_fencing: ::core::option::Option<RestoreSourceFencingEvidence>,
     #[prost(message, repeated, tag = "3")]
     pub blockers: ::prost::alloc::vec::Vec<ValidationBlocker>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreNodeProgress {
+pub struct RestoreNodeProgress {
     #[prost(int32, tag = "1")]
     pub ordinal: i32,
     #[prost(string, tag = "2")]
@@ -2296,7 +2177,7 @@ pub struct ClusterRestoreNodeProgress {
     >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreProgress {
+pub struct RestoreProgress {
     #[prost(int32, tag = "1")]
     pub total_nodes: i32,
     #[prost(int32, tag = "2")]
@@ -2314,7 +2195,7 @@ pub struct ClusterRestoreProgress {
     #[prost(string, tag = "8")]
     pub current_node: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "9")]
-    pub nodes: ::prost::alloc::vec::Vec<ClusterRestoreNodeProgress>,
+    pub nodes: ::prost::alloc::vec::Vec<RestoreNodeProgress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RestorePlanSummary {
@@ -2324,11 +2205,11 @@ pub struct RestorePlanSummary {
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "ClusterRestoreTargetMode", tag = "4")]
+    #[prost(enumeration = "RestoreTargetMode", tag = "4")]
     pub target_mode: i32,
-    #[prost(enumeration = "ClusterRestoreIdentityMode", tag = "5")]
+    #[prost(enumeration = "RestoreIdentityMode", tag = "5")]
     pub identity_mode: i32,
-    #[prost(enumeration = "ClusterRestoreAuthSessionPolicy", tag = "6")]
+    #[prost(enumeration = "RestoreAuthSessionPolicy", tag = "6")]
     pub auth_session_policy: i32,
     #[prost(bool, tag = "7")]
     pub restorable: bool,
@@ -2345,16 +2226,14 @@ pub struct RestorePlanSummary {
     #[prost(string, tag = "13")]
     pub planned_at: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "14")]
-    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    pub target: ::core::option::Option<RestoreTarget>,
     #[prost(message, optional, tag = "15")]
-    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    pub staging: ::core::option::Option<RestoreStagingLocation>,
     #[prost(message, optional, tag = "16")]
-    pub required_preconditions: ::core::option::Option<
-        ClusterRestorePreconditionEvidence,
-    >,
+    pub required_preconditions: ::core::option::Option<RestorePreconditionEvidence>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterRestoreOperation {
+pub struct RestoreOperation {
     #[prost(string, tag = "1")]
     pub restore_operation_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2363,11 +2242,11 @@ pub struct ClusterRestoreOperation {
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
     pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "ClusterRestoreState", tag = "5")]
+    #[prost(enumeration = "RestoreOperationState", tag = "5")]
     pub state: i32,
-    #[prost(enumeration = "ClusterRestoreTargetMode", tag = "6")]
+    #[prost(enumeration = "RestoreTargetMode", tag = "6")]
     pub target_mode: i32,
-    #[prost(enumeration = "ClusterRestoreIdentityMode", tag = "7")]
+    #[prost(enumeration = "RestoreIdentityMode", tag = "7")]
     pub identity_mode: i32,
     #[prost(string, tag = "8")]
     pub created_at: ::prost::alloc::string::String,
@@ -2381,16 +2260,16 @@ pub struct ClusterRestoreOperation {
     pub cleanup_tasks: ::prost::alloc::vec::Vec<CleanupTask>,
     #[prost(string, tag = "13")]
     pub error: ::prost::alloc::string::String,
-    #[prost(enumeration = "ClusterRestoreAuthSessionPolicy", tag = "14")]
+    #[prost(enumeration = "RestoreAuthSessionPolicy", tag = "14")]
     pub auth_session_policy: i32,
     #[prost(message, optional, tag = "15")]
-    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    pub target: ::core::option::Option<RestoreTarget>,
     #[prost(message, optional, tag = "16")]
-    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    pub staging: ::core::option::Option<RestoreStagingLocation>,
     #[prost(message, optional, tag = "17")]
-    pub preconditions: ::core::option::Option<ClusterRestorePreconditionEvidence>,
+    pub preconditions: ::core::option::Option<RestorePreconditionEvidence>,
     #[prost(message, optional, tag = "18")]
-    pub progress: ::core::option::Option<ClusterRestoreProgress>,
+    pub progress: ::core::option::Option<RestoreProgress>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct GetBackupPolicyRequest {}
@@ -2478,96 +2357,51 @@ pub struct DeleteBackupRepositoryResponse {
     pub state: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TriggerBackupRequest {
+pub struct StartBackupRequest {
     #[prost(string, tag = "1")]
     pub reason: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TriggerBackupResponse {
-    #[prost(message, optional, tag = "1")]
-    pub status: ::core::option::Option<BackupStatus>,
-    #[prost(message, optional, tag = "2")]
-    pub backup: ::core::option::Option<BackupSummary>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct GetBackupStatusRequest {}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetBackupStatusResponse {
-    #[prost(message, optional, tag = "1")]
-    pub status: ::core::option::Option<BackupStatus>,
-    #[prost(message, optional, tag = "2")]
-    pub quiesce: ::core::option::Option<QuiesceStatus>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListBackupsRequest {
-    #[prost(int32, tag = "1")]
-    pub page_size: i32,
-    #[prost(string, tag = "2")]
-    pub page_token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListBackupsResponse {
-    #[prost(message, repeated, tag = "1")]
-    pub backups: ::prost::alloc::vec::Vec<BackupSummary>,
-    #[prost(string, tag = "2")]
-    pub next_page_token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteBackupRequest {
-    #[prost(string, tag = "1")]
-    pub backup_id: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteBackupResponse {
-    #[prost(string, tag = "1")]
-    pub backup_id: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct StartClusterBackupRequest {
-    #[prost(string, tag = "1")]
-    pub reason: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub output_dir: ::prost::alloc::string::String,
-    #[prost(enumeration = "BackupArchiveFormat", tag = "3")]
+    #[prost(enumeration = "BackupArchiveFormat", tag = "2")]
     pub archive_format: i32,
     /// Optional client-provided key for idempotent start retries. Servers may return the existing
     /// operation for the same key instead of creating a duplicate operation.
-    #[prost(string, tag = "4")]
+    #[prost(string, tag = "3")]
     pub idempotency_key: ::prost::alloc::string::String,
-    /// Optional maximum time the operation may remain waiting for cluster convergence before failing.
+    /// Optional maximum time the operation may remain waiting for deployment convergence before failing.
     /// Zero means the server default applies.
-    #[prost(int64, tag = "5")]
+    #[prost(int64, tag = "4")]
     pub convergence_timeout_seconds: i64,
-    #[prost(string, tag = "6")]
+    /// Required unless the daemon has an explicit default repository policy. The repository receives
+    /// the durable backup-set manifest, artifacts, and complete marker.
+    #[prost(string, tag = "5")]
     pub repository_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "BackupCaptureProvider", tag = "7")]
+    #[prost(enumeration = "BackupCaptureProvider", tag = "6")]
     pub capture_provider: i32,
-    #[prost(message, optional, tag = "8")]
+    #[prost(message, optional, tag = "7")]
     pub validation_options: ::core::option::Option<ValidationOptions>,
-    #[prost(enumeration = "BackupQuiesceReadProfile", tag = "9")]
+    #[prost(enumeration = "BackupQuiesceReadProfile", tag = "8")]
     pub quiesce_read_profile: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct StartClusterBackupResponse {
+pub struct StartBackupResponse {
     #[prost(message, optional, tag = "1")]
-    pub status: ::core::option::Option<ClusterBackupStatus>,
+    pub operation: ::core::option::Option<BackupOperation>,
     #[prost(message, optional, tag = "2")]
-    pub backup_set: ::core::option::Option<ClusterBackupSetSummary>,
+    pub backup_set: ::core::option::Option<BackupSetSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterBackupStatusRequest {
+pub struct GetBackupOperationRequest {
     #[prost(string, tag = "1")]
     pub backup_set_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub backup_operation_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterBackupStatusResponse {
+pub struct GetBackupOperationResponse {
     #[prost(message, optional, tag = "1")]
-    pub status: ::core::option::Option<ClusterBackupStatus>,
+    pub operation: ::core::option::Option<BackupOperation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CancelClusterBackupRequest {
+pub struct CancelBackupOperationRequest {
     #[prost(string, tag = "1")]
     pub backup_set_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2576,40 +2410,26 @@ pub struct CancelClusterBackupRequest {
     pub backup_operation_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CancelClusterBackupResponse {
+pub struct CancelBackupOperationResponse {
     #[prost(message, optional, tag = "1")]
-    pub status: ::core::option::Option<ClusterBackupStatus>,
+    pub operation: ::core::option::Option<BackupOperation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupsRequest {
+pub struct ListBackupOperationsRequest {
     #[prost(int32, tag = "1")]
     pub page_size: i32,
     #[prost(string, tag = "2")]
     pub page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupsResponse {
+pub struct ListBackupOperationsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub backup_sets: ::prost::alloc::vec::Vec<ClusterBackupSetSummary>,
+    pub operations: ::prost::alloc::vec::Vec<BackupOperation>,
     #[prost(string, tag = "2")]
     pub next_page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupOperationsRequest {
-    #[prost(int32, tag = "1")]
-    pub page_size: i32,
-    #[prost(string, tag = "2")]
-    pub page_token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupOperationsResponse {
-    #[prost(message, repeated, tag = "1")]
-    pub operations: ::prost::alloc::vec::Vec<ClusterBackupStatus>,
-    #[prost(string, tag = "2")]
-    pub next_page_token: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupSetsRequest {
+pub struct ListBackupSetsRequest {
     #[prost(string, tag = "1")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(int32, tag = "2")]
@@ -2618,48 +2438,46 @@ pub struct ListClusterBackupSetsRequest {
     pub page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterBackupSetsResponse {
+pub struct ListBackupSetsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub backup_sets: ::prost::alloc::vec::Vec<ClusterBackupSetSummary>,
+    pub backup_sets: ::prost::alloc::vec::Vec<BackupSetSummary>,
     #[prost(string, tag = "2")]
     pub next_page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterBackupSetRequest {
+pub struct GetBackupSetRequest {
     #[prost(string, tag = "1")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub backup_set_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterBackupSetResponse {
+pub struct GetBackupSetResponse {
     #[prost(message, optional, tag = "1")]
-    pub backup_set: ::core::option::Option<ClusterBackupSetSummary>,
+    pub backup_set: ::core::option::Option<BackupSetSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ValidateClusterBackupSetRequest {
+pub struct ValidateBackupSetRequest {
     #[prost(string, tag = "1")]
-    pub backup_set_path: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
     pub repository_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "2")]
     pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, optional, tag = "3")]
     pub validation_options: ::core::option::Option<ValidationOptions>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ValidateClusterBackupSetResponse {
+pub struct ValidateBackupSetResponse {
     #[prost(bool, tag = "1")]
     pub valid: bool,
     #[prost(string, repeated, tag = "2")]
     pub errors: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(message, optional, tag = "3")]
-    pub backup_set: ::core::option::Option<ClusterBackupSetSummary>,
+    pub backup_set: ::core::option::Option<BackupSetSummary>,
     #[prost(message, optional, tag = "4")]
     pub validation: ::core::option::Option<ValidationSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteClusterBackupSetRequest {
+pub struct DeleteBackupSetRequest {
     #[prost(string, tag = "1")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2668,7 +2486,7 @@ pub struct DeleteClusterBackupSetRequest {
     pub reason: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteClusterBackupSetResponse {
+pub struct DeleteBackupSetResponse {
     #[prost(string, tag = "1")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2799,7 +2617,7 @@ pub struct BackupObservabilitySnapshot {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BackupMetric {
-    /// Stable metric name, e.g. mycel_backup_cluster_operation_count.
+    /// Stable metric name, e.g. mycel_backup_operation_count.
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2840,54 +2658,58 @@ pub struct BackupAlertCondition {
     pub evidence: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterBackupStatus {
+pub struct BackupOperation {
     #[prost(string, tag = "1")]
-    pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub state: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub cluster_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub reason: ::prost::alloc::string::String,
-    #[prost(string, tag = "5")]
-    pub created_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "6")]
-    pub updated_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "7")]
-    pub completed_at: ::prost::alloc::string::String,
-    #[prost(int32, tag = "8")]
-    pub expected_nodes: i32,
-    #[prost(string, tag = "9")]
-    pub manifest_uri: ::prost::alloc::string::String,
-    #[prost(message, repeated, tag = "10")]
-    pub nodes: ::prost::alloc::vec::Vec<ClusterBackupNodeArtifact>,
-    #[prost(string, tag = "11")]
-    pub failed_phase: ::prost::alloc::string::String,
-    #[prost(string, tag = "12")]
-    pub error: ::prost::alloc::string::String,
-    #[prost(map = "string, uint64", tag = "13")]
-    pub raft_barriers: ::std::collections::HashMap<::prost::alloc::string::String, u64>,
-    #[prost(enumeration = "ClusterBackupState", tag = "14")]
-    pub state_code: i32,
-    #[prost(message, repeated, tag = "15")]
-    pub blockers: ::prost::alloc::vec::Vec<ClusterBackupBlocker>,
-    #[prost(bool, tag = "16")]
-    pub cancel_requested: bool,
-    #[prost(string, tag = "17")]
-    pub current_phase: ::prost::alloc::string::String,
-    #[prost(int64, tag = "18")]
-    pub retry_after_seconds: i64,
-    #[prost(string, tag = "19")]
-    pub repository_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "20")]
     pub backup_operation_id: ::prost::alloc::string::String,
-    #[prost(message, repeated, tag = "21")]
+    #[prost(string, tag = "2")]
+    pub backup_set_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub repository_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub deployment_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub deployment_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "BackupDeploymentMode", tag = "6")]
+    pub deployment_mode: i32,
+    #[prost(enumeration = "BackupOperationState", tag = "7")]
+    pub state: i32,
+    /// Optional implementation-specific phase detail for operator diagnostics.
+    #[prost(string, tag = "8")]
+    pub phase: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub reason: ::prost::alloc::string::String,
+    #[prost(string, tag = "10")]
+    pub created_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "11")]
+    pub updated_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "12")]
+    pub completed_at: ::prost::alloc::string::String,
+    #[prost(int32, tag = "13")]
+    pub expected_node_count: i32,
+    #[prost(string, tag = "14")]
+    pub manifest_uri: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "15")]
+    pub nodes: ::prost::alloc::vec::Vec<BackupNodeArtifact>,
+    /// Raft convergence barriers are empty for standalone deployments.
+    #[prost(map = "string, uint64", tag = "16")]
+    pub raft_barriers: ::std::collections::HashMap<::prost::alloc::string::String, u64>,
+    #[prost(message, repeated, tag = "17")]
+    pub blockers: ::prost::alloc::vec::Vec<BackupOperationBlocker>,
+    #[prost(message, repeated, tag = "18")]
     pub cleanup_tasks: ::prost::alloc::vec::Vec<CleanupTask>,
-    #[prost(message, optional, tag = "22")]
+    #[prost(message, optional, tag = "19")]
     pub validation: ::core::option::Option<ValidationSummary>,
+    #[prost(bool, tag = "20")]
+    pub cancel_requested: bool,
+    #[prost(int64, tag = "21")]
+    pub retry_after_seconds: i64,
+    #[prost(string, tag = "22")]
+    pub failed_phase: ::prost::alloc::string::String,
+    #[prost(string, tag = "23")]
+    pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterBackupBlocker {
+pub struct BackupOperationBlocker {
     #[prost(string, tag = "1")]
     pub node_name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2906,38 +2728,42 @@ pub struct ClusterBackupBlocker {
     pub detail: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterBackupSetSummary {
+pub struct BackupSetSummary {
     #[prost(string, tag = "1")]
     pub backup_set_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
-    pub state: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub cluster_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub created_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "5")]
-    pub completed_at: ::prost::alloc::string::String,
-    #[prost(int32, tag = "6")]
-    pub expected_nodes: i32,
-    #[prost(string, tag = "7")]
-    pub manifest_uri: ::prost::alloc::string::String,
-    #[prost(message, repeated, tag = "8")]
-    pub nodes: ::prost::alloc::vec::Vec<ClusterBackupNodeArtifact>,
-    #[prost(string, tag = "9")]
     pub repository_id: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "10")]
+    #[prost(string, tag = "3")]
+    pub deployment_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub deployment_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "BackupDeploymentMode", tag = "5")]
+    pub deployment_mode: i32,
+    #[prost(enumeration = "BackupOperationState", tag = "6")]
+    pub state: i32,
+    #[prost(string, tag = "7")]
+    pub created_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub completed_at: ::prost::alloc::string::String,
+    #[prost(int32, tag = "9")]
+    pub expected_node_count: i32,
+    #[prost(string, tag = "10")]
+    pub manifest_uri: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "11")]
+    pub nodes: ::prost::alloc::vec::Vec<BackupNodeArtifact>,
+    #[prost(message, optional, tag = "12")]
     pub compatibility: ::core::option::Option<CompatibilitySummary>,
-    #[prost(message, optional, tag = "11")]
+    #[prost(message, optional, tag = "13")]
     pub validation: ::core::option::Option<ValidationSummary>,
-    #[prost(enumeration = "BackupDeletionState", tag = "12")]
+    #[prost(enumeration = "BackupDeletionState", tag = "14")]
     pub deletion_state: i32,
-    #[prost(enumeration = "BackupRetentionClass", tag = "13")]
+    #[prost(enumeration = "BackupRetentionClass", tag = "15")]
     pub retention_class: i32,
-    #[prost(message, optional, tag = "14")]
+    #[prost(message, optional, tag = "16")]
     pub manifest: ::core::option::Option<BackupSetManifestSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ClusterBackupNodeArtifact {
+pub struct BackupNodeArtifact {
     #[prost(string, tag = "1")]
     pub pod_name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -2965,96 +2791,96 @@ pub struct ClusterBackupNodeArtifact {
     >,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PlanClusterRestoreRequest {
+pub struct PlanRestoreRequest {
     #[prost(string, tag = "1")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "ClusterRestoreTargetMode", tag = "3")]
+    #[prost(enumeration = "RestoreTargetMode", tag = "3")]
     pub target_mode: i32,
-    #[prost(enumeration = "ClusterRestoreIdentityMode", tag = "4")]
+    #[prost(enumeration = "RestoreIdentityMode", tag = "4")]
     pub identity_mode: i32,
-    #[prost(enumeration = "ClusterRestoreAuthSessionPolicy", tag = "5")]
+    #[prost(enumeration = "RestoreAuthSessionPolicy", tag = "5")]
     pub auth_session_policy: i32,
     #[prost(message, optional, tag = "6")]
     pub validation_options: ::core::option::Option<ValidationOptions>,
     #[prost(message, optional, tag = "7")]
-    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    pub target: ::core::option::Option<RestoreTarget>,
     #[prost(message, optional, tag = "8")]
-    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    pub staging: ::core::option::Option<RestoreStagingLocation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PlanClusterRestoreResponse {
+pub struct PlanRestoreResponse {
     #[prost(message, optional, tag = "1")]
     pub plan: ::core::option::Option<RestorePlanSummary>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct StartClusterRestoreRequest {
+pub struct StartRestoreRequest {
     #[prost(string, tag = "1")]
     pub restore_plan_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub repository_id: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub backup_set_id: ::prost::alloc::string::String,
-    #[prost(enumeration = "ClusterRestoreTargetMode", tag = "4")]
+    #[prost(enumeration = "RestoreTargetMode", tag = "4")]
     pub target_mode: i32,
-    #[prost(enumeration = "ClusterRestoreIdentityMode", tag = "5")]
+    #[prost(enumeration = "RestoreIdentityMode", tag = "5")]
     pub identity_mode: i32,
-    #[prost(enumeration = "ClusterRestoreAuthSessionPolicy", tag = "6")]
+    #[prost(enumeration = "RestoreAuthSessionPolicy", tag = "6")]
     pub auth_session_policy: i32,
     #[prost(string, tag = "7")]
     pub idempotency_key: ::prost::alloc::string::String,
     #[prost(string, tag = "8")]
     pub destructive_confirmation: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "9")]
-    pub target: ::core::option::Option<ClusterRestoreTarget>,
+    pub target: ::core::option::Option<RestoreTarget>,
     #[prost(message, optional, tag = "10")]
-    pub staging: ::core::option::Option<ClusterRestoreStagingLocation>,
+    pub staging: ::core::option::Option<RestoreStagingLocation>,
     #[prost(message, optional, tag = "11")]
-    pub preconditions: ::core::option::Option<ClusterRestorePreconditionEvidence>,
+    pub preconditions: ::core::option::Option<RestorePreconditionEvidence>,
     #[prost(string, tag = "12")]
     pub plan_freshness_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct StartClusterRestoreResponse {
+pub struct StartRestoreResponse {
     #[prost(message, optional, tag = "1")]
-    pub operation: ::core::option::Option<ClusterRestoreOperation>,
+    pub operation: ::core::option::Option<RestoreOperation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterRestoreStatusRequest {
+pub struct GetRestoreOperationRequest {
     #[prost(string, tag = "1")]
     pub restore_operation_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetClusterRestoreStatusResponse {
+pub struct GetRestoreOperationResponse {
     #[prost(message, optional, tag = "1")]
-    pub operation: ::core::option::Option<ClusterRestoreOperation>,
+    pub operation: ::core::option::Option<RestoreOperation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterRestoresRequest {
+pub struct ListRestoreOperationsRequest {
     #[prost(int32, tag = "1")]
     pub page_size: i32,
     #[prost(string, tag = "2")]
     pub page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListClusterRestoresResponse {
+pub struct ListRestoreOperationsResponse {
     #[prost(message, repeated, tag = "1")]
-    pub operations: ::prost::alloc::vec::Vec<ClusterRestoreOperation>,
+    pub operations: ::prost::alloc::vec::Vec<RestoreOperation>,
     #[prost(string, tag = "2")]
     pub next_page_token: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CancelClusterRestoreRequest {
+pub struct CancelRestoreOperationRequest {
     #[prost(string, tag = "1")]
     pub restore_operation_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub reason: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CancelClusterRestoreResponse {
+pub struct CancelRestoreOperationResponse {
     #[prost(message, optional, tag = "1")]
-    pub operation: ::core::option::Option<ClusterRestoreOperation>,
+    pub operation: ::core::option::Option<RestoreOperation>,
 }
 /// BackupArchiveFormat identifies the archive/container format used for a backup.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3443,13 +3269,43 @@ impl BackupQuiesceReadProfile {
         }
     }
 }
-/// ClusterBackupState identifies the lifecycle state of an asynchronous cluster backup operation.
+/// BackupDeploymentMode identifies the source or target deployment topology.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
-pub enum ClusterBackupState {
+pub enum BackupDeploymentMode {
+    Unspecified = 0,
+    Standalone = 1,
+    Clustered = 2,
+}
+impl BackupDeploymentMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "BACKUP_DEPLOYMENT_MODE_UNSPECIFIED",
+            Self::Standalone => "BACKUP_DEPLOYMENT_MODE_STANDALONE",
+            Self::Clustered => "BACKUP_DEPLOYMENT_MODE_CLUSTERED",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "BACKUP_DEPLOYMENT_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "BACKUP_DEPLOYMENT_MODE_STANDALONE" => Some(Self::Standalone),
+            "BACKUP_DEPLOYMENT_MODE_CLUSTERED" => Some(Self::Clustered),
+            _ => None,
+        }
+    }
+}
+/// BackupOperationState identifies the lifecycle state of an asynchronous backup operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum BackupOperationState {
     Unspecified = 0,
     Pending = 1,
-    WaitingForClusterConvergence = 2,
+    WaitingForConvergence = 2,
     Ready = 3,
     Quiescing = 4,
     Capturing = 5,
@@ -3464,173 +3320,169 @@ pub enum ClusterBackupState {
     Uploading = 14,
     Finalizing = 15,
 }
-impl ClusterBackupState {
+impl BackupOperationState {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unspecified => "CLUSTER_BACKUP_STATE_UNSPECIFIED",
-            Self::Pending => "CLUSTER_BACKUP_STATE_PENDING",
-            Self::WaitingForClusterConvergence => {
-                "CLUSTER_BACKUP_STATE_WAITING_FOR_CLUSTER_CONVERGENCE"
+            Self::Unspecified => "BACKUP_OPERATION_STATE_UNSPECIFIED",
+            Self::Pending => "BACKUP_OPERATION_STATE_PENDING",
+            Self::WaitingForConvergence => {
+                "BACKUP_OPERATION_STATE_WAITING_FOR_CONVERGENCE"
             }
-            Self::Ready => "CLUSTER_BACKUP_STATE_READY",
-            Self::Quiescing => "CLUSTER_BACKUP_STATE_QUIESCING",
-            Self::Capturing => "CLUSTER_BACKUP_STATE_CAPTURING",
-            Self::Validating => "CLUSTER_BACKUP_STATE_VALIDATING",
-            Self::Succeeded => "CLUSTER_BACKUP_STATE_SUCCEEDED",
-            Self::Failed => "CLUSTER_BACKUP_STATE_FAILED",
-            Self::Canceling => "CLUSTER_BACKUP_STATE_CANCELING",
-            Self::Canceled => "CLUSTER_BACKUP_STATE_CANCELED",
-            Self::Preflighting => "CLUSTER_BACKUP_STATE_PREFLIGHTING",
-            Self::Checkpointing => "CLUSTER_BACKUP_STATE_CHECKPOINTING",
-            Self::ReleasingQuiesce => "CLUSTER_BACKUP_STATE_RELEASING_QUIESCE",
-            Self::Uploading => "CLUSTER_BACKUP_STATE_UPLOADING",
-            Self::Finalizing => "CLUSTER_BACKUP_STATE_FINALIZING",
+            Self::Ready => "BACKUP_OPERATION_STATE_READY",
+            Self::Quiescing => "BACKUP_OPERATION_STATE_QUIESCING",
+            Self::Capturing => "BACKUP_OPERATION_STATE_CAPTURING",
+            Self::Validating => "BACKUP_OPERATION_STATE_VALIDATING",
+            Self::Succeeded => "BACKUP_OPERATION_STATE_SUCCEEDED",
+            Self::Failed => "BACKUP_OPERATION_STATE_FAILED",
+            Self::Canceling => "BACKUP_OPERATION_STATE_CANCELING",
+            Self::Canceled => "BACKUP_OPERATION_STATE_CANCELED",
+            Self::Preflighting => "BACKUP_OPERATION_STATE_PREFLIGHTING",
+            Self::Checkpointing => "BACKUP_OPERATION_STATE_CHECKPOINTING",
+            Self::ReleasingQuiesce => "BACKUP_OPERATION_STATE_RELEASING_QUIESCE",
+            Self::Uploading => "BACKUP_OPERATION_STATE_UPLOADING",
+            Self::Finalizing => "BACKUP_OPERATION_STATE_FINALIZING",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CLUSTER_BACKUP_STATE_UNSPECIFIED" => Some(Self::Unspecified),
-            "CLUSTER_BACKUP_STATE_PENDING" => Some(Self::Pending),
-            "CLUSTER_BACKUP_STATE_WAITING_FOR_CLUSTER_CONVERGENCE" => {
-                Some(Self::WaitingForClusterConvergence)
+            "BACKUP_OPERATION_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "BACKUP_OPERATION_STATE_PENDING" => Some(Self::Pending),
+            "BACKUP_OPERATION_STATE_WAITING_FOR_CONVERGENCE" => {
+                Some(Self::WaitingForConvergence)
             }
-            "CLUSTER_BACKUP_STATE_READY" => Some(Self::Ready),
-            "CLUSTER_BACKUP_STATE_QUIESCING" => Some(Self::Quiescing),
-            "CLUSTER_BACKUP_STATE_CAPTURING" => Some(Self::Capturing),
-            "CLUSTER_BACKUP_STATE_VALIDATING" => Some(Self::Validating),
-            "CLUSTER_BACKUP_STATE_SUCCEEDED" => Some(Self::Succeeded),
-            "CLUSTER_BACKUP_STATE_FAILED" => Some(Self::Failed),
-            "CLUSTER_BACKUP_STATE_CANCELING" => Some(Self::Canceling),
-            "CLUSTER_BACKUP_STATE_CANCELED" => Some(Self::Canceled),
-            "CLUSTER_BACKUP_STATE_PREFLIGHTING" => Some(Self::Preflighting),
-            "CLUSTER_BACKUP_STATE_CHECKPOINTING" => Some(Self::Checkpointing),
-            "CLUSTER_BACKUP_STATE_RELEASING_QUIESCE" => Some(Self::ReleasingQuiesce),
-            "CLUSTER_BACKUP_STATE_UPLOADING" => Some(Self::Uploading),
-            "CLUSTER_BACKUP_STATE_FINALIZING" => Some(Self::Finalizing),
+            "BACKUP_OPERATION_STATE_READY" => Some(Self::Ready),
+            "BACKUP_OPERATION_STATE_QUIESCING" => Some(Self::Quiescing),
+            "BACKUP_OPERATION_STATE_CAPTURING" => Some(Self::Capturing),
+            "BACKUP_OPERATION_STATE_VALIDATING" => Some(Self::Validating),
+            "BACKUP_OPERATION_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "BACKUP_OPERATION_STATE_FAILED" => Some(Self::Failed),
+            "BACKUP_OPERATION_STATE_CANCELING" => Some(Self::Canceling),
+            "BACKUP_OPERATION_STATE_CANCELED" => Some(Self::Canceled),
+            "BACKUP_OPERATION_STATE_PREFLIGHTING" => Some(Self::Preflighting),
+            "BACKUP_OPERATION_STATE_CHECKPOINTING" => Some(Self::Checkpointing),
+            "BACKUP_OPERATION_STATE_RELEASING_QUIESCE" => Some(Self::ReleasingQuiesce),
+            "BACKUP_OPERATION_STATE_UPLOADING" => Some(Self::Uploading),
+            "BACKUP_OPERATION_STATE_FINALIZING" => Some(Self::Finalizing),
             _ => None,
         }
     }
 }
-/// ClusterRestoreTargetMode identifies the target shape for a restore.
+/// RestoreTargetMode identifies the target shape for a restore.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
-pub enum ClusterRestoreTargetMode {
+pub enum RestoreTargetMode {
     Unspecified = 0,
-    NewClusterBootstrap = 1,
-    ExistingClusterReplace = 2,
+    NewDeploymentBootstrap = 1,
+    ExistingDeploymentReplace = 2,
 }
-impl ClusterRestoreTargetMode {
+impl RestoreTargetMode {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unspecified => "CLUSTER_RESTORE_TARGET_MODE_UNSPECIFIED",
-            Self::NewClusterBootstrap => {
-                "CLUSTER_RESTORE_TARGET_MODE_NEW_CLUSTER_BOOTSTRAP"
+            Self::Unspecified => "RESTORE_TARGET_MODE_UNSPECIFIED",
+            Self::NewDeploymentBootstrap => {
+                "RESTORE_TARGET_MODE_NEW_DEPLOYMENT_BOOTSTRAP"
             }
-            Self::ExistingClusterReplace => {
-                "CLUSTER_RESTORE_TARGET_MODE_EXISTING_CLUSTER_REPLACE"
+            Self::ExistingDeploymentReplace => {
+                "RESTORE_TARGET_MODE_EXISTING_DEPLOYMENT_REPLACE"
             }
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CLUSTER_RESTORE_TARGET_MODE_UNSPECIFIED" => Some(Self::Unspecified),
-            "CLUSTER_RESTORE_TARGET_MODE_NEW_CLUSTER_BOOTSTRAP" => {
-                Some(Self::NewClusterBootstrap)
+            "RESTORE_TARGET_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "RESTORE_TARGET_MODE_NEW_DEPLOYMENT_BOOTSTRAP" => {
+                Some(Self::NewDeploymentBootstrap)
             }
-            "CLUSTER_RESTORE_TARGET_MODE_EXISTING_CLUSTER_REPLACE" => {
-                Some(Self::ExistingClusterReplace)
+            "RESTORE_TARGET_MODE_EXISTING_DEPLOYMENT_REPLACE" => {
+                Some(Self::ExistingDeploymentReplace)
             }
             _ => None,
         }
     }
 }
-/// ClusterRestoreIdentityMode identifies how restored cluster identity is handled.
+/// RestoreIdentityMode identifies how restored deployment identity is handled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
-pub enum ClusterRestoreIdentityMode {
+pub enum RestoreIdentityMode {
     Unspecified = 0,
     PreserveBackupId = 1,
     AdoptTargetId = 2,
     GenerateNewId = 3,
 }
-impl ClusterRestoreIdentityMode {
+impl RestoreIdentityMode {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unspecified => "CLUSTER_RESTORE_IDENTITY_MODE_UNSPECIFIED",
-            Self::PreserveBackupId => "CLUSTER_RESTORE_IDENTITY_MODE_PRESERVE_BACKUP_ID",
-            Self::AdoptTargetId => "CLUSTER_RESTORE_IDENTITY_MODE_ADOPT_TARGET_ID",
-            Self::GenerateNewId => "CLUSTER_RESTORE_IDENTITY_MODE_GENERATE_NEW_ID",
+            Self::Unspecified => "RESTORE_IDENTITY_MODE_UNSPECIFIED",
+            Self::PreserveBackupId => "RESTORE_IDENTITY_MODE_PRESERVE_BACKUP_ID",
+            Self::AdoptTargetId => "RESTORE_IDENTITY_MODE_ADOPT_TARGET_ID",
+            Self::GenerateNewId => "RESTORE_IDENTITY_MODE_GENERATE_NEW_ID",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CLUSTER_RESTORE_IDENTITY_MODE_UNSPECIFIED" => Some(Self::Unspecified),
-            "CLUSTER_RESTORE_IDENTITY_MODE_PRESERVE_BACKUP_ID" => {
-                Some(Self::PreserveBackupId)
-            }
-            "CLUSTER_RESTORE_IDENTITY_MODE_ADOPT_TARGET_ID" => Some(Self::AdoptTargetId),
-            "CLUSTER_RESTORE_IDENTITY_MODE_GENERATE_NEW_ID" => Some(Self::GenerateNewId),
+            "RESTORE_IDENTITY_MODE_UNSPECIFIED" => Some(Self::Unspecified),
+            "RESTORE_IDENTITY_MODE_PRESERVE_BACKUP_ID" => Some(Self::PreserveBackupId),
+            "RESTORE_IDENTITY_MODE_ADOPT_TARGET_ID" => Some(Self::AdoptTargetId),
+            "RESTORE_IDENTITY_MODE_GENERATE_NEW_ID" => Some(Self::GenerateNewId),
             _ => None,
         }
     }
 }
-/// ClusterRestoreAuthSessionPolicy identifies auth-session handling during restore.
+/// RestoreAuthSessionPolicy identifies auth-session handling during restore.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
-pub enum ClusterRestoreAuthSessionPolicy {
+pub enum RestoreAuthSessionPolicy {
     Unspecified = 0,
     PreserveRestoredSessions = 1,
     RevokeAllSessions = 2,
 }
-impl ClusterRestoreAuthSessionPolicy {
+impl RestoreAuthSessionPolicy {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unspecified => "CLUSTER_RESTORE_AUTH_SESSION_POLICY_UNSPECIFIED",
+            Self::Unspecified => "RESTORE_AUTH_SESSION_POLICY_UNSPECIFIED",
             Self::PreserveRestoredSessions => {
-                "CLUSTER_RESTORE_AUTH_SESSION_POLICY_PRESERVE_RESTORED_SESSIONS"
+                "RESTORE_AUTH_SESSION_POLICY_PRESERVE_RESTORED_SESSIONS"
             }
-            Self::RevokeAllSessions => {
-                "CLUSTER_RESTORE_AUTH_SESSION_POLICY_REVOKE_ALL_SESSIONS"
-            }
+            Self::RevokeAllSessions => "RESTORE_AUTH_SESSION_POLICY_REVOKE_ALL_SESSIONS",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CLUSTER_RESTORE_AUTH_SESSION_POLICY_UNSPECIFIED" => Some(Self::Unspecified),
-            "CLUSTER_RESTORE_AUTH_SESSION_POLICY_PRESERVE_RESTORED_SESSIONS" => {
+            "RESTORE_AUTH_SESSION_POLICY_UNSPECIFIED" => Some(Self::Unspecified),
+            "RESTORE_AUTH_SESSION_POLICY_PRESERVE_RESTORED_SESSIONS" => {
                 Some(Self::PreserveRestoredSessions)
             }
-            "CLUSTER_RESTORE_AUTH_SESSION_POLICY_REVOKE_ALL_SESSIONS" => {
+            "RESTORE_AUTH_SESSION_POLICY_REVOKE_ALL_SESSIONS" => {
                 Some(Self::RevokeAllSessions)
             }
             _ => None,
         }
     }
 }
-/// ClusterRestoreState identifies the lifecycle state of a restore operation.
+/// RestoreOperationState identifies the lifecycle state of a restore operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
-pub enum ClusterRestoreState {
+pub enum RestoreOperationState {
     Unspecified = 0,
     Pending = 1,
     Planning = 2,
@@ -3650,68 +3502,70 @@ pub enum ClusterRestoreState {
     Failed = 16,
     FailedRequiresOperator = 17,
 }
-impl ClusterRestoreState {
+impl RestoreOperationState {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unspecified => "CLUSTER_RESTORE_STATE_UNSPECIFIED",
-            Self::Pending => "CLUSTER_RESTORE_STATE_PENDING",
-            Self::Planning => "CLUSTER_RESTORE_STATE_PLANNING",
-            Self::ValidatingBackupSet => "CLUSTER_RESTORE_STATE_VALIDATING_BACKUP_SET",
-            Self::ValidatingTarget => "CLUSTER_RESTORE_STATE_VALIDATING_TARGET",
-            Self::AcquiringRestoreLock => "CLUSTER_RESTORE_STATE_ACQUIRING_RESTORE_LOCK",
-            Self::StagingArtifacts => "CLUSTER_RESTORE_STATE_STAGING_ARTIFACTS",
-            Self::ReadyToApply => "CLUSTER_RESTORE_STATE_READY_TO_APPLY",
-            Self::PreparingTarget => "CLUSTER_RESTORE_STATE_PREPARING_TARGET",
-            Self::ApplyingArtifacts => "CLUSTER_RESTORE_STATE_APPLYING_ARTIFACTS",
+            Self::Unspecified => "RESTORE_OPERATION_STATE_UNSPECIFIED",
+            Self::Pending => "RESTORE_OPERATION_STATE_PENDING",
+            Self::Planning => "RESTORE_OPERATION_STATE_PLANNING",
+            Self::ValidatingBackupSet => "RESTORE_OPERATION_STATE_VALIDATING_BACKUP_SET",
+            Self::ValidatingTarget => "RESTORE_OPERATION_STATE_VALIDATING_TARGET",
+            Self::AcquiringRestoreLock => {
+                "RESTORE_OPERATION_STATE_ACQUIRING_RESTORE_LOCK"
+            }
+            Self::StagingArtifacts => "RESTORE_OPERATION_STATE_STAGING_ARTIFACTS",
+            Self::ReadyToApply => "RESTORE_OPERATION_STATE_READY_TO_APPLY",
+            Self::PreparingTarget => "RESTORE_OPERATION_STATE_PREPARING_TARGET",
+            Self::ApplyingArtifacts => "RESTORE_OPERATION_STATE_APPLYING_ARTIFACTS",
             Self::NormalizingRestoredState => {
-                "CLUSTER_RESTORE_STATE_NORMALIZING_RESTORED_STATE"
+                "RESTORE_OPERATION_STATE_NORMALIZING_RESTORED_STATE"
             }
             Self::PostRestoreValidating => {
-                "CLUSTER_RESTORE_STATE_POST_RESTORE_VALIDATING"
+                "RESTORE_OPERATION_STATE_POST_RESTORE_VALIDATING"
             }
-            Self::ResumingService => "CLUSTER_RESTORE_STATE_RESUMING_SERVICE",
-            Self::Succeeded => "CLUSTER_RESTORE_STATE_SUCCEEDED",
-            Self::Canceling => "CLUSTER_RESTORE_STATE_CANCELING",
-            Self::Canceled => "CLUSTER_RESTORE_STATE_CANCELED",
-            Self::Failed => "CLUSTER_RESTORE_STATE_FAILED",
+            Self::ResumingService => "RESTORE_OPERATION_STATE_RESUMING_SERVICE",
+            Self::Succeeded => "RESTORE_OPERATION_STATE_SUCCEEDED",
+            Self::Canceling => "RESTORE_OPERATION_STATE_CANCELING",
+            Self::Canceled => "RESTORE_OPERATION_STATE_CANCELED",
+            Self::Failed => "RESTORE_OPERATION_STATE_FAILED",
             Self::FailedRequiresOperator => {
-                "CLUSTER_RESTORE_STATE_FAILED_REQUIRES_OPERATOR"
+                "RESTORE_OPERATION_STATE_FAILED_REQUIRES_OPERATOR"
             }
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CLUSTER_RESTORE_STATE_UNSPECIFIED" => Some(Self::Unspecified),
-            "CLUSTER_RESTORE_STATE_PENDING" => Some(Self::Pending),
-            "CLUSTER_RESTORE_STATE_PLANNING" => Some(Self::Planning),
-            "CLUSTER_RESTORE_STATE_VALIDATING_BACKUP_SET" => {
+            "RESTORE_OPERATION_STATE_UNSPECIFIED" => Some(Self::Unspecified),
+            "RESTORE_OPERATION_STATE_PENDING" => Some(Self::Pending),
+            "RESTORE_OPERATION_STATE_PLANNING" => Some(Self::Planning),
+            "RESTORE_OPERATION_STATE_VALIDATING_BACKUP_SET" => {
                 Some(Self::ValidatingBackupSet)
             }
-            "CLUSTER_RESTORE_STATE_VALIDATING_TARGET" => Some(Self::ValidatingTarget),
-            "CLUSTER_RESTORE_STATE_ACQUIRING_RESTORE_LOCK" => {
+            "RESTORE_OPERATION_STATE_VALIDATING_TARGET" => Some(Self::ValidatingTarget),
+            "RESTORE_OPERATION_STATE_ACQUIRING_RESTORE_LOCK" => {
                 Some(Self::AcquiringRestoreLock)
             }
-            "CLUSTER_RESTORE_STATE_STAGING_ARTIFACTS" => Some(Self::StagingArtifacts),
-            "CLUSTER_RESTORE_STATE_READY_TO_APPLY" => Some(Self::ReadyToApply),
-            "CLUSTER_RESTORE_STATE_PREPARING_TARGET" => Some(Self::PreparingTarget),
-            "CLUSTER_RESTORE_STATE_APPLYING_ARTIFACTS" => Some(Self::ApplyingArtifacts),
-            "CLUSTER_RESTORE_STATE_NORMALIZING_RESTORED_STATE" => {
+            "RESTORE_OPERATION_STATE_STAGING_ARTIFACTS" => Some(Self::StagingArtifacts),
+            "RESTORE_OPERATION_STATE_READY_TO_APPLY" => Some(Self::ReadyToApply),
+            "RESTORE_OPERATION_STATE_PREPARING_TARGET" => Some(Self::PreparingTarget),
+            "RESTORE_OPERATION_STATE_APPLYING_ARTIFACTS" => Some(Self::ApplyingArtifacts),
+            "RESTORE_OPERATION_STATE_NORMALIZING_RESTORED_STATE" => {
                 Some(Self::NormalizingRestoredState)
             }
-            "CLUSTER_RESTORE_STATE_POST_RESTORE_VALIDATING" => {
+            "RESTORE_OPERATION_STATE_POST_RESTORE_VALIDATING" => {
                 Some(Self::PostRestoreValidating)
             }
-            "CLUSTER_RESTORE_STATE_RESUMING_SERVICE" => Some(Self::ResumingService),
-            "CLUSTER_RESTORE_STATE_SUCCEEDED" => Some(Self::Succeeded),
-            "CLUSTER_RESTORE_STATE_CANCELING" => Some(Self::Canceling),
-            "CLUSTER_RESTORE_STATE_CANCELED" => Some(Self::Canceled),
-            "CLUSTER_RESTORE_STATE_FAILED" => Some(Self::Failed),
-            "CLUSTER_RESTORE_STATE_FAILED_REQUIRES_OPERATOR" => {
+            "RESTORE_OPERATION_STATE_RESUMING_SERVICE" => Some(Self::ResumingService),
+            "RESTORE_OPERATION_STATE_SUCCEEDED" => Some(Self::Succeeded),
+            "RESTORE_OPERATION_STATE_CANCELING" => Some(Self::Canceling),
+            "RESTORE_OPERATION_STATE_CANCELED" => Some(Self::Canceled),
+            "RESTORE_OPERATION_STATE_FAILED" => Some(Self::Failed),
+            "RESTORE_OPERATION_STATE_FAILED_REQUIRES_OPERATOR" => {
                 Some(Self::FailedRequiresOperator)
             }
             _ => None,
@@ -3771,8 +3625,11 @@ pub mod admin_backup_service_client {
     )]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
-    /// AdminBackupService manages daemon backup policy, backup repositories, backup
-    /// operations, backup-set validation, and restore planning/operations.
+    /// AdminBackupService manages repository-backed backup policy, backup repositories,
+    /// deployment-wide backup operations, backup-set validation, and restore planning/operations.
+    /// A deployment can be a standalone daemon or a clustered installation. External backup
+    /// repositories are the durable backup source of truth; daemon-local filesystem paths are
+    /// not exposed as public backup artifacts.
     #[derive(Debug, Clone)]
     pub struct AdminBackupServiceClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -4085,11 +3942,15 @@ pub mod admin_backup_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn trigger_backup(
+        /// StartBackup creates an asynchronous repository-backed deployment backup operation.
+        /// Standalone deployments are represented as a single-node backup set. Clustered deployments
+        /// include all authoritative members and any required multi-node convergence evidence.
+        /// The requested repository is the durable source of truth.
+        pub async fn start_backup(
             &mut self,
-            request: impl tonic::IntoRequest<super::TriggerBackupRequest>,
+            request: impl tonic::IntoRequest<super::StartBackupRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::TriggerBackupResponse>,
+            tonic::Response<super::StartBackupResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4102,20 +3963,20 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/TriggerBackup",
+                "/mycel.admin.v1.AdminBackupService/StartBackup",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "TriggerBackup"),
+                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "StartBackup"),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn get_backup_status(
+        pub async fn get_backup_operation(
             &mut self,
-            request: impl tonic::IntoRequest<super::GetBackupStatusRequest>,
+            request: impl tonic::IntoRequest<super::GetBackupOperationRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::GetBackupStatusResponse>,
+            tonic::Response<super::GetBackupOperationResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4128,137 +3989,25 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/GetBackupStatus",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "GetBackupStatus",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn list_backups(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ListBackupsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListBackupsResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ListBackups",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "ListBackups"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn delete_backup(
-            &mut self,
-            request: impl tonic::IntoRequest<super::DeleteBackupRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteBackupResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/DeleteBackup",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "DeleteBackup"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// StartClusterBackup creates an asynchronous cluster-wide backup operation. Implementations own
-        /// cluster-safety transitions such as waiting for Raft applied-index convergence before capture.
-        pub async fn start_cluster_backup(
-            &mut self,
-            request: impl tonic::IntoRequest<super::StartClusterBackupRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::StartClusterBackupResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/StartClusterBackup",
+                "/mycel.admin.v1.AdminBackupService/GetBackupOperation",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "StartClusterBackup",
+                        "GetBackupOperation",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn get_cluster_backup_status(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GetClusterBackupStatusRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetClusterBackupStatusResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/GetClusterBackupStatus",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "GetClusterBackupStatus",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// CancelClusterBackup requests cancellation of a pending or active cluster-wide backup operation.
+        /// CancelBackupOperation requests cancellation of a pending or active backup operation.
         /// Cancellation is idempotent for terminal operations.
-        pub async fn cancel_cluster_backup(
+        pub async fn cancel_backup_operation(
             &mut self,
-            request: impl tonic::IntoRequest<super::CancelClusterBackupRequest>,
+            request: impl tonic::IntoRequest<super::CancelBackupOperationRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::CancelClusterBackupResponse>,
+            tonic::Response<super::CancelBackupOperationResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4271,23 +4020,23 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/CancelClusterBackup",
+                "/mycel.admin.v1.AdminBackupService/CancelBackupOperation",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "CancelClusterBackup",
+                        "CancelBackupOperation",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn list_cluster_backups(
+        pub async fn list_backup_operations(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListClusterBackupsRequest>,
+            request: impl tonic::IntoRequest<super::ListBackupOperationsRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::ListClusterBackupsResponse>,
+            tonic::Response<super::ListBackupOperationsResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4300,23 +4049,23 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ListClusterBackups",
+                "/mycel.admin.v1.AdminBackupService/ListBackupOperations",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "ListClusterBackups",
+                        "ListBackupOperations",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn list_cluster_backup_operations(
+        pub async fn list_backup_sets(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListClusterBackupOperationsRequest>,
+            request: impl tonic::IntoRequest<super::ListBackupSetsRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::ListClusterBackupOperationsResponse>,
+            tonic::Response<super::ListBackupSetsResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4329,23 +4078,23 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ListClusterBackupOperations",
+                "/mycel.admin.v1.AdminBackupService/ListBackupSets",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "ListClusterBackupOperations",
+                        "ListBackupSets",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn list_cluster_backup_sets(
+        pub async fn get_backup_set(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListClusterBackupSetsRequest>,
+            request: impl tonic::IntoRequest<super::GetBackupSetRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::ListClusterBackupSetsResponse>,
+            tonic::Response<super::GetBackupSetResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4358,23 +4107,49 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ListClusterBackupSets",
+                "/mycel.admin.v1.AdminBackupService/GetBackupSet",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "GetBackupSet"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn validate_backup_set(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ValidateBackupSetRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ValidateBackupSetResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminBackupService/ValidateBackupSet",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "ListClusterBackupSets",
+                        "ValidateBackupSet",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn get_cluster_backup_set(
+        pub async fn delete_backup_set(
             &mut self,
-            request: impl tonic::IntoRequest<super::GetClusterBackupSetRequest>,
+            request: impl tonic::IntoRequest<super::DeleteBackupSetRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::GetClusterBackupSetResponse>,
+            tonic::Response<super::DeleteBackupSetResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4387,72 +4162,14 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/GetClusterBackupSet",
+                "/mycel.admin.v1.AdminBackupService/DeleteBackupSet",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "GetClusterBackupSet",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn validate_cluster_backup_set(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ValidateClusterBackupSetRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ValidateClusterBackupSetResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ValidateClusterBackupSet",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "ValidateClusterBackupSet",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn delete_cluster_backup_set(
-            &mut self,
-            request: impl tonic::IntoRequest<super::DeleteClusterBackupSetRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteClusterBackupSetResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/DeleteClusterBackupSet",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "DeleteClusterBackupSet",
+                        "DeleteBackupSet",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -4546,11 +4263,11 @@ pub mod admin_backup_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn plan_cluster_restore(
+        pub async fn plan_restore(
             &mut self,
-            request: impl tonic::IntoRequest<super::PlanClusterRestoreRequest>,
+            request: impl tonic::IntoRequest<super::PlanRestoreRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::PlanClusterRestoreResponse>,
+            tonic::Response<super::PlanRestoreResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4563,23 +4280,75 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/PlanClusterRestore",
+                "/mycel.admin.v1.AdminBackupService/PlanRestore",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "PlanRestore"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn start_restore(
+            &mut self,
+            request: impl tonic::IntoRequest<super::StartRestoreRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::StartRestoreResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminBackupService/StartRestore",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("mycel.admin.v1.AdminBackupService", "StartRestore"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_restore_operation(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetRestoreOperationRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetRestoreOperationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminBackupService/GetRestoreOperation",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "PlanClusterRestore",
+                        "GetRestoreOperation",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn start_cluster_restore(
+        pub async fn list_restore_operations(
             &mut self,
-            request: impl tonic::IntoRequest<super::StartClusterRestoreRequest>,
+            request: impl tonic::IntoRequest<super::ListRestoreOperationsRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::StartClusterRestoreResponse>,
+            tonic::Response<super::ListRestoreOperationsResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4592,23 +4361,23 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/StartClusterRestore",
+                "/mycel.admin.v1.AdminBackupService/ListRestoreOperations",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "StartClusterRestore",
+                        "ListRestoreOperations",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        pub async fn get_cluster_restore_status(
+        pub async fn cancel_restore_operation(
             &mut self,
-            request: impl tonic::IntoRequest<super::GetClusterRestoreStatusRequest>,
+            request: impl tonic::IntoRequest<super::CancelRestoreOperationRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::GetClusterRestoreStatusResponse>,
+            tonic::Response<super::CancelRestoreOperationResponse>,
             tonic::Status,
         > {
             self.inner
@@ -4621,72 +4390,14 @@ pub mod admin_backup_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/GetClusterRestoreStatus",
+                "/mycel.admin.v1.AdminBackupService/CancelRestoreOperation",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "mycel.admin.v1.AdminBackupService",
-                        "GetClusterRestoreStatus",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn list_cluster_restores(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ListClusterRestoresRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListClusterRestoresResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/ListClusterRestores",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "ListClusterRestores",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn cancel_cluster_restore(
-            &mut self,
-            request: impl tonic::IntoRequest<super::CancelClusterRestoreRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CancelClusterRestoreResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mycel.admin.v1.AdminBackupService/CancelClusterRestore",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "mycel.admin.v1.AdminBackupService",
-                        "CancelClusterRestore",
+                        "CancelRestoreOperation",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -13822,16 +13533,16 @@ pub struct UpsertUsageLimitResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteUsageLimitRequest {
-    #[prost(message, optional, tag = "2")]
-    pub scope: ::core::option::Option<UsageScope>,
-    #[prost(string, tag = "4")]
-    pub metric_name: ::prost::alloc::string::String,
     #[prost(string, tag = "1")]
     pub limit_id: ::prost::alloc::string::String,
-    #[prost(uint32, tag = "5")]
-    pub metric_version: u32,
+    #[prost(message, optional, tag = "2")]
+    pub scope: ::core::option::Option<UsageScope>,
     #[prost(enumeration = "DomainInclusionMode", tag = "3")]
     pub domain_inclusion: i32,
+    #[prost(string, tag = "4")]
+    pub metric_name: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteUsageLimitResponse {
@@ -13840,16 +13551,16 @@ pub struct DeleteUsageLimitResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetUsageLimitRequest {
-    #[prost(uint32, tag = "5")]
-    pub metric_version: u32,
-    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
-    pub domain_inclusion: i32,
     #[prost(string, tag = "1")]
     pub limit_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub scope: ::core::option::Option<UsageScope>,
+    #[prost(enumeration = "DomainInclusionMode", tag = "3")]
+    pub domain_inclusion: i32,
     #[prost(string, tag = "4")]
     pub metric_name: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "5")]
+    pub metric_version: u32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetUsageLimitResponse {
@@ -14236,89 +13947,438 @@ impl UsageStatusReason {
         }
     }
 }
-macro_rules! define_admin_usage_client {
-    ($module:ident, $client:ident, $service:literal, { $(
-        $rpc:ident($request:ty => $response:ty, $method:literal)
-    ),+ $(,)? }) => {
-        pub mod $module {
-            #![allow(dead_code, missing_docs, unused_variables)]
-            use tonic::codegen::*;
-
-            #[derive(Debug, Clone)]
-            pub struct $client<T> {
-                inner: tonic::client::Grpc<T>,
-            }
-
-            impl<T> $client<T> {
-                pub fn new(inner: T) -> Self {
-                    Self { inner: tonic::client::Grpc::new(inner) }
-                }
-
-                pub fn with_interceptor<F>(inner: T, interceptor: F) -> $client<InterceptedService<T, F>>
-                where
-                    F: tonic::service::Interceptor,
-                    T: tonic::client::GrpcService<tonic::body::BoxBody>,
-                    T::ResponseBody: Default,
-                    T: tonic::codegen::Service<
-                        http::Request<tonic::body::BoxBody>,
-                        Response = http::Response<<T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody>,
-                    >,
-                    <T as tonic::codegen::Service<
-                        http::Request<tonic::body::BoxBody>,
-                    >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
-                {
-                    $client::new(InterceptedService::new(inner, interceptor))
-                }
-            }
-
-            impl<T> $client<T>
-            where
-                T: tonic::client::GrpcService<tonic::body::BoxBody>,
-                T::Error: Into<StdError>,
-                T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
-                <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
-            {
-                async fn unary<Req, Res>(
-                    &mut self,
-                    request: impl tonic::IntoRequest<Req>,
-                    method: &'static str,
-                    path: &'static str,
-                ) -> std::result::Result<tonic::Response<Res>, tonic::Status>
-                where
-                    Req: prost::Message + Default + 'static,
-                    Res: prost::Message + Default + 'static,
-                {
-                    self.inner.ready().await.map_err(|e| tonic::Status::unknown(format!("Usage service was not ready: {}", e.into())))?;
-                    let mut req = request.into_request();
-                    req.extensions_mut().insert(GrpcMethod::new($service, method));
-                    self.inner
-                        .unary(req, http::uri::PathAndQuery::from_static(path), tonic::codec::ProstCodec::default())
-                        .await
-                }
-
-                $(
-                    pub async fn $rpc(
-                        &mut self,
-                        request: impl tonic::IntoRequest<$request>,
-                    ) -> std::result::Result<tonic::Response<$response>, tonic::Status> {
-                        self.unary(request, $method, concat!("/", $service, "/", $method)).await
-                    }
-                )+
-            }
+/// Generated client implementations.
+pub mod admin_usage_accounting_service_client {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    /// AdminUsageAccountingService exposes read-only logical usage snapshots for
+    /// billing, quota, reconciliation, and operator diagnostics.
+    #[derive(Debug, Clone)]
+    pub struct AdminUsageAccountingServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl AdminUsageAccountingServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
         }
-    };
+    }
+    impl<T> AdminUsageAccountingServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> AdminUsageAccountingServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+        {
+            AdminUsageAccountingServiceClient::new(
+                InterceptedService::new(inner, interceptor),
+            )
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        /// GetUsage returns the current materialized usage snapshot for one scope.
+        pub async fn get_usage(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetUsageRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetUsageResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAccountingService/GetUsage",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAccountingService",
+                        "GetUsage",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// BatchGetUsage returns independent usage snapshots or statuses for multiple
+        /// scopes without failing the whole response when one scope is unavailable.
+        pub async fn batch_get_usage(
+            &mut self,
+            request: impl tonic::IntoRequest<super::BatchGetUsageRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchGetUsageResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAccountingService/BatchGetUsage",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAccountingService",
+                        "BatchGetUsage",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// ListUsage pages over materialized space or domain usage snapshots.
+        pub async fn list_usage(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ListUsageRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListUsageResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAccountingService/ListUsage",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAccountingService",
+                        "ListUsage",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// GetUsageAccountingHealth reports whether usage accounting is safe for quota
+        /// decisions and surfaces rebuild, staleness, reconciliation, and diagnostic
+        /// collector health.
+        pub async fn get_usage_accounting_health(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetUsageAccountingHealthRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetUsageAccountingHealthResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAccountingService/GetUsageAccountingHealth",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAccountingService",
+                        "GetUsageAccountingHealth",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+    }
 }
-
-define_admin_usage_client!(admin_usage_accounting_service_client, AdminUsageAccountingServiceClient, "mycel.admin.v1.AdminUsageAccountingService", {
-    get_usage(super::GetUsageRequest => super::GetUsageResponse, "GetUsage"),
-    batch_get_usage(super::BatchGetUsageRequest => super::BatchGetUsageResponse, "BatchGetUsage"),
-    list_usage(super::ListUsageRequest => super::ListUsageResponse, "ListUsage"),
-    get_usage_accounting_health(super::GetUsageAccountingHealthRequest => super::GetUsageAccountingHealthResponse, "GetUsageAccountingHealth"),
-});
-
-define_admin_usage_client!(admin_usage_admission_service_client, AdminUsageAdmissionServiceClient, "mycel.admin.v1.AdminUsageAdmissionService", {
-    upsert_usage_limit(super::UpsertUsageLimitRequest => super::UpsertUsageLimitResponse, "UpsertUsageLimit"),
-    delete_usage_limit(super::DeleteUsageLimitRequest => super::DeleteUsageLimitResponse, "DeleteUsageLimit"),
-    get_usage_limit(super::GetUsageLimitRequest => super::GetUsageLimitResponse, "GetUsageLimit"),
-    list_usage_limits(super::ListUsageLimitsRequest => super::ListUsageLimitsResponse, "ListUsageLimits"),
-});
+/// Generated client implementations.
+pub mod admin_usage_admission_service_client {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    /// AdminUsageAdmissionService configures daemon-side hard write gates for
+    /// quota-safe metrics. Product policy, billing, warning thresholds, and plan
+    /// mapping remain outside Mycel; Mycel only enforces explicit hard limits that
+    /// operators configure here.
+    #[derive(Debug, Clone)]
+    pub struct AdminUsageAdmissionServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl AdminUsageAdmissionServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> AdminUsageAdmissionServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> AdminUsageAdmissionServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+        {
+            AdminUsageAdmissionServiceClient::new(
+                InterceptedService::new(inner, interceptor),
+            )
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        pub async fn upsert_usage_limit(
+            &mut self,
+            request: impl tonic::IntoRequest<super::UpsertUsageLimitRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertUsageLimitResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAdmissionService/UpsertUsageLimit",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAdmissionService",
+                        "UpsertUsageLimit",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn delete_usage_limit(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DeleteUsageLimitRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteUsageLimitResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAdmissionService/DeleteUsageLimit",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAdmissionService",
+                        "DeleteUsageLimit",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_usage_limit(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetUsageLimitRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetUsageLimitResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAdmissionService/GetUsageLimit",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAdmissionService",
+                        "GetUsageLimit",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn list_usage_limits(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ListUsageLimitsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListUsageLimitsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/mycel.admin.v1.AdminUsageAdmissionService/ListUsageLimits",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "mycel.admin.v1.AdminUsageAdmissionService",
+                        "ListUsageLimits",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+    }
+}

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "component": "mycel-rust-sdk",
-  "component_release": "v0.23.1",
-  "source_revision": "08bc4c7b60e92562b7d80f49f36492d782cddc3f",
-  "mycel_api_line": "0.23",
+  "component_release": "v0.25.0",
+  "source_revision": "e48cca5009e3e1a64fff22c4c8820865a176413d",
+  "mycel_api_line": "0.25",
   "supported_daemon_api_lines": [
-    "0.23"
+    "0.25"
   ],
   "incompatible_daemon_api_lines": [
     {
@@ -20,7 +20,21 @@
       "contracts": [
         "semantic-projection-consistency-v1"
       ]
+    },
+    {
+      "line": "0.23",
+      "contracts": [
+        "repository-backed-backup-restore-v1",
+        "usage-accounting-admission-v1"
+      ]
+    },
+    {
+      "line": "0.24",
+      "contracts": [
+        "repository-only-backup-api-v1",
+        "deployment-wide-backup-api-v1"
+      ]
     }
   ],
-  "published_at": "2026-11-18T18:27:03Z"
+  "published_at": "2026-11-24T17:00:13Z"
 }
