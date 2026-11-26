@@ -24,7 +24,7 @@ This SDK mirrors the Go SDK shape:
 
 ## Compatibility
 
-The SDK major/minor line must match the Mycel API/daemon major/minor line for generated contracts. A successful gRPC connection or health check does not prove that an RPC's protobuf wire contract is compatible.
+Use a daemon line listed as supported for the SDK version below. A successful gRPC connection or health check does not prove that an RPC's protobuf wire contract is compatible.
 
 | Rust SDK line | Generated API line | Supported daemon line | Notes |
 | --- | --- | --- | --- |
@@ -34,8 +34,7 @@ The SDK major/minor line must match the Mycel API/daemon major/minor line for ge
 | `v0.23.x` | `v0.23` | `v0.23.x` | Required for semantic projection consistency policies and per-channel freshness diagnostics. |
 | `v0.24.x` | `v0.24` | `v0.24.x` | Required for production backup/restore operations, backup observability, restored-derived readiness, usage accounting, and usage admission helpers. |
 | `v0.25.x` | `v0.25` | `v0.25.x` | Repository-backed backup sets are the only public backup model; local backup helpers and cluster-specific backup helper names were removed. |
-
-The current development line targets `mycel-api v0.25.0`. The approved immutable v0.24 consumer target is [`v0.24.0`](https://github.com/MycelDB/mycel-rust-sdk/releases/tag/v0.24.0). The v0.23 line remains available for the v0.23 API/daemon contract; clients and daemons should be updated together within a matching minor line.
+| `v0.26.x` | `v0.26` | `v0.25.x`, `v0.26.x` | The wire contract is unchanged. The existing usage helpers can read `graph.logical_bytes` from a daemon that supports the metric. |
 
 Machine-readable compatibility metadata is published at [`.release/mycel-compatibility.json`](.release/mycel-compatibility.json). Deployment tooling must fail closed for missing or unknown metadata/schema versions, unknown daemon lines, or contradictory compatibility declarations.
 
@@ -97,7 +96,7 @@ explicit policy and release change. Consumers should pin the Git tag or use a
 checked-out path dependency; Mycel Console uses the latter. For example:
 
 ```toml
-mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.25.0" }
+mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.26.0" }
 ```
 
 ## Crates
@@ -109,7 +108,7 @@ mycel-sdk = { git = "https://github.com/MycelDB/mycel-rust-sdk.git", tag = "v0.2
 
 Generated Rust protobuf/gRPC bindings are committed under `crates/mycel/gen/rust/` so tagged crate releases are self-contained. Normal `cargo build` and `cargo test` use the committed generated files and do not require a `mycel-api` checkout.
 
-The current development line is aligned with `mycel-api` `v0.25.0`.
+The current development line is aligned with `mycel-api` `v0.26.0`.
 
 To regenerate bindings, use a matching `mycel-api` checkout and run:
 

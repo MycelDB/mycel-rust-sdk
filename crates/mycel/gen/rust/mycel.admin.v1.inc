@@ -13504,6 +13504,8 @@ pub struct UsageLimit {
     pub scope: ::core::option::Option<UsageScope>,
     #[prost(enumeration = "DomainInclusionMode", tag = "3")]
     pub domain_inclusion: i32,
+    /// Stable metric identifier. Implementations reject metrics that are not
+    /// quota-safe hard-limit eligible.
     #[prost(string, tag = "4")]
     pub metric_name: ::prost::alloc::string::String,
     #[prost(uint32, tag = "5")]
@@ -13636,6 +13638,9 @@ pub struct UsageSnapshot {
 /// UsageMetric is one named usage value with explicit authority metadata.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UsageMetric {
+    /// Stable metric identifier such as graph.node_count, graph.edge_count,
+    /// graph.logical_bytes, or blob.active_logical_bytes. Metric formulas are
+    /// documented by the API contract and may evolve by metric_version.
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
     #[prost(uint32, tag = "2")]
