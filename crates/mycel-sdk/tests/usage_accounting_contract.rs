@@ -11,6 +11,7 @@ use mycel_sdk::proto::admin::v1::{
     UsageStatusSeverity, UsageUnit,
 };
 use mycel_sdk::AdminClient;
+use prost::Message;
 
 #[test]
 fn usage_accounting_contract_types_compile() {
@@ -65,6 +66,22 @@ fn usage_accounting_contract_types_compile() {
     let snapshot = response.snapshot.unwrap();
     assert!(snapshot.quota_safe_complete);
     assert_eq!(snapshot.metrics[0].value, 1024);
+}
+
+#[test]
+fn graph_logical_bytes_usage_metric_round_trip() {
+    let metric = UsageMetric {
+        name: "graph.logical_bytes".to_string(),
+        metric_version: 1,
+        value: 42,
+        unit: UsageUnit::Bytes as i32,
+        authority: UsageAuthority::RaftCommittedExact as i32,
+        quota_safe: true,
+        ..Default::default()
+    };
+    let encoded = metric.encode_to_vec();
+    let decoded = UsageMetric::decode(encoded.as_slice()).unwrap();
+    assert_eq!(decoded, metric);
 }
 
 #[test]
